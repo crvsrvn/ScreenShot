@@ -2,6 +2,7 @@
 
 #include "core/annotation/AnnotationDocument.h"
 #include "core/annotation/Extras.h"
+#include "core/annotation/Overlays.h"
 #include "core/annotation/Shapes.h"
 #include "core/capture/SelectionGeometry.h"
 
@@ -23,9 +24,9 @@ class Settings;
 class AnnotationEditor : public QObject {
     Q_OBJECT
 public:
-    enum class Tool { None, Rect, Ellipse, Line, Arrow, Pencil, Highlighter, Mosaic, Blur, Text, Eraser, Step, Magnifier };
+    enum class Tool { None, Rect, Ellipse, Line, Arrow, Pencil, Highlighter, Mosaic, Blur, Text, Eraser, Step, Magnifier, Spotlight, SmartErase };
     Q_ENUM(Tool)
-    enum class DragMode { None, Create, Move, Resize, Rotate, Pending, Radius };
+    enum class DragMode { None, Create, Move, Resize, Rotate, Pending, Radius, Marquee, ArcStart, ArcEnd, Pointer };
 
     explicit AnnotationEditor(Settings& settings, QObject* parent = nullptr);
     ~AnnotationEditor() override;
@@ -98,10 +99,35 @@ public:
     SelectionHandle handleAt(QPointF p) const; // 选中项上的锚点
     bool rotateHandleAt(QPointF p) const;
     bool radiusHandleAt(QPointF p) const;      // 圆角矩形的圆角控制点
+    // 端点 / 连接样式（ANN-24）
+    void setCapStyle(Qt::PenCapStyle s);
+    void setJoinStyle(Qt::PenJoinStyle s);
+    // 扇形 / 弧形（ANN-22）：选中椭圆的控制点；setArc 直接设置
+    QPointF arcHandleImage(bool end) const;
+    bool arcHandleAt(QPointF p, bool& end) const;
+    void setArc(double startDegrees, double spanDegrees);
+    // 文字指示箭头（ANN-34）：选中文字下方的控制点，拖出指向目标
+    QPointF pointerHandleImage() const;
+    bool pointerHandleAt(QPointF p) const;
+    void setTextPointer(std::optional<QPointF> target);
+    // 聚光灯（ANN-38）
+    void setSpotlightShape(SpotlightAnnotation::Shape s) { m_spotlightShape = s; }
+    SpotlightAnnotation::Shape spotlightShape() const { return m_spotlightShape; }
+    // 水印（ANN-39）：按设置添加 / 移除一个水印
+    int addWatermark();
+    void removeWatermark();
+    bool hasWatermark() const;
+    // 自动马赛克（ANN-31）：按设置开关；手动覆盖
+    void setAutoMosaic(bool on) { m_autoMosaic = on; }
+    bool autoMosaic() const { return m_autoMosaic; }
 
     // ---- 编辑 ----
     int selectedId() const { return m_selectedId; }
     void select(int id);
+    // 多选（ANN-08）：框选得到；一起移动 / 删除
+    QList<int> selectedIds() const;
+    void selectMany(const QList<int>& ids);
+    QRectF marqueeRect() const { return m_marquee; }
     void deleteSelected();
     void copySelected();
     bool pasteCopied();
@@ -129,6 +155,7 @@ signals:
     void changed();
     void toolChanged(ss::AnnotationEditor::Tool tool);
     void selectionChanged(int id);
+    void styleChanged(); // 样式（颜色 / 笔宽 / 线型 / 端点 / 连接）经接口改变
 
 private:
     std::unique_ptr<Annotation> makeDraft(QPointF start);
@@ -140,6 +167,8 @@ private:
     void startTextInput(QPointF p, Annotation* existing); // 文字或序号说明
     void applyMagnifierToSelected();
     void renumberStepsAfterRemoval(int removedNumber);
+    void addAutoMosaics(const EffectAnnotation& original);
+    void removeGroup(int groupId);
     void positionTextEdit();
     QRectF selectedBounds() const;
 
@@ -162,6 +191,11 @@ private:
     TextDecor m_textDecor;
     StepAnnotation::NumberStyle m_stepStyle = StepAnnotation::NumberStyle::Numeric;
     double m_magnifierZoom = 2.0;
+    SpotlightAnnotation::Shape m_spotlightShape = SpotlightAnnotation::Shape::Rect;
+    bool m_autoMosaic = false;
+    QList<int> m_multi;      // 多选里除主选中外的其他项
+    QRectF m_marquee;        // 框选中的矩形
+    int m_nextGroupId = 1;
     MagnifierAnnotation::Shape m_magnifierShape = MagnifierAnnotation::Shape::Rect;
     bool m_magnifierInclude = false;
     bool m_magnifierShadow = true;

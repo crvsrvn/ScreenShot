@@ -50,8 +50,11 @@ void CaptureSession::setTool(AnnotationEditor::Tool tool)
             m_editor.setTextHost(host, host->toLogical(QRect(m_selection.topLeft(), QSize(1, 1))).topLeft(), host->screenInfo().scale);
         setState(State::Annotating);
     }
-    if (m_state == State::Annotating)
+    if (m_state == State::Annotating) {
         m_editor.setTool(tool);
+        if (tool != AnnotationEditor::Tool::None && m_settings.boolValue(QStringLiteral("annotation.rememberTool")))
+            m_settings.setValue(QStringLiteral("annotation.lastToolCapture"), CaptureToolbar::toolName(tool)); // ANN-15
+    }
     layoutToolbar();
     updateOverlays();
 }
@@ -381,8 +384,20 @@ void CaptureSession::setState(State state)
     if (m_state == state)
         return;
     m_state = state;
-    if (state == State::Selected)
+    if (state == State::Selected) {
         autoDetectCodes(); // REC-06：选区确定后自动检测
+        // ANN-15：默认工具 / 上次工具
+        QString toolName = m_settings.stringValue(QStringLiteral("annotation.defaultCaptureTool"));
+        if (m_settings.boolValue(QStringLiteral("annotation.rememberTool")) && !m_settings.stringValue(QStringLiteral("annotation.lastToolCapture")).isEmpty())
+            toolName = m_settings.stringValue(QStringLiteral("annotation.lastToolCapture"));
+        const AnnotationEditor::Tool tool = CaptureToolbar::toolFromName(toolName);
+        if (tool != AnnotationEditor::Tool::None && !m_selection.isEmpty() && m_drag == Drag::None) {
+            m_state = state;
+            emit stateChanged(state);
+            setTool(tool);
+            return;
+        }
+    }
     else if (state != State::Annotating && state != State::History)
         m_codes.clear();
     emit stateChanged(state);

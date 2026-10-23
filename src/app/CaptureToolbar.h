@@ -27,11 +27,23 @@ public:
     void syncFromEditor();
     static QString toolName(AnnotationEditor::Tool tool);
     static AnnotationEditor::Tool toolFromName(const QString& name);
+    static const char* kToolText(AnnotationEditor::Tool tool);
+    // 色板（ANN-04）
+    QList<QColor> paletteColors() const;
+    void savePalette(const QList<QColor>& colors);
+    bool exportPalette(const QString& path) const;
+    bool importPalette(const QString& path);
+    QList<QToolButton*> colorButtons() const { return m_colorButtons; }
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
     QToolButton* addButton(QWidget* row, const QString& name, const QString& text, const QString& tooltip, bool checkable = false);
     void buildOptions();
     void refreshColorButtons();
+    void rebuildPalette();
+    void rebuildTools();
 
     ToolbarTarget* m_target;
     QWidget* m_tools = nullptr;
@@ -55,6 +67,10 @@ private:
     QFontComboBox* m_fontCombo = nullptr;
     QSpinBox* m_fontSize = nullptr;
     QToolButton* m_customColor = nullptr;
+    QWidget* m_paletteRow = nullptr;
+    QToolButton* m_recentButton = nullptr;
+    QToolButton* m_moreButton = nullptr;
+    AnnotationEditor::Tool m_recentTool = AnnotationEditor::Tool::None;
     QList<QToolButton*> m_colorButtons;
     QHash<QString, QToolButton*> m_toolButtons;
     bool m_syncing = false;

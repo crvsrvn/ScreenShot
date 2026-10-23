@@ -25,6 +25,8 @@ qt_add_library(screenshot_core STATIC
     annotation/Annotation.h annotation/Annotation.cpp
     annotation/Shapes.h annotation/Shapes.cpp
     annotation/Extras.h annotation/Extras.cpp
+    annotation/Overlays.h annotation/Overlays.cpp
+    fx/Inpaint.h fx/Inpaint.cpp
     annotation/AnnotationDocument.h annotation/AnnotationDocument.cpp
     pin/TextPin.h pin/TextPin.cpp
     pin/ColorPin.h pin/ColorPin.cpp

@@ -1,6 +1,7 @@
 #include "core/annotation/Shapes.h"
 
 #include "core/fx/Blur.h"
+#include "core/fx/Inpaint.h"
 #include "core/fx/Mosaic.h"
 
 #include <QFontMetricsF>
@@ -128,10 +129,49 @@ void RectAnnotation::readJson(const QJsonObject& o)
     m_radius = o.value(QStringLiteral("radius")).toDouble();
 }
 
+void EllipseAnnotation::setArc(double startDegrees, double spanDegrees)
+{
+    m_start = std::fmod(std::fmod(startDegrees, 360.0) + 360.0, 360.0);
+    m_span = std::clamp(spanDegrees, 1.0, 360.0);
+}
+
+QPointF EllipseAnnotation::pointAtAngle(double degrees) const
+{
+    const double rad = degrees * M_PI / 180.0;
+    return QPointF(m_rect.center().x() + m_rect.width() / 2 * std::cos(rad), m_rect.center().y() - m_rect.height() / 2 * std::sin(rad));
+}
+
+QPainterPath EllipseAnnotation::shapePath() const
+{
+    QPainterPath path;
+    if (isFullEllipse()) {
+        path.addEllipse(m_rect);
+        return path;
+    }
+    if (m_style.filled) {
+        // 扇形
+        path.moveTo(m_rect.center());
+        path.arcTo(m_rect, m_start, m_span);
+        path.closeSubpath();
+    } else {
+        // 弧形
+        path.arcMoveTo(m_rect, m_start);
+        path.arcTo(m_rect, m_start, m_span);
+    }
+    return path;
+}
+
 bool EllipseAnnotation::hitTest(QPointF p, double tolerance) const
 {
     const QPointF local = rotationTransform().inverted().map(p);
     const double t = tolerance + m_style.width / 2.0;
+    if (!isFullEllipse()) {
+        if (m_style.filled)
+            return shapePath().contains(local);
+        QPainterPathStroker stroker;
+        stroker.setWidth(2 * t);
+        return stroker.createStroke(shapePath()).contains(local);
+    }
     QPainterPath outer;
     outer.addEllipse(m_rect.adjusted(-t, -t, t, t));
     if (m_style.filled)
@@ -153,15 +193,43 @@ void EllipseAnnotation::paint(QPainter& p, const RenderContext&) const
         p.setPen(pen());
         p.setBrush(Qt::NoBrush);
     }
-    p.drawEllipse(m_rect);
+    p.drawPath(shapePath());
     p.restore();
+}
+
+QJsonObject EllipseAnnotation::toJson() const
+{
+    QJsonObject o = RectAnnotation::toJson();
+    o[QStringLiteral("start")] = m_start;
+    o[QStringLiteral("span")] = m_span;
+    return o;
+}
+
+void EllipseAnnotation::readJson(const QJsonObject& o)
+{
+    RectAnnotation::readJson(o);
+    m_start = o.value(QStringLiteral("start")).toDouble(0);
+    m_span = o.value(QStringLiteral("span")).toDouble(360);
 }
 
 // ---- 线条 / 箭头 ----
 
+QRectF LineAnnotation::textRect() const
+{
+    if (m_text.isEmpty() || m_points.size() < 2)
+        return {};
+    const QFontMetricsF fm(m_font);
+    const QRectF br = fm.boundingRect(QRectF(0, 0, 10000, 10000), Qt::AlignLeft | Qt::AlignTop, m_text);
+    const QPointF end = m_points.last();
+    return QRectF(end.x() + 8, end.y() - br.height() / 2, br.width() + 4, br.height());
+}
+
 QRectF LineAnnotation::bounds() const
 {
-    return boundsOfPoints(m_points, 0);
+    QRectF b = boundsOfPoints(m_points, 0);
+    if (!m_text.isEmpty())
+        b = b.united(textRect());
+    return b;
 }
 
 void LineAnnotation::setBounds(const QRectF& r)
@@ -292,6 +360,22 @@ void LineAnnotation::paint(QPainter& p, const RenderContext&) const
     p.setPen(pen());
     p.setBrush(Qt::NoBrush);
     p.drawPolyline(pts.data(), static_cast<int>(pts.size()));
+    if (!m_text.isEmpty()) {
+        // 注释文字（ANN-26）：描边保证可读
+        QPainterPath path;
+        const QFontMetricsF fm(m_font);
+        const QRectF tr = textRect();
+        double y = tr.top() + fm.ascent();
+        for (const QString& line : m_text.split(QLatin1Char('\n'))) {
+            path.addText(QPointF(tr.left() + 2, y), m_font, line);
+            y += fm.lineSpacing();
+        }
+        p.setPen(QPen(m_style.stroke.lightnessF() > 0.6 ? QColor(Qt::black) : QColor(Qt::white), 3.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.drawPath(path);
+        p.setPen(Qt::NoPen);
+        p.setBrush(m_style.stroke);
+        p.drawPath(path);
+    }
     p.restore();
 }
 
@@ -301,6 +385,8 @@ QJsonObject LineAnnotation::toJson() const
     o[QStringLiteral("points")] = pointsToJson(m_points);
     o[QStringLiteral("headStart")] = headName(m_headStart);
     o[QStringLiteral("headEnd")] = headName(m_headEnd);
+    o[QStringLiteral("text")] = m_text;
+    o[QStringLiteral("font")] = m_font.toString();
     return o;
 }
 
@@ -310,6 +396,9 @@ void LineAnnotation::readJson(const QJsonObject& o)
     m_points = pointsFromJson(o.value(QStringLiteral("points")).toArray());
     m_headStart = headFromName(o.value(QStringLiteral("headStart")).toString());
     m_headEnd = headFromName(o.value(QStringLiteral("headEnd")).toString());
+    m_text = o.value(QStringLiteral("text")).toString();
+    if (o.contains(QStringLiteral("font")))
+        m_font.fromString(o.value(QStringLiteral("font")).toString());
     // 兼容旧字段
     if (o.value(QStringLiteral("arrowStart")).toBool())
         m_headStart = Head::Triangle;
@@ -509,6 +598,12 @@ void EffectAnnotation::paint(QPainter& p, const RenderContext& ctx) const
     if (m_effect == Effect::Mosaic) {
         const int block = std::max(2, m_strength / 2); // 强度 1~100 → 块 2~50
         processed = fx::mosaic(source, block);
+    } else if (m_effect == Effect::Inpaint) {
+        // 智能擦除（ANN-30）：取稍大的周边作为修补来源
+        const QRect wide = region.adjusted(-24, -24, 24, 24).intersected(ctx.below->rect());
+        const QImage around = ctx.below->copy(wide);
+        const QImage filled = fx::inpaint(around, shapePath().translated(-wide.topLeft()));
+        processed = filled.copy(region.translated(-wide.topLeft()));
     } else {
         const int radius = std::max(1, m_strength / 2); // 强度 1~100 → 半径 1~50
         processed = fx::gaussianBlur(source, radius);
@@ -528,6 +623,7 @@ QJsonObject EffectAnnotation::toJson() const
     o[QStringLiteral("rect")] = QJsonArray{m_rect.x(), m_rect.y(), m_rect.width(), m_rect.height()};
     o[QStringLiteral("points")] = pointsToJson(m_points);
     o[QStringLiteral("strength")] = m_strength;
+    o[QStringLiteral("group")] = m_groupId;
     return o;
 }
 
@@ -541,6 +637,7 @@ void EffectAnnotation::readJson(const QJsonObject& o)
         m_rect = QRectF(r[0].toDouble(), r[1].toDouble(), r[2].toDouble(), r[3].toDouble());
     m_points = pointsFromJson(o.value(QStringLiteral("points")).toArray());
     m_strength = o.value(QStringLiteral("strength")).toInt(30);
+    m_groupId = o.value(QStringLiteral("group")).toInt(0);
 }
 
 // ---- 文字 ----
@@ -572,35 +669,88 @@ TextDecor TextDecor::fromJson(const QJsonObject& o)
     return d;
 }
 
+QStringList TextAnnotation::wrappedLines() const
+{
+    const QStringList raw = m_text.split(QLatin1Char('\n'));
+    if (m_wrapWidth <= 0)
+        return raw;
+    // 自动换行（ANN-34）：按换行宽度逐词折行；单词过长则按字符折
+    const QFontMetricsF fm(m_font);
+    const double limit = std::max(8.0, m_wrapWidth - 4 - 2 * padding());
+    QStringList out;
+    for (const QString& para : raw) {
+        QString line;
+        for (const QChar ch : para) {
+            const QString candidate = line + ch;
+            if (!line.isEmpty() && fm.horizontalAdvance(candidate) > limit) {
+                // 回退到最近的空格
+                const int space = static_cast<int>(line.lastIndexOf(QLatin1Char(' ')));
+                if (space > 0) {
+                    out.append(line.left(space));
+                    line = line.mid(space + 1) + ch;
+                } else {
+                    out.append(line);
+                    line = QString(ch);
+                }
+            } else {
+                line = candidate;
+            }
+        }
+        out.append(line);
+    }
+    return out;
+}
+
 QSizeF TextAnnotation::textSize() const
 {
     const QFontMetricsF fm(m_font);
-    const QStringList lines = m_text.split(QLatin1Char('\n'));
+    const QStringList lines = wrappedLines();
     double w = 0;
     for (const auto& l : lines)
         w = std::max(w, fm.horizontalAdvance(l));
+    if (m_wrapWidth > 0)
+        w = std::max(w, m_wrapWidth - 4 - 2 * padding());
     return QSizeF(std::max(w, 4.0) + 4 + 2 * padding(), lines.size() * fm.lineSpacing() + 4 + 2 * padding());
 }
 
-QRectF TextAnnotation::bounds() const
+QRectF TextAnnotation::textBox() const
 {
     return QRectF(m_pos, textSize());
 }
 
+QRectF TextAnnotation::bounds() const
+{
+    return textBox();
+}
+
 void TextAnnotation::setBounds(const QRectF& r)
 {
-    // 按高度比例缩放字号（ANN-32 拖角缩放）
     const QRectF old = bounds();
-    if (old.height() > 0) {
-        const double factor = r.height() / old.height();
-        m_font.setPointSizeF(std::max(4.0, m_font.pointSizeF() * factor));
+    if (old.height() > 0 && std::abs(r.height() - old.height()) > 0.5 && std::abs(r.width() - old.width()) <= 0.5) {
+        // 只改高度：按比例缩放字号（ANN-32 拖角缩放）
+        m_font.setPointSizeF(std::max(4.0, m_font.pointSizeF() * r.height() / old.height()));
+    } else if (std::abs(r.width() - old.width()) > 0.5 && std::abs(r.height() - old.height()) <= 0.5) {
+        m_wrapWidth = r.width(); // 只改宽度：换行宽度（ANN-34）
+    } else if (old.height() > 0) {
+        m_font.setPointSizeF(std::max(4.0, m_font.pointSizeF() * r.height() / old.height()));
+        if (m_wrapWidth > 0)
+            m_wrapWidth = r.width();
     }
     m_pos = r.topLeft();
 }
 
 bool TextAnnotation::hitTest(QPointF p, double tolerance) const
 {
-    return Annotation::hitTest(p, tolerance);
+    if (Annotation::hitTest(p, tolerance))
+        return true;
+    if (m_pointer) {
+        QPainterPath line(textBox().center());
+        line.lineTo(*m_pointer);
+        QPainterPathStroker stroker;
+        stroker.setWidth(m_style.width + 2 * tolerance);
+        return stroker.createStroke(line).contains(p);
+    }
+    return false;
 }
 
 void TextAnnotation::paint(QPainter& p, const RenderContext&) const
@@ -611,17 +761,35 @@ void TextAnnotation::paint(QPainter& p, const RenderContext&) const
     applyRotation(p);
     p.setRenderHint(QPainter::Antialiasing, true);
     p.setRenderHint(QPainter::TextAntialiasing, true);
-    const QRectF box = bounds();
+    const QRectF box = textBox();
+    if (m_pointer) {
+        // 指示箭头（ANN-34）：从文字框边缘指向目标
+        const QPointF c = box.center();
+        const QPointF d = *m_pointer - c;
+        const double len = std::hypot(d.x(), d.y());
+        if (len > 1) {
+            // 起点取框边缘与连线的交点
+            const double tx = d.x() != 0 ? (box.width() / 2) / std::abs(d.x()) : 1e9;
+            const double ty = d.y() != 0 ? (box.height() / 2) / std::abs(d.y()) : 1e9;
+            const QPointF from = c + d * std::min(1.0, std::min(tx, ty));
+            p.setPen(QPen(m_style.stroke, std::max(2, m_style.width), Qt::SolidLine, Qt::RoundCap));
+            p.drawLine(from, *m_pointer);
+            p.setPen(Qt::NoPen);
+            p.setBrush(m_style.stroke);
+            p.drawPath(LineAnnotation::arrowHead(from, *m_pointer, std::max(2, m_style.width)));
+        }
+    }
     if (m_decor.background) {
         p.setPen(Qt::NoPen);
         p.setBrush(m_decor.backgroundColor);
         p.drawRoundedRect(box, m_decor.backgroundRadius, m_decor.backgroundRadius);
     }
     const QRectF textBox = box.adjusted(2 + padding(), 2 + padding(), -2 - padding(), -2 - padding());
+    const QString shown = wrappedLines().join(QLatin1Char('\n'));
     if (!m_decor.outline && !m_decor.shadow) {
         p.setFont(m_font);
         p.setPen(m_style.stroke);
-        p.drawText(textBox, Qt::AlignLeft | Qt::AlignTop, m_text);
+        p.drawText(textBox, Qt::AlignLeft | Qt::AlignTop, shown);
         p.restore();
         return;
     }
@@ -629,7 +797,7 @@ void TextAnnotation::paint(QPainter& p, const RenderContext&) const
     QPainterPath path;
     const QFontMetricsF fm(m_font);
     double y = textBox.top() + fm.ascent();
-    for (const QString& line : m_text.split(QLatin1Char('\n'))) {
+    for (const QString& line : shown.split(QLatin1Char('\n'))) {
         path.addText(QPointF(textBox.left(), y), m_font, line);
         y += fm.lineSpacing();
     }
@@ -659,6 +827,9 @@ QJsonObject TextAnnotation::toJson() const
     o[QStringLiteral("font")] = m_font.toString();
     o[QStringLiteral("pos")] = QJsonArray{m_pos.x(), m_pos.y()};
     o[QStringLiteral("decor")] = m_decor.toJson();
+    o[QStringLiteral("wrap")] = m_wrapWidth;
+    if (m_pointer)
+        o[QStringLiteral("pointer")] = QJsonArray{m_pointer->x(), m_pointer->y()};
     return o;
 }
 
@@ -672,6 +843,9 @@ void TextAnnotation::readJson(const QJsonObject& o)
         m_pos = QPointF(p[0].toDouble(), p[1].toDouble());
     if (o.contains(QStringLiteral("decor")))
         m_decor = TextDecor::fromJson(o.value(QStringLiteral("decor")).toObject());
+    m_wrapWidth = o.value(QStringLiteral("wrap")).toDouble(0);
+    const QJsonArray ptr = o.value(QStringLiteral("pointer")).toArray();
+    m_pointer = ptr.size() == 2 ? std::optional<QPointF>(QPointF(ptr[0].toDouble(), ptr[1].toDouble())) : std::nullopt;
 }
 
 // ---- 橡皮擦 ----

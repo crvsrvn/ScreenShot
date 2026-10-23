@@ -295,7 +295,7 @@ void PinWindow::rebuildTransformed()
     QTransform t;
     t.rotate(m_rotation);
     t.scale(m_flipH ? -1 : 1, m_flipV ? -1 : 1);
-    const QImage base = croppedSource();
+    const QImage base = (m_annotated.isNull() || m_annotationsHidden) ? croppedSource() : (m_cropRect.isNull() ? m_annotated : m_annotated.copy(m_cropRect));
     m_transformedFull = t.isIdentity() ? base : base.transformed(t);
     if (m_gray) // PIN-27：灰度（保留透明度）
         m_transformedFull = m_transformedFull.convertToFormat(QImage::Format_Grayscale8).convertToFormat(QImage::Format_ARGB32_Premultiplied);
@@ -426,23 +426,25 @@ void PinWindow::toggleToolbar()
         m_editor->setTextHost(this, contentRect().topLeft() - pos(), m_dpr / m_scale);
         if (!m_toolbar)
             m_toolbar = new CaptureToolbar(this);
+        if (m_settings.boolValue(QStringLiteral("annotation.rememberTool"))) {
+            const AnnotationEditor::Tool last = CaptureToolbar::toolFromName(m_settings.stringValue(QStringLiteral("annotation.lastToolPin")));
+            if (last != AnnotationEditor::Tool::None)
+                m_editor->setTool(last); // ANN-15
+        }
         m_toolbar->syncFromEditor();
         layoutToolbar();
         m_toolbar->show();
         update();
     } else {
-        // 结束：把标注烘焙进显示图（PIN-41 复制“当前显示的图像”含标注）
+        // 结束：把标注烘焙进原图方向的标注图（PIN-41 复制“当前显示的图像”含标注；旋转 / 裁剪后仍保留）
         m_editor->finishDraft();
-        const QImage baked = m_editor->renderForExport();
+        const QImage baked = m_editor->document().count() > 0 ? m_editor->renderForExport() : QImage();
         m_annotating = false;
         m_editor->end();
-        if (!baked.isNull()) {
-            m_display = baked;
-            m_display.setDevicePixelRatio(1.0);
-            m_mipmap = Mipmap(m_display);
-            m_smooth = QPixmap();
-            m_magnifierDesktop.reset();
-        }
+        if (!baked.isNull())
+            bakeAnnotations(baked);
+        rebuildTransformed();
+        relayout();
         if (m_toolbar)
             m_toolbar->hide();
         update();
@@ -459,6 +461,8 @@ void PinWindow::setTool(AnnotationEditor::Tool tool)
     if (!m_annotating)
         toggleToolbar();
     m_editor->setTool(tool);
+    if (tool != AnnotationEditor::Tool::None && m_settings.boolValue(QStringLiteral("annotation.rememberTool")))
+        m_settings.setValue(QStringLiteral("annotation.lastToolPin"), CaptureToolbar::toolName(tool));
     if (m_toolbar)
         m_toolbar->syncFromEditor();
     layoutToolbar();
@@ -552,6 +556,31 @@ void PinWindow::destroyPin(bool userGesture)
         toggleToolbar();
     hide();
     emit destroyed(this);
+}
+
+// ---- 标注层（ANN-16）----
+
+void PinWindow::bakeAnnotations(const QImage& bakedDisplay)
+{
+    // 显示图（含当前旋转 / 翻转 / 裁剪 / 显示范围）→ 原图方向，写回对应位置
+    QTransform t;
+    t.rotate(m_rotation);
+    t.scale(m_flipH ? -1 : 1, m_flipV ? -1 : 1);
+    QImage layer = t.isIdentity() ? bakedDisplay : bakedDisplay.transformed(t.inverted());
+    const QRect target = displayToSource(QRectF(QPointF(0, 0), QSizeF(bakedDisplay.size())));
+    if (m_annotated.isNull())
+        m_annotated = m_source.copy();
+    QPainter p(&m_annotated);
+    p.drawImage(target.topLeft(), layer.scaled(target.size()));
+}
+
+void PinWindow::setAnnotationsHidden(bool hidden)
+{
+    if (m_annotationsHidden == hidden)
+        return;
+    m_annotationsHidden = hidden;
+    rebuildTransformed();
+    update();
 }
 
 // ---- 状态外观 ----
@@ -700,6 +729,11 @@ QMenu* PinWindow::buildMenu()
     invert->setCheckable(true);
     invert->setChecked(m_invert);
     menu->addSeparator();
+    if (!m_annotated.isNull()) {
+        QAction* hideAnn = menu->addAction(tr("Hide annotations"), this, [this](bool on) { setAnnotationsHidden(on); });
+        hideAnn->setCheckable(true);
+        hideAnn->setChecked(m_annotationsHidden);
+    }
     QAction* thumb = menu->addAction(tr("Thumbnail\tShift+double-click"), this, &PinWindow::toggleThumbnail);
     thumb->setCheckable(true);
     thumb->setChecked(m_thumbnail);

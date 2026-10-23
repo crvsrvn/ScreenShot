@@ -4,6 +4,12 @@
 
 #include <QApplication>
 #include <QColorDialog>
+#include <QCursor>
+#include <QEvent>
+#include <QFile>
+#include <QFileDialog>
+#include <QMenu>
+#include <QWheelEvent>
 #include <QComboBox>
 #include <QFontComboBox>
 #include <QHBoxLayout>
@@ -42,11 +48,53 @@ const ToolDef kTools[] = {
     {AnnotationEditor::Tool::Eraser, "eraser", QT_TR_NOOP("Eraser"), QT_TR_NOOP("Eraser (Ctrl+8): erases annotations only")},
     {AnnotationEditor::Tool::Step, "step", QT_TR_NOOP("Step"), QT_TR_NOOP("Step number (N): click to add, drag to add a pointer, double-click to add a note")},
     {AnnotationEditor::Tool::Magnifier, "magnifier", QT_TR_NOOP("Magnify"), QT_TR_NOOP("Magnifier (M): drag the area to enlarge")},
+    {AnnotationEditor::Tool::Spotlight, "spotlight", QT_TR_NOOP("Spotlight"), QT_TR_NOOP("Spotlight: darken everything outside the area")},
+    {AnnotationEditor::Tool::SmartErase, "smartErase", QT_TR_NOOP("Smart erase"), QT_TR_NOOP("Smart erase: fill the area from its surroundings")},
 };
 
 const char* const kHeadNames[] = {"none", "triangle", "open", "dot", "bar"};
 
 } // namespace
+
+void CaptureToolbar::rebuildTools()
+{
+    auto* row = static_cast<QHBoxLayout*>(m_tools->layout());
+    const QStringList common = m_target->settings().stringValue(QStringLiteral("annotation.toolbarCommon")).split(QLatin1Char(','), Qt::SkipEmptyParts);
+    QList<const ToolDef*> ordered;
+    for (const QString& name : common)
+        for (const auto& d : kTools)
+            if (name.trimmed() == QLatin1String(d.name) && !ordered.contains(&d))
+                ordered.append(&d);
+    // 先全部摘下，再按常用区顺序插到行首
+    for (const auto& d : kTools) {
+        QToolButton* b = m_toolButtons.value(QString::fromLatin1(d.name));
+        row->removeWidget(b);
+        b->setVisible(ordered.contains(&d));
+    }
+    int index = 0;
+    for (const ToolDef* d : ordered)
+        row->insertWidget(index++, m_toolButtons.value(QString::fromLatin1(d->name)));
+    QMenu* moreMenu = m_moreButton->menu();
+    moreMenu->clear();
+    for (const auto& d : kTools) {
+        if (ordered.contains(&d))
+            continue;
+        const AnnotationEditor::Tool tool = d.tool;
+        moreMenu->addAction(tr(d.text), this, [this, tool] { m_target->setTool(tool); });
+    }
+    m_moreButton->setVisible(!moreMenu->isEmpty());
+    m_recentButton->setVisible(false);
+    m_recentTool = AnnotationEditor::Tool::None;
+    adjustSize();
+}
+
+const char* CaptureToolbar::kToolText(AnnotationEditor::Tool tool)
+{
+    for (const auto& d : kTools)
+        if (d.tool == tool)
+            return d.text;
+    return "";
+}
 
 QString CaptureToolbar::toolName(AnnotationEditor::Tool tool)
 {
@@ -81,6 +129,7 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
     row->setContentsMargins(0, 0, 0, 0);
     row->setSpacing(2);
     layout->addWidget(m_tools);
+    // 自定义工具栏（ANN-14）：常用区按设置顺序；其余折叠进“更多”；最近从折叠区用过的工具有一个浮动按钮
     for (const auto& d : kTools) {
         QToolButton* b = addButton(m_tools, QString::fromLatin1(d.name), tr(d.text), tr(d.tip), true);
         m_toolButtons.insert(QString::fromLatin1(d.name), b);
@@ -93,12 +142,37 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
                 b->setChecked(false);
         });
     }
+    m_recentButton = addButton(m_tools, QStringLiteral("recent"), QString(), tr("Last tool used from More"), true);
+    m_recentButton->setVisible(false);
+    connect(m_recentButton, &QToolButton::clicked, this, [this](bool checked) {
+        if (!m_syncing)
+            m_target->setTool(checked ? m_recentTool : AnnotationEditor::Tool::None);
+    });
+    m_moreButton = addButton(m_tools, QStringLiteral("more"), tr("More"), tr("Tools not on the toolbar"));
+    m_moreButton->setMenu(new QMenu(m_moreButton));
+    m_moreButton->setPopupMode(QToolButton::InstantPopup);
+    rebuildTools();
+    connect(&target->settings(), &Settings::changed, this, [this](const QString& key, const QVariant&) {
+        if (key == QLatin1String("annotation.toolbarCommon"))
+            rebuildTools();
+        else if (key == QLatin1String("annotation.palette") && m_paletteRow)
+            rebuildPalette();
+    });
     auto* sep = new QFrame(m_tools);
     sep->setFrameShape(QFrame::VLine);
     row->addWidget(sep);
     connect(addButton(m_tools, QStringLiteral("undo"), tr("Undo"), tr("Undo (Ctrl+Z)")), &QToolButton::clicked, this, [this] { m_target->editor().undo(); });
     connect(addButton(m_tools, QStringLiteral("redo"), tr("Redo"), tr("Redo (Ctrl+Y)")), &QToolButton::clicked, this, [this] { m_target->editor().redo(); });
     connect(addButton(m_tools, QStringLiteral("clear"), tr("Clear"), tr("Remove all annotations (undoable)")), &QToolButton::clicked, this, [this] { m_target->editor().clearAll(); });
+    QToolButton* watermark = addButton(m_tools, QStringLiteral("watermark"), tr("Watermark"), tr("Add or remove the watermark (settings: Annotation)"), true);
+    connect(watermark, &QToolButton::clicked, this, [this](bool on) {
+        if (m_syncing)
+            return;
+        if (on)
+            m_target->editor().addWatermark();
+        else
+            m_target->editor().removeWatermark();
+    });
     auto* sep2 = new QFrame(m_tools);
     sep2->setFrameShape(QFrame::VLine);
     row->addWidget(sep2);
@@ -148,6 +222,10 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
 
     connect(&target->editor(), &AnnotationEditor::toolChanged, this, [this] { syncFromEditor(); });
     connect(&target->editor(), &AnnotationEditor::selectionChanged, this, [this] { syncFromEditor(); });
+    connect(&target->editor(), &AnnotationEditor::styleChanged, this, [this] {
+        if (!m_syncing)
+            syncFromEditor();
+    });
 }
 
 QToolButton* CaptureToolbar::addButton(QWidget* row, const QString& name, const QString& text, const QString& tooltip, bool checkable)
@@ -170,21 +248,13 @@ void CaptureToolbar::buildOptions()
     row->setSpacing(2);
     AnnotationEditor& editor = m_target->editor();
 
-    // 颜色（ANN-03）：预设色板 + 自定义（含透明度）
-    for (const QColor& c : kPalette) {
-        auto* b = new QToolButton(m_options);
-        b->setObjectName(QStringLiteral("color_") + c.name());
-        b->setFixedSize(20, 20);
-        b->setStyleSheet(QStringLiteral("QToolButton { background: %1; border: 1px solid #888; } QToolButton:checked { border: 2px solid white; }").arg(c.name()));
-        b->setCheckable(true);
-        b->setFocusPolicy(Qt::NoFocus);
-        connect(b, &QToolButton::clicked, this, [this, c] {
-            m_target->editor().setColor(c);
-            refreshColorButtons();
-        });
-        row->addWidget(b);
-        m_colorButtons.append(b);
-    }
+    // 颜色（ANN-03、ANN-04）：色板来自设置，可编辑 / 排序 / 导入导出；滚轮调透明度
+    m_paletteRow = new QWidget(m_options);
+    auto* paletteLayout = new QHBoxLayout(m_paletteRow);
+    paletteLayout->setContentsMargins(0, 0, 0, 0);
+    paletteLayout->setSpacing(2);
+    row->addWidget(m_paletteRow);
+    rebuildPalette();
     m_customColor = addButton(m_options, QStringLiteral("customColor"), tr("Custom"), tr("Pick a color (with opacity)"));
     connect(m_customColor, &QToolButton::clicked, this, [this] {
         const QColor c = QColorDialog::getColor(m_target->editor().style().stroke, nullptr, tr("Annotation color"), QColorDialog::ShowAlphaChannel);
@@ -249,6 +319,11 @@ void CaptureToolbar::buildOptions()
             syncFromEditor();
         });
     }
+    // 端点 / 连接（ANN-24）
+    QToolButton* capSquare = addButton(m_styleRow, QStringLiteral("capSquare"), tr("Square ends"), tr("Square line ends (off: round)"), true);
+    connect(capSquare, &QToolButton::clicked, this, [this](bool on) { m_target->editor().setCapStyle(on ? Qt::SquareCap : Qt::RoundCap); });
+    QToolButton* joinMiter = addButton(m_styleRow, QStringLiteral("joinMiter"), tr("Sharp corners"), tr("Sharp line joins (off: round)"), true);
+    connect(joinMiter, &QToolButton::clicked, this, [this](bool on) { m_target->editor().setJoinStyle(on ? Qt::MiterJoin : Qt::RoundJoin); });
     row->addWidget(m_styleRow);
 
     // 箭头样式（ANN-25）：起点 / 终点
@@ -335,6 +410,8 @@ void CaptureToolbar::buildOptions()
                 e.setEraserShape(static_cast<EraserAnnotation::Shape>(idx));
             else if (e.tool() == AnnotationEditor::Tool::Magnifier)
                 e.setMagnifierShape(idx == 2 ? MagnifierAnnotation::Shape::Ellipse : MagnifierAnnotation::Shape::Rect);
+            else if (e.tool() == AnnotationEditor::Tool::Spotlight)
+                e.setSpotlightShape(idx == 2 ? SpotlightAnnotation::Shape::Ellipse : SpotlightAnnotation::Shape::Rect);
             else
                 e.setEffectShape(static_cast<EffectAnnotation::Shape>(idx));
             syncFromEditor();
@@ -408,12 +485,154 @@ void CaptureToolbar::buildOptions()
     row->addWidget(m_textRow);
 }
 
+QList<QColor> CaptureToolbar::paletteColors() const
+{
+    QList<QColor> colors;
+    for (const QString& s : m_target->settings().stringValue(QStringLiteral("annotation.palette")).split(QLatin1Char(','), Qt::SkipEmptyParts)) {
+        const QColor c = QColor::fromString(s.trimmed());
+        if (c.isValid())
+            colors.append(c);
+    }
+    if (colors.isEmpty())
+        colors = kPalette;
+    return colors;
+}
+
+void CaptureToolbar::savePalette(const QList<QColor>& colors)
+{
+    QStringList names;
+    for (const QColor& c : colors)
+        names.append(c.alpha() == 255 ? c.name(QColor::HexRgb) : c.name(QColor::HexArgb));
+    m_target->settings().setValue(QStringLiteral("annotation.palette"), names.join(QLatin1Char(',')));
+    rebuildPalette();
+}
+
+bool CaptureToolbar::exportPalette(const QString& path) const
+{
+    QFile f(path);
+    if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        return false;
+    for (const QColor& c : paletteColors())
+        f.write((c.name(QColor::HexArgb) + QLatin1Char('\n')).toUtf8());
+    return true;
+}
+
+bool CaptureToolbar::importPalette(const QString& path)
+{
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly))
+        return false;
+    QList<QColor> colors;
+    for (const QByteArray& line : f.readAll().split('\n')) {
+        const QColor c = QColor::fromString(QString::fromUtf8(line).trimmed());
+        if (c.isValid())
+            colors.append(c);
+    }
+    if (colors.isEmpty())
+        return false;
+    savePalette(colors);
+    return true;
+}
+
+void CaptureToolbar::rebuildPalette()
+{
+    for (QToolButton* b : m_colorButtons)
+        delete b;
+    m_colorButtons.clear();
+    auto* layout = static_cast<QHBoxLayout*>(m_paletteRow->layout());
+    const QList<QColor> colors = paletteColors();
+    for (int i = 0; i < colors.size(); ++i) {
+        const QColor c = colors[i];
+        auto* b = new QToolButton(m_paletteRow);
+        b->setObjectName(QStringLiteral("color_%1").arg(i));
+        b->setFixedSize(20, 20);
+        b->setStyleSheet(QStringLiteral("QToolButton { background: %1; border: 1px solid #888; } QToolButton:checked { border: 2px solid white; }").arg(c.name(QColor::HexArgb)));
+        b->setCheckable(true);
+        b->setFocusPolicy(Qt::NoFocus);
+        b->setContextMenuPolicy(Qt::CustomContextMenu);
+        b->installEventFilter(this);
+        connect(b, &QToolButton::clicked, this, [this, i] {
+            m_target->editor().setColor(paletteColors().value(i));
+            refreshColorButtons();
+        });
+        connect(b, &QToolButton::customContextMenuRequested, this, [this, i](QPoint pos) {
+            // 色板编辑（ANN-04）
+            QList<QColor> colors = paletteColors();
+            QMenu menu;
+            QAction* edit = menu.addAction(tr("Edit color..."));
+            QAction* add = menu.addAction(tr("Add color..."));
+            QAction* remove = menu.addAction(tr("Remove"));
+            QAction* left = menu.addAction(tr("Move left"));
+            QAction* right = menu.addAction(tr("Move right"));
+            menu.addSeparator();
+            QAction* imp = menu.addAction(tr("Import palette..."));
+            QAction* exp = menu.addAction(tr("Export palette..."));
+            QAction* chosen = menu.exec(m_colorButtons.value(i) ? m_colorButtons[i]->mapToGlobal(pos) : QCursor::pos());
+            if (chosen == edit) {
+                const QColor c = QColorDialog::getColor(colors[i], nullptr, tr("Palette color"), QColorDialog::ShowAlphaChannel);
+                if (c.isValid()) {
+                    colors[i] = c;
+                    savePalette(colors);
+                }
+            } else if (chosen == add) {
+                const QColor c = QColorDialog::getColor(colors[i], nullptr, tr("Palette color"), QColorDialog::ShowAlphaChannel);
+                if (c.isValid()) {
+                    colors.insert(i + 1, c);
+                    savePalette(colors);
+                }
+            } else if (chosen == remove && colors.size() > 1) {
+                colors.removeAt(i);
+                savePalette(colors);
+            } else if (chosen == left && i > 0) {
+                colors.swapItemsAt(i, i - 1);
+                savePalette(colors);
+            } else if (chosen == right && i + 1 < colors.size()) {
+                colors.swapItemsAt(i, i + 1);
+                savePalette(colors);
+            } else if (chosen == imp) {
+                const QString path = QFileDialog::getOpenFileName(nullptr, tr("Import palette"), QString(), tr("Palette (*.txt)"));
+                if (!path.isEmpty())
+                    importPalette(path);
+            } else if (chosen == exp) {
+                const QString path = QFileDialog::getSaveFileName(nullptr, tr("Export palette"), QStringLiteral("palette.txt"), tr("Palette (*.txt)"));
+                if (!path.isEmpty())
+                    exportPalette(path);
+            }
+        });
+        layout->addWidget(b);
+        m_colorButtons.append(b);
+    }
+    refreshColorButtons();
+}
+
+bool CaptureToolbar::eventFilter(QObject* watched, QEvent* event)
+{
+    // 颜色按钮上滚轮：调整该色的透明度并应用（ANN-04）
+    if (event->type() == QEvent::Wheel) {
+        const int index = static_cast<int>(m_colorButtons.indexOf(qobject_cast<QToolButton*>(watched)));
+        if (index >= 0) {
+            const int steps = static_cast<QWheelEvent*>(event)->angleDelta().y() / 120;
+            QList<QColor> colors = paletteColors();
+            QColor c = colors[index];
+            c.setAlpha(std::clamp(c.alpha() + steps * 10, 10, 255));
+            colors[index] = c;
+            savePalette(colors);
+            m_target->editor().setColor(c);
+            refreshColorButtons();
+            return true;
+        }
+    }
+    return QWidget::eventFilter(watched, event);
+}
+
 void CaptureToolbar::refreshColorButtons()
 {
     const QColor current = m_target->editor().style().stroke;
-    for (int i = 0; i < m_colorButtons.size(); ++i)
-        m_colorButtons[i]->setChecked(kPalette[i].rgb() == current.rgb());
-    m_customColor->setStyleSheet(QStringLiteral("QToolButton { border: 2px solid %1; }").arg(current.name()));
+    const QList<QColor> colors = paletteColors();
+    for (int i = 0; i < m_colorButtons.size() && i < colors.size(); ++i)
+        m_colorButtons[i]->setChecked(colors[i].rgba() == current.rgba());
+    if (m_customColor)
+        m_customColor->setStyleSheet(QStringLiteral("QToolButton { border: 2px solid %1; }").arg(current.name()));
 }
 
 void CaptureToolbar::syncFromEditor()
@@ -424,6 +643,15 @@ void CaptureToolbar::syncFromEditor()
     const AnnotationEditor::Tool tool = e.tool();
     for (auto it = m_toolButtons.cbegin(); it != m_toolButtons.cend(); ++it)
         it.value()->setChecked(annotating && toolFromName(it.key()) == tool);
+    // 折叠区工具被使用：显示“最近”浮动按钮（ANN-14）
+    if (tool != AnnotationEditor::Tool::None && m_toolButtons.contains(toolName(tool)) && !m_toolButtons.value(toolName(tool))->isVisibleTo(m_tools)) {
+        m_recentTool = tool;
+        m_recentButton->setText(tr(kToolText(tool)));
+        m_recentButton->setVisible(true);
+    }
+    m_recentButton->setChecked(annotating && m_recentButton->isVisibleTo(m_tools) && tool == m_recentTool);
+    if (auto* b = button(QStringLiteral("watermark")))
+        b->setChecked(e.hasWatermark());
     if (auto* b = button(QStringLiteral("ratio")))
         b->setChecked(m_target->ratioLocked());
     if (auto* b = button(QStringLiteral("shadow")))
@@ -452,11 +680,13 @@ void CaptureToolbar::syncFromEditor()
         m_fillRow->findChild<QLabel*>()->setVisible(radius);
         m_radius->setValue(static_cast<int>(std::round(e.cornerRadius())));
         const bool styles = tool == AnnotationEditor::Tool::Rect || tool == AnnotationEditor::Tool::Ellipse || tool == AnnotationEditor::Tool::Line || tool == AnnotationEditor::Tool::Arrow
-            || tool == AnnotationEditor::Tool::Pencil || tool == AnnotationEditor::Tool::Magnifier;
+            || tool == AnnotationEditor::Tool::Pencil || tool == AnnotationEditor::Tool::Magnifier || tool == AnnotationEditor::Tool::Spotlight;
         m_styleRow->setVisible(styles);
         m_styleRow->findChild<QToolButton*>(QStringLiteral("style_solid"))->setChecked(e.style().penStyle == Qt::SolidLine);
         m_styleRow->findChild<QToolButton*>(QStringLiteral("style_dash"))->setChecked(e.style().penStyle == Qt::DashLine);
         m_styleRow->findChild<QToolButton*>(QStringLiteral("style_dot"))->setChecked(e.style().penStyle == Qt::DotLine);
+        m_styleRow->findChild<QToolButton*>(QStringLiteral("capSquare"))->setChecked(e.style().capStyle == Qt::SquareCap);
+        m_styleRow->findChild<QToolButton*>(QStringLiteral("joinMiter"))->setChecked(e.style().joinStyle == Qt::MiterJoin);
         m_arrowRow->setVisible(tool == AnnotationEditor::Tool::Arrow || tool == AnnotationEditor::Tool::Line);
         m_arrowStart->setCurrentIndex(static_cast<int>(e.arrowHeadStart()));
         m_arrowEnd->setCurrentIndex(static_cast<int>(e.arrowHeadEnd()));
@@ -471,7 +701,7 @@ void CaptureToolbar::syncFromEditor()
         m_magnifierRow->findChild<QToolButton*>(QStringLiteral("includeBelow"))->setChecked(e.magnifierIncludeAnnotations());
         m_magnifierRow->findChild<QToolButton*>(QStringLiteral("magShadow"))->setChecked(e.magnifierShadow());
         const bool shapes = tool == AnnotationEditor::Tool::Highlighter || tool == AnnotationEditor::Tool::Mosaic || tool == AnnotationEditor::Tool::Blur || tool == AnnotationEditor::Tool::Eraser
-            || tool == AnnotationEditor::Tool::Magnifier;
+            || tool == AnnotationEditor::Tool::Magnifier || tool == AnnotationEditor::Tool::Spotlight || tool == AnnotationEditor::Tool::SmartErase;
         m_shapeRow->setVisible(shapes);
         if (shapes) {
             int idx = 0;
@@ -481,13 +711,15 @@ void CaptureToolbar::syncFromEditor()
                 idx = static_cast<int>(e.eraserShape());
             else if (tool == AnnotationEditor::Tool::Magnifier)
                 idx = e.magnifierShape() == MagnifierAnnotation::Shape::Ellipse ? 2 : 1;
+            else if (tool == AnnotationEditor::Tool::Spotlight)
+                idx = e.spotlightShape() == SpotlightAnnotation::Shape::Ellipse ? 2 : 1;
             else
                 idx = static_cast<int>(e.effectShape());
             m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_brush"))->setChecked(idx == 0);
             m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_rect"))->setChecked(idx == 1);
             m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_ellipse"))->setChecked(idx == 2);
             m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_ellipse"))->setVisible(tool != AnnotationEditor::Tool::Highlighter);
-            m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_brush"))->setVisible(tool != AnnotationEditor::Tool::Magnifier);
+            m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_brush"))->setVisible(tool != AnnotationEditor::Tool::Magnifier && tool != AnnotationEditor::Tool::Spotlight && tool != AnnotationEditor::Tool::SmartErase);
         }
         m_strengthRow->setVisible(tool == AnnotationEditor::Tool::Mosaic || tool == AnnotationEditor::Tool::Blur);
         m_strength->setValue(e.effectStrength());

@@ -1,6 +1,7 @@
 #include "core/annotation/Annotation.h"
 
 #include "core/annotation/Extras.h"
+#include "core/annotation/Overlays.h"
 #include "core/annotation/Shapes.h"
 
 #include <QJsonArray>
@@ -10,7 +11,8 @@ namespace ss {
 QJsonObject AnnotationStyle::toJson() const
 {
     return {{QStringLiteral("stroke"), stroke.name(QColor::HexArgb)}, {QStringLiteral("width"), width}, {QStringLiteral("filled"), filled},
-            {QStringLiteral("fill"), fill.name(QColor::HexArgb)}, {QStringLiteral("penStyle"), static_cast<int>(penStyle)}};
+            {QStringLiteral("fill"), fill.name(QColor::HexArgb)}, {QStringLiteral("penStyle"), static_cast<int>(penStyle)},
+            {QStringLiteral("cap"), static_cast<int>(capStyle)}, {QStringLiteral("join"), static_cast<int>(joinStyle)}};
 }
 
 AnnotationStyle AnnotationStyle::fromJson(const QJsonObject& o)
@@ -21,6 +23,8 @@ AnnotationStyle AnnotationStyle::fromJson(const QJsonObject& o)
     s.filled = o.value(QStringLiteral("filled")).toBool(false);
     s.fill = QColor::fromString(o.value(QStringLiteral("fill")).toString(s.fill.name(QColor::HexArgb)));
     s.penStyle = static_cast<Qt::PenStyle>(o.value(QStringLiteral("penStyle")).toInt(Qt::SolidLine));
+    s.capStyle = static_cast<Qt::PenCapStyle>(o.value(QStringLiteral("cap")).toInt(Qt::RoundCap));
+    s.joinStyle = static_cast<Qt::PenJoinStyle>(o.value(QStringLiteral("join")).toInt(Qt::RoundJoin));
     return s;
 }
 
@@ -56,7 +60,7 @@ bool Annotation::hitTest(QPointF p, double tolerance) const
 
 QPen Annotation::pen() const
 {
-    QPen pen(m_style.stroke, m_style.width, m_style.penStyle, Qt::RoundCap, Qt::RoundJoin);
+    QPen pen(m_style.stroke, m_style.width, m_style.penStyle, m_style.capStyle, m_style.joinStyle);
     return pen;
 }
 
@@ -94,6 +98,10 @@ std::unique_ptr<Annotation> createAnnotation(const QString& type)
         return std::make_unique<StepAnnotation>();
     if (type == QLatin1String("magnifier"))
         return std::make_unique<MagnifierAnnotation>();
+    if (type == QLatin1String("spotlight"))
+        return std::make_unique<SpotlightAnnotation>();
+    if (type == QLatin1String("watermark"))
+        return std::make_unique<WatermarkAnnotation>();
     return nullptr;
 }
 

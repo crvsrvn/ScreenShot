@@ -17,6 +17,8 @@ struct AnnotationStyle {
     bool filled = false;
     QColor fill = QColor(230, 60, 60);
     Qt::PenStyle penStyle = Qt::SolidLine;
+    Qt::PenCapStyle capStyle = Qt::RoundCap;    // ANN-24：端点圆形 / 方形
+    Qt::PenJoinStyle joinStyle = Qt::RoundJoin; // ANN-24：连接圆角 / 尖角
 
     bool operator==(const AnnotationStyle&) const = default;
     QJsonObject toJson() const;

@@ -68,6 +68,10 @@ public:
     void setInverted(bool on);
 
     // ---- 缩略图 / 显示范围 / 裁剪（PIN-29 ~ PIN-31）----
+    // 临时隐藏标注（ANN-16）
+    bool annotationsHidden() const { return m_annotationsHidden; }
+    void setAnnotationsHidden(bool hidden);
+    bool hasAnnotations() const { return !m_annotated.isNull(); }
     bool thumbnail() const { return m_thumbnail; }
     void toggleThumbnail();
     QRectF viewRect() const { return m_viewRect; }   // 完整显示图坐标；空 = 全部
@@ -214,6 +218,7 @@ private:
     bool onContentEdge(QPointF logicalInWindow) const;
     void ensureMagnifierDesktop();
     void replaceSource(const QImage& image);
+    void bakeAnnotations(const QImage& bakedDisplay);
     QImage croppedSource() const;
     QRect displayToSource(const QRectF& displayRect) const;
     void textSelectAt(QPointF imagePos, bool extend);
@@ -224,6 +229,8 @@ private:
     Settings& m_settings;
     OutputActions* m_output;
     QImage m_source;          // 原图
+    QImage m_annotated;       // 原图方向上烘焙了标注的图（空 = 没有标注）
+    bool m_annotationsHidden = false;
     QImage m_transformedFull; // 裁剪 + 旋转 / 翻转 + 灰度 / 反色后的完整图
     QImage m_transformed;     // 再按显示范围裁出的部分
     QImage m_display;         // 加标注后（原始像素尺寸）

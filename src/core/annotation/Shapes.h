@@ -5,6 +5,7 @@
 #include <QFont>
 #include <QList>
 #include <QPointF>
+#include <optional>
 
 namespace ss {
 
@@ -31,6 +32,7 @@ protected:
     double m_radius = 0;
 };
 
+// 椭圆；通过控制点变为扇形 / 弧形（ANN-22）：startAngle / spanAngle（度，逆时针，span 360 为整圆）
 class EllipseAnnotation : public RectAnnotation {
 public:
     QString type() const override { return QStringLiteral("ellipse"); }
@@ -38,6 +40,19 @@ public:
     void paint(QPainter& p, const RenderContext&) const override;
     std::unique_ptr<Annotation> clone() const override { return std::make_unique<EllipseAnnotation>(*this); }
     bool supportsRadius() const override { return false; }
+    QJsonObject toJson() const override;
+    void readJson(const QJsonObject& o) override;
+    void setArc(double startDegrees, double spanDegrees);
+    double startAngle() const { return m_start; }
+    double spanAngle() const { return m_span; }
+    bool isFullEllipse() const { return m_span >= 360.0; }
+    // 弧的两个端点（图像坐标，未旋转）
+    QPointF pointAtAngle(double degrees) const;
+    QPainterPath shapePath() const;
+
+private:
+    double m_start = 0;
+    double m_span = 360;
 };
 
 // 折线 / 箭头（ANN-23、ANN-25）：points 至少两个；起点与终点各自的箭头样式
@@ -67,6 +82,12 @@ public:
     static QPainterPath arrowHead(QPointF from, QPointF to, double width);
     static QString headName(Head h);
     static Head headFromName(const QString& name);
+    // 注释文字（ANN-26）：画在终点旁
+    void setText(const QString& t) { m_text = t; }
+    const QString& text() const { return m_text; }
+    void setFont(const QFont& f) { m_font = f; }
+    const QFont& font() const { return m_font; }
+    QRectF textRect() const;
 
 private:
     // 画一个端点的箭头；返回线条应缩短的长度
@@ -74,6 +95,8 @@ private:
     QList<QPointF> m_points;
     Head m_headStart = Head::None;
     Head m_headEnd = Head::None;
+    QString m_text;
+    QFont m_font{QStringLiteral("Microsoft YaHei"), 14};
 };
 
 // 铅笔（ANN-27）：自由路径；smooth=true 时用二次贝塞尔平滑
@@ -129,7 +152,7 @@ private:
 // 马赛克 / 高斯模糊（ANN-29）：画笔、矩形、椭圆三种形状，强度可调；效果作用于下层内容
 class EffectAnnotation : public Annotation {
 public:
-    enum class Effect { Mosaic, Blur };
+    enum class Effect { Mosaic, Blur, Inpaint }; // Inpaint：智能擦除（ANN-30）
     enum class Shape { Brush, Rect, Ellipse };
     QString type() const override { return QStringLiteral("effect"); }
     QRectF bounds() const override;
@@ -151,6 +174,9 @@ public:
     void setStrength(int s) { m_strength = std::clamp(s, 1, 100); } // 1~100
     int strength() const { return m_strength; }
     QPainterPath shapePath() const;
+    // 自动马赛克（ANN-31）：同组的效果一起增删；0 为不分组
+    void setGroupId(int g) { m_groupId = g; }
+    int groupId() const { return m_groupId; }
 
 private:
     Effect m_effect = Effect::Mosaic;
@@ -158,6 +184,7 @@ private:
     QRectF m_rect;
     QList<QPointF> m_points;
     int m_strength = 30;
+    int m_groupId = 0;
 };
 
 // 文字装饰（ANN-33）：描边、背景、投影
@@ -199,6 +226,14 @@ public:
     QSizeF textSize() const;
     void setDecor(const TextDecor& d) { m_decor = d; }
     const TextDecor& decor() const { return m_decor; }
+    // 自动换行（ANN-34）：0 为不换行；拖动左右边改变换行宽度
+    void setWrapWidth(double w) { m_wrapWidth = std::max(0.0, w); }
+    double wrapWidth() const { return m_wrapWidth; }
+    // 指示箭头（ANN-34）：从文字框指向目标点
+    void setPointer(std::optional<QPointF> p) { m_pointer = p; }
+    std::optional<QPointF> pointer() const { return m_pointer; }
+    QRectF textBox() const; // 不含指示箭头的文字框
+    QStringList wrappedLines() const;
 
 private:
     double padding() const { return m_decor.background ? m_decor.backgroundPadding : 0.0; }
@@ -206,6 +241,8 @@ private:
     QFont m_font{QStringLiteral("Microsoft YaHei"), 16};
     QPointF m_pos;
     TextDecor m_decor;
+    double m_wrapWidth = 0;
+    std::optional<QPointF> m_pointer;
 };
 
 // 橡皮擦（ANN-36）：画笔、矩形、椭圆形状，只擦标注不擦底图；擦除区域可二次编辑

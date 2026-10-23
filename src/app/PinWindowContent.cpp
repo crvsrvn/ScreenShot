@@ -192,6 +192,7 @@ void PinWindow::replaceSource(const QImage& image)
 {
     m_source = image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
     m_source.setDevicePixelRatio(1.0);
+    m_annotated = QImage();
     m_cropRect = QRect();
     m_viewRect = QRectF();
     rebuildTransformed();
@@ -322,6 +323,8 @@ void PinWindow::confirmCrop()
     if (m_cropRect.isNull())
         return;
     m_source = m_source.copy(m_cropRect);
+    if (!m_annotated.isNull())
+        m_annotated = m_annotated.copy(m_cropRect);
     m_cropRect = QRect();
     rebuildTransformed();
     relayout();
