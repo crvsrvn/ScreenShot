@@ -159,7 +159,7 @@ QList<ScenarioResult> Runner::runAll()
     const QStringList ids{QStringLiteral("R-01"), QStringLiteral("R-08"), QStringLiteral("R-16"), QStringLiteral("R-02"),
                           QStringLiteral("R-03"), QStringLiteral("HOTKEY"), QStringLiteral("R-06"), QStringLiteral("R-05"),
                           QStringLiteral("R-07"), QStringLiteral("R-09"), QStringLiteral("R-11"), QStringLiteral("R-17"),
-                          QStringLiteral("M1-FLOW"), QStringLiteral("M1-INSTANCE")};
+                          QStringLiteral("M1-FLOW"), QStringLiteral("M1-INSTANCE"), QStringLiteral("M2-ANNOTATE")};
     QList<ScenarioResult> results;
     logLine(QStringLiteral("交互桌面：%1").arg(desktopUnlocked() ? QStringLiteral("可用") : QStringLiteral("锁屏中，真实输入场景将跳过")));
     for (const auto& id : ids) {
@@ -192,6 +192,7 @@ ScenarioResult Runner::run(const QString& id)
     if (id == QStringLiteral("HOTKEY")) return hotkeyEndToEnd();
     if (id == QStringLiteral("M1-FLOW")) return m1CaptureFlow();
     if (id == QStringLiteral("M1-INSTANCE")) return m1SingleInstance();
+    if (id == QStringLiteral("M2-ANNOTATE")) return m2Annotate();
     ScenarioResult r;
     r.id = id;
     r.summary = QStringLiteral("未知场景");
@@ -637,6 +638,38 @@ ScenarioResult Runner::m1SingleInstance()
     r.data = QJsonObject{{QStringLiteral("secondExited"), exited}, {QStringLiteral("exitCode"), second.exitCode()}, {QStringLiteral("capturing"), capturing}};
     r.passed = exited && second.exitCode() == 0 && capturing;
     r.summary = QStringLiteral("第二实例退出码 %1，运行中的实例%2开始截图").arg(second.exitCode()).arg(capturing ? QStringLiteral("已") : QStringLiteral("未"));
+    return r;
+}
+
+ScenarioResult Runner::m2Annotate()
+{
+    // REQ: ANN-01 ANN-20 NFR-08
+    ScenarioResult r{QStringLiteral("M2-ANNOTATE"), QStringLiteral("M2：真实桌面上框选、画填充矩形、快速保存后像素正确")};
+    QTemporaryDir dir;
+    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("output.quickSaveDir")}, {QStringLiteral("value"), dir.path()}});
+    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("output.fileNamePattern")}, {QStringLiteral("value"), QStringLiteral("ann_{n}")}});
+    if (!m_client.call(QStringLiteral("capture")).value(QStringLiteral("ok")).toBool()) {
+        r.summary = QStringLiteral("capture 失败");
+        return r;
+    }
+    const QRect g = win::enumerateScreens().first().physicalGeometry;
+    const QPoint a = g.topLeft() + QPoint(300, 300);
+    m_client.call(QStringLiteral("setSelection"), {{QStringLiteral("x"), a.x()}, {QStringLiteral("y"), a.y()}, {QStringLiteral("w"), 200}, {QStringLiteral("h"), 150}});
+    const bool toolbarShown = m_client.call(QStringLiteral("state")).value(QStringLiteral("toolbarVisible")).toBool();
+    m_client.call(QStringLiteral("annotate"), {{QStringLiteral("tool"), QStringLiteral("rect")}});
+    m_client.call(QStringLiteral("annotateStyle"), {{QStringLiteral("color"), QStringLiteral("#ff00ff00")}, {QStringLiteral("filled"), true}});
+    m_client.call(QStringLiteral("mouse"), {{QStringLiteral("action"), QStringLiteral("press")}, {QStringLiteral("x"), a.x() + 20}, {QStringLiteral("y"), a.y() + 20}});
+    m_client.call(QStringLiteral("mouse"), {{QStringLiteral("action"), QStringLiteral("move")}, {QStringLiteral("x"), a.x() + 60}, {QStringLiteral("y"), a.y() + 60}});
+    m_client.call(QStringLiteral("mouse"), {{QStringLiteral("action"), QStringLiteral("release")}, {QStringLiteral("x"), a.x() + 119}, {QStringLiteral("y"), a.y() + 99}});
+    const QJsonObject st = m_client.call(QStringLiteral("annotateState"));
+    const bool oneItem = st.value(QStringLiteral("count")).toInt() == 1 && m_client.call(QStringLiteral("state")).value(QStringLiteral("state")).toString() == QLatin1String("annotating");
+    m_client.call(QStringLiteral("key"), {{QStringLiteral("key"), QStringLiteral("Ctrl+Shift+S")}});
+    const QString saved = QDir(dir.path()).filePath(QStringLiteral("ann_1.png"));
+    const QImage img(saved);
+    const bool pixelsOk = !img.isNull() && img.size() == QSize(200, 150) && img.pixel(60, 60) == qRgb(0, 255, 0) && img.pixel(5, 5) != qRgb(0, 255, 0);
+    r.data = QJsonObject{{QStringLiteral("toolbarShown"), toolbarShown}, {QStringLiteral("oneItem"), oneItem}, {QStringLiteral("pixelsOk"), pixelsOk}, {QStringLiteral("file"), saved}};
+    r.passed = toolbarShown && oneItem && pixelsOk;
+    r.summary = QStringLiteral("工具栏%1，标注%2，保存像素%3").arg(toolbarShown ? QStringLiteral("ok") : QStringLiteral("FAIL"), oneItem ? QStringLiteral("ok") : QStringLiteral("FAIL"), pixelsOk ? QStringLiteral("ok") : QStringLiteral("FAIL"));
     return r;
 }
 

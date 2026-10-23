@@ -56,6 +56,7 @@ private:
     ScenarioResult hotkeyEndToEnd();
     ScenarioResult m1CaptureFlow();     // 框选 → 快速保存 → 文件与选区一致
     ScenarioResult m1SingleInstance();  // 第二个实例把 snip 转交给运行中的实例
+    ScenarioResult m2Annotate();        // 真实桌面上画一个填充矩形并快速保存
 
     // 每个场景开始前把程序恢复到空闲状态（取消截图、关闭贴图）
     void resetApp();

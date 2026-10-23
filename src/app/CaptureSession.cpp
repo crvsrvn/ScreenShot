@@ -539,6 +539,18 @@ bool CaptureSession::handleKeyPress(QKeyEvent* e)
         m_editor.setShiftHeld(true);
     if (m_state == State::Annotating && handleAnnotationKey(e))
         return true;
+    // 工具快捷键（ANN-13）：Ctrl+数字；从已选定状态直接进入标注
+    if (ctrl && !shift && key >= Qt::Key_1 && key <= Qt::Key_8 && (m_state == State::Selected || m_state == State::History || m_state == State::Annotating)) {
+        static const AnnotationEditor::Tool tools[] = {AnnotationEditor::Tool::Rect, AnnotationEditor::Tool::Ellipse, AnnotationEditor::Tool::Line,
+                                                       AnnotationEditor::Tool::Arrow, AnnotationEditor::Tool::Highlighter, AnnotationEditor::Tool::Mosaic,
+                                                       AnnotationEditor::Tool::Blur, AnnotationEditor::Tool::Eraser};
+        setTool(tools[key - Qt::Key_1]);
+        return true;
+    }
+    if (!ctrl && (key == Qt::Key_T || key == Qt::Key_B) && (m_state == State::Selected || m_state == State::History)) {
+        setTool(key == Qt::Key_T ? AnnotationEditor::Tool::Text : AnnotationEditor::Tool::Pencil);
+        return true;
+    }
     switch (key) {
     case Qt::Key_Escape:
         if (confirmCancel())
