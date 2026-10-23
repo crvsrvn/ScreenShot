@@ -25,6 +25,7 @@ quint64 privateBytes(quint32 pid)
     if (!h)
         return 0;
     PROCESS_MEMORY_COUNTERS_EX pmc{};
+    pmc.cb = sizeof(pmc);
     quint64 result = 0;
     if (GetProcessMemoryInfo(h, reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&pmc), sizeof(pmc)))
         result = pmc.PrivateUsage;

@@ -39,10 +39,13 @@ void TestServer::serve()
 {
     while (!m_stop) {
         HANDLE pipe = CreateNamedPipeW(reinterpret_cast<const wchar_t*>(m_pipePath.utf16()), PIPE_ACCESS_DUPLEX,
-                                       PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS, 1,
-                                       1 << 20, 1 << 20, 0, nullptr);
-        if (pipe == INVALID_HANDLE_VALUE)
-            return;
+                                       PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS,
+                                       PIPE_UNLIMITED_INSTANCES, 1 << 20, 1 << 20, 0, nullptr);
+        if (pipe == INVALID_HANDLE_VALUE) {
+            // 上一个实例可能还没完全关闭（ERROR_PIPE_BUSY），稍后重试而不是放弃
+            Sleep(50);
+            continue;
+        }
         const BOOL connected = ConnectNamedPipe(pipe, nullptr) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
         if (!connected || m_stop) {
             CloseHandle(pipe);

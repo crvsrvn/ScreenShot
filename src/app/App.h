@@ -2,8 +2,9 @@
 
 #include "core/ports/Platform.h"
 
-#include <QObject>
+#include <QHash>
 #include <QList>
+#include <QObject>
 #include <memory>
 
 class QSystemTrayIcon;
@@ -26,6 +27,8 @@ public:
     Platform& platform() { return m_platform; }
     CaptureSession& session() { return *m_session; }
     QList<PinWindow*>& pins() { return m_pins; }
+    // 热键注册结果（id → 是否成功），用于冲突提示和测试接口
+    QHash<int, bool> hotkeyStatus() const { return m_hotkeyStatus; }
 
     // 用指定捕获实现替换会话使用的捕获（测试接口注入合成画面）；传空恢复真实捕获
     void useScreenCapture(std::unique_ptr<IScreenCapture> capture);
@@ -46,6 +49,7 @@ private:
     std::unique_ptr<IScreenCapture> m_injectedCapture;
     std::unique_ptr<CaptureSession> m_session;
     QList<PinWindow*> m_pins;
+    QHash<int, bool> m_hotkeyStatus;
     QSystemTrayIcon* m_tray = nullptr;
     QMenu* m_trayMenu = nullptr;
 };

@@ -1,0 +1,6 @@
+# 源码统一 LF；Windows 批处理用 CRLF
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.png binary
+*.7z binary

@@ -16,6 +16,8 @@ QImage mosaic(const QImage& source, int blockSize)
         return src;
 
     QImage dst(src.size(), src.format());
+    uchar* dstBase = dst.bits(); // 在并行区之前取得独占像素指针，线程里不再调用会 detach 的接口
+    const qsizetype dstStride = dst.bytesPerLine();
     const int w = src.width();
     const int h = src.height();
     const int blockRows = (h + blockSize - 1) / blockSize;
@@ -47,7 +49,7 @@ QImage mosaic(const QImage& source, int blockSize)
                 | (static_cast<quint32>((sum[2] + n / 2) / n) << 16)
                 | (static_cast<quint32>((sum[3] + n / 2) / n) << 24);
             for (int y = y0; y < y1; ++y) {
-                auto* line = reinterpret_cast<quint32*>(dst.scanLine(y));
+                auto* line = reinterpret_cast<quint32*>(dstBase + y * dstStride);
                 std::fill(line + x0, line + x1, avg);
             }
         }

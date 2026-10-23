@@ -10,8 +10,10 @@
 #include <QScreen>
 #include <QWindow>
 
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN)
 #include "platform/windows/WinWindowTools.h"
+#elif defined(Q_OS_MACOS)
+#include "platform/macos/MacWindowTools.h"
 #endif
 
 namespace ss {
@@ -81,10 +83,13 @@ void OverlayWindow::showOnScreen()
     setGeometry(qs->geometry());
     show();
     raise();
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN)
     // 用系统接口按物理像素定位，消除逻辑尺寸取整带来的偏差（R-03）
     win::setWindowPhysicalRect(reinterpret_cast<void*>(winId()), m_screen.physicalGeometry);
     const QPoint cursor = win::cursorPhysicalPos();
+#elif defined(Q_OS_MACOS)
+    mac::setWindowPhysicalRect(reinterpret_cast<void*>(winId()), m_screen.physicalGeometry);
+    const QPoint cursor = mac::cursorPhysicalPos();
 #else
     const QPoint cursor = QCursor::pos();
 #endif

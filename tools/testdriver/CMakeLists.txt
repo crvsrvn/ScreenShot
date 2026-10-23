@@ -6,5 +6,5 @@ qt_add_executable(screenshot_testdriver
 )
 target_link_libraries(screenshot_testdriver PRIVATE screenshot_core screenshot_testing Qt6::Gui)
 if(WIN32)
-    target_link_libraries(screenshot_testdriver PRIVATE platform_windows)
+    target_link_libraries(screenshot_testdriver PRIVATE platform_windows wtsapi32)
 endif()

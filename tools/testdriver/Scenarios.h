@@ -37,6 +37,9 @@ public:
     QStringList networkViolations() const { return m_networkViolations; }
     void pollNetwork();
 
+    // 交互桌面是否可用（未锁屏）。锁屏时模拟输入到不了程序窗口，相关场景只能跳过。
+    static bool desktopUnlocked();
+
 private:
     ScenarioResult r01Toolchain();
     ScenarioResult r02CaptureLatency();
@@ -50,6 +53,10 @@ private:
     ScenarioResult r16FakeMultiScreen();
     ScenarioResult r17QmlNetworkDependency();
     ScenarioResult hotkeyEndToEnd();
+
+    // 每个场景开始前把程序恢复到空闲状态（取消截图、关闭贴图）
+    void resetApp();
+    ScenarioResult skipped(const QString& id, const QString& title, const QString& reason);
 
     Options m_options;
     PipeClient& m_client;

@@ -8,12 +8,22 @@
 #include <memorybuffer.h>
 #include <windows.h>
 
+#include <QRegularExpression>
 #include <cstring>
 #include <thread>
 
 namespace ss::win {
 
 namespace {
+
+// Windows OCR 把中文逐字当作“单词”，行文本里字与字之间带空格；去掉 CJK 字符之间的空格
+QString collapseCjkSpaces(const QString& text)
+{
+    static const QRegularExpression re(QStringLiteral("(?<=[\\x{4E00}-\\x{9FFF}\\x{3000}-\\x{303F}\\x{FF00}-\\x{FFEF}])\\s+(?=[\\x{4E00}-\\x{9FFF}\\x{3000}-\\x{303F}\\x{FF00}-\\x{FFEF}])"));
+    QString out = text;
+    out.replace(re, QString());
+    return out;
+}
 
 using namespace winrt;
 using namespace winrt::Windows::Graphics::Imaging;
@@ -101,7 +111,7 @@ OcrResult WinOcr::recognize(const QImage& image)
             ::winrt::Windows::Media::Ocr::OcrResult ocr = engine.RecognizeAsync(bitmap).get();
             for (const auto& line : ocr.Lines()) {
                 OcrLine l;
-                l.text = QString::fromStdWString(std::wstring(line.Text()));
+                l.text = collapseCjkSpaces(QString::fromStdWString(std::wstring(line.Text())));
                 QRect bounds;
                 for (const auto& word : line.Words()) {
                     const auto r = word.BoundingRect();

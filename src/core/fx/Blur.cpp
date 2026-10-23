@@ -30,16 +30,30 @@ void parallelRanges(int count, int minPerTask, Fn fn)
     QtConcurrent::blockingMap(ranges, [&](const std::pair<int, int>& r) { fn(r.first, r.second); });
 }
 
+// 工作线程里只能用 const 接口读源图；目标图在进入并行区之前先取得独占的像素指针
+// （非 const 的 scanLine() 会 detach，多个线程同时调用会产生拷贝 / 释放竞争）。
+struct WritableRows {
+    uchar* base;
+    qsizetype stride;
+    explicit WritableRows(QImage& img)
+        : base(img.bits()) // bits() 在调用线程完成 detach
+        , stride(img.bytesPerLine())
+    {
+    }
+    quint32* row(int y) const { return reinterpret_cast<quint32*>(base + y * stride); }
+};
+
 // 水平盒式模糊：src → dst，逐行滑动窗口，边缘重复
 void boxBlurH(const QImage& src, QImage& dst, int r)
 {
     const int w = src.width();
     const int h = src.height();
     const int win = 2 * r + 1;
+    const WritableRows rows(dst);
     parallelRanges(h, kMinRowsPerTask, [&](int y0, int y1) {
         for (int y = y0; y < y1; ++y) {
             const auto* in = reinterpret_cast<const quint32*>(src.constScanLine(y));
-            auto* out = reinterpret_cast<quint32*>(dst.scanLine(y));
+            quint32* out = rows.row(y);
             int sum[4] = {0, 0, 0, 0};
             auto add = [&](int x, int sign) {
                 const quint32 p = in[std::clamp(x, 0, w - 1)];
@@ -70,6 +84,7 @@ void boxBlurV(const QImage& src, QImage& dst, int r)
     const int h = src.height();
     const int win = 2 * r + 1;
     constexpr int kMinColsPerTask = 64;
+    const WritableRows rows(dst);
     parallelRanges(w, kMinColsPerTask, [&](int x0, int x1) {
         const int cols = x1 - x0;
         std::vector<int> sum(static_cast<size_t>(cols) * 4, 0);
@@ -87,7 +102,7 @@ void boxBlurV(const QImage& src, QImage& dst, int r)
         for (int y = -r; y <= r; ++y)
             addRow(y, +1);
         for (int y = 0; y < h; ++y) {
-            auto* out = reinterpret_cast<quint32*>(dst.scanLine(y)) + x0;
+            quint32* out = rows.row(y) + x0;
             for (int i = 0; i < cols; ++i) {
                 const int* s = &sum[static_cast<size_t>(i) * 4];
                 const quint32 c0 = static_cast<quint32>((s[0] + win / 2) / win);
@@ -158,18 +173,21 @@ QImage gaussianBlur(const QImage& source, int radius, int downscaleThreshold)
 
     int sizes[3];
     boxSizesForGaussian(static_cast<double>(radius) / 2.0, sizes);
-    QImage a = src;
-    QImage b(src.size(), src.format());
+    // 输入图像可能与调用方共享，只读不写；两个自有缓冲交替作为输出
+    QImage buffers[2] = {QImage(src.size(), src.format()), QImage(src.size(), src.format())};
     QImage tmp(src.size(), src.format());
+    const QImage* current = &src;
+    int next = 0;
     for (int s : sizes) {
         const int r = std::max(0, (s - 1) / 2);
         if (r == 0)
             continue;
-        boxBlurH(a, tmp, r);
-        boxBlurV(tmp, b, r);
-        std::swap(a, b);
+        boxBlurH(*current, tmp, r);
+        boxBlurV(tmp, buffers[next], r);
+        current = &buffers[next];
+        next = 1 - next;
     }
-    return a;
+    return *current;
 }
 
 QImage referenceGaussianBlur(const QImage& source, double sigma)

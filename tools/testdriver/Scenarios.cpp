@@ -19,6 +19,7 @@
 #include <cstdio>
 
 #include <windows.h>
+#include <wtsapi32.h>
 
 namespace ss::driver {
 
@@ -112,17 +113,59 @@ void Runner::pollNetwork()
     }
 }
 
+bool Runner::desktopUnlocked()
+{
+    // 会话锁定状态（Windows 10 的锁屏画在 Default 桌面上，只看输入桌面名会误判）
+    WTSINFOEXW* info = nullptr;
+    DWORD bytes = 0;
+    bool locked = false;
+    if (WTSQuerySessionInformationW(WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSSessionInfoEx, reinterpret_cast<LPWSTR*>(&info), &bytes) && info) {
+        if (info->Level == 1)
+            locked = info->Data.WTSInfoExLevel1.SessionFlags == WTS_SESSIONSTATE_LOCK;
+        WTSFreeMemory(info);
+    }
+    if (locked)
+        return false;
+    HDESK desk = OpenInputDesktop(0, FALSE, GENERIC_READ);
+    if (!desk)
+        return false; // 输入桌面是 Winlogon（UAC、登录界面），普通进程打不开
+    wchar_t name[64]{};
+    DWORD len = 0;
+    const bool ok = GetUserObjectInformationW(desk, UOI_NAME, name, sizeof(name), &len);
+    CloseDesktop(desk);
+    return ok && _wcsicmp(name, L"Default") == 0;
+}
+
+void Runner::resetApp()
+{
+    m_client.call(QStringLiteral("cancelCapture"));
+    m_client.call(QStringLiteral("closePins"));
+    m_client.call(QStringLiteral("useRealScreens"));
+}
+
+ScenarioResult Runner::skipped(const QString& id, const QString& title, const QString& reason)
+{
+    ScenarioResult r{id, title};
+    r.skipped = true;
+    r.summary = reason;
+    return r;
+}
+
 QList<ScenarioResult> Runner::runAll()
 {
-    const QStringList ids{QStringLiteral("R-01"), QStringLiteral("R-16"), QStringLiteral("R-03"), QStringLiteral("R-02"),
-                          QStringLiteral("HOTKEY"), QStringLiteral("R-06"), QStringLiteral("R-05"), QStringLiteral("R-07"),
-                          QStringLiteral("R-09"), QStringLiteral("R-11"), QStringLiteral("R-17"), QStringLiteral("R-08")};
+    // R-08 紧跟 R-01：在干净的空闲状态测内存；需要真实输入的场景在锁屏时跳过
+    const QStringList ids{QStringLiteral("R-01"), QStringLiteral("R-08"), QStringLiteral("R-16"), QStringLiteral("R-02"),
+                          QStringLiteral("R-03"), QStringLiteral("HOTKEY"), QStringLiteral("R-06"), QStringLiteral("R-05"),
+                          QStringLiteral("R-07"), QStringLiteral("R-09"), QStringLiteral("R-11"), QStringLiteral("R-17")};
     QList<ScenarioResult> results;
+    logLine(QStringLiteral("交互桌面：%1").arg(desktopUnlocked() ? QStringLiteral("可用") : QStringLiteral("锁屏中，真实输入场景将跳过")));
     for (const auto& id : ids) {
         if (!m_options.only.isEmpty() && m_options.only != id)
             continue;
         logLine(QStringLiteral("==== %1").arg(id));
+        resetApp();
         ScenarioResult r = run(id);
+        resetApp();
         logLine(QStringLiteral("  %1：%2").arg(r.skipped ? QStringLiteral("跳过") : r.passed ? QStringLiteral("通过") : QStringLiteral("失败"), r.summary));
         results.append(r);
         pollNetwork();
@@ -164,6 +207,8 @@ ScenarioResult Runner::r01Toolchain()
 ScenarioResult Runner::r02CaptureLatency()
 {
     ScenarioResult r{QStringLiteral("R-02"), QStringLiteral("冻结画面延迟：触发到可框选")};
+    if (!desktopUnlocked())
+        return skipped(r.id, r.title, QStringLiteral("锁屏中，桌面复制不可用、窗口不显示，计时不具代表性"));
     const int iterations = m_options.quick ? 100 : 1000;
     QList<double> totals, captures;
     QString backend;
@@ -206,20 +251,24 @@ ScenarioResult Runner::r02CaptureLatency()
 ScenarioResult Runner::hotkeyEndToEnd()
 {
     ScenarioResult r{QStringLiteral("HOTKEY"), QStringLiteral("真实热键 F1：SendInput 到首次绘制")};
+    if (!desktopUnlocked())
+        return skipped(r.id, r.title, QStringLiteral("锁屏中，无法模拟按键"));
     const int iterations = m_options.quick ? 20 : 50;
     QList<double> totals;
     for (int i = 0; i < iterations; ++i) {
         const qint64 t0 = monotonicNs();
         pressKey(VK_F1);
         QJsonObject t;
+        bool fresh = false;
         for (int wait = 0; wait < 200; ++wait) {
             t = m_client.call(QStringLiteral("captureTimings"));
-            if (t.value(QStringLiteral("complete")).toBool() && t.value(QStringLiteral("triggerNs")).toDouble() >= static_cast<double>(t0))
+            fresh = t.value(QStringLiteral("complete")).toBool() && t.value(QStringLiteral("triggerNs")).toDouble() >= static_cast<double>(t0);
+            if (fresh)
                 break;
             QThread::msleep(10);
         }
         m_client.call(QStringLiteral("cancelCapture"));
-        if (!t.value(QStringLiteral("complete")).toBool()) {
+        if (!fresh) {
             r.summary = QStringLiteral("第 %1 次热键没有触发截图（热键可能被其他程序占用）").arg(i);
             return r;
         }
@@ -236,6 +285,8 @@ ScenarioResult Runner::hotkeyEndToEnd()
 ScenarioResult Runner::r03MixedScaleAccuracy()
 {
     ScenarioResult r{QStringLiteral("R-03"), QStringLiteral("混合缩放坐标精度：真实鼠标框选 → 物理像素选区零偏差")};
+    if (!desktopUnlocked())
+        return skipped(r.id, r.title, QStringLiteral("锁屏中，无法模拟鼠标"));
     const auto screens = win::enumerateScreens();
     if (screens.isEmpty()) {
         r.summary = QStringLiteral("没有显示器");
@@ -261,13 +312,18 @@ ScenarioResult Runner::r03MixedScaleAccuracy()
         QThread::msleep(300);
         dragMouse(d.first, d.second);
         const QJsonObject state = m_client.call(QStringLiteral("state"));
+        if (state.value(QStringLiteral("selection")).toObject().value(QStringLiteral("w")).toInt() == 0) {
+            // 失败截图（TST-10）
+            m_client.call(QStringLiteral("screenshotDesktop"), {{QStringLiteral("path"), tempPng(QStringLiteral("r03-failure"))}});
+            m_client.call(QStringLiteral("cancelCapture"));
+        }
         const QJsonObject sel = state.value(QStringLiteral("selection")).toObject();
         const QRect got(sel.value(QStringLiteral("x")).toInt(), sel.value(QStringLiteral("y")).toInt(), sel.value(QStringLiteral("w")).toInt(), sel.value(QStringLiteral("h")).toInt());
         const QRect expected(QPoint(std::min(d.first.x(), d.second.x()), std::min(d.first.y(), d.second.y())),
                              QPoint(std::max(d.first.x(), d.second.x()), std::max(d.first.y(), d.second.y())));
         // 用 GDI 独立抓取同一区域与程序输出比对（画面冻结期间内容不变）
         const QString path = tempPng(QStringLiteral("r03"));
-        const QJsonObject acc = m_client.call(QStringLiteral("acceptCapture"), {{QStringLiteral("path"), path}});
+        const QJsonObject acc = got.isEmpty() ? QJsonObject{} : m_client.call(QStringLiteral("acceptCapture"), {{QStringLiteral("path"), path}});
         bool pixelsMatch = false;
         QString pixelSummary;
         if (acc.value(QStringLiteral("ok")).toBool()) {
@@ -381,14 +437,18 @@ ScenarioResult Runner::r07LargePinScaling()
         return r;
     }
     QThread::msleep(300);
-    const QJsonObject down = m_client.call(QStringLiteral("scalePin"), {{QStringLiteral("index"), 0}, {QStringLiteral("steps"), 60}, {QStringLiteral("factor"), 0.95}});
-    const QJsonObject up = m_client.call(QStringLiteral("scalePin"), {{QStringLiteral("index"), 0}, {QStringLiteral("steps"), 40}, {QStringLiteral("factor"), 1.05}});
+    // 新贴图已自动缩小到屏幕内（PIN-42）；先缩小再放大到超出屏幕（窗口只覆盖可见部分）
+    const QJsonObject down = m_client.call(QStringLiteral("scalePin"), {{QStringLiteral("index"), 0}, {QStringLiteral("steps"), 40}, {QStringLiteral("factor"), 0.95}});
+    const QJsonObject up = m_client.call(QStringLiteral("scalePin"), {{QStringLiteral("index"), 0}, {QStringLiteral("steps"), 60}, {QStringLiteral("factor"), 1.06}});
     m_client.call(QStringLiteral("closePins"));
     const double fpsDown = down.value(QStringLiteral("fps")).toDouble(), fpsUp = up.value(QStringLiteral("fps")).toDouble();
     const double worst = std::max(down.value(QStringLiteral("maxFrameMs")).toDouble(), up.value(QStringLiteral("maxFrameMs")).toDouble());
-    r.data = QJsonObject{{QStringLiteral("fpsDown"), fpsDown}, {QStringLiteral("fpsUp"), fpsUp}, {QStringLiteral("worstFrameMs"), worst}};
+    r.data = QJsonObject{{QStringLiteral("fpsDown"), fpsDown}, {QStringLiteral("fpsUp"), fpsUp}, {QStringLiteral("worstFrameMs"), worst},
+                         {QStringLiteral("finalScale"), up.value(QStringLiteral("scale")).toDouble()}, {QStringLiteral("finalClipped"), up.value(QStringLiteral("clipped")).toBool()}};
     r.passed = fpsDown >= 30.0 && fpsUp >= 30.0;
-    r.summary = QStringLiteral("缩小 %1 FPS，放大 %2 FPS，最慢一帧 %3 ms；要求 ≥ 30").arg(fpsDown, 0, 'f', 0).arg(fpsUp, 0, 'f', 0).arg(worst, 0, 'f', 1);
+    r.summary = QStringLiteral("缩小 %1 FPS，放大 %2 FPS（最终 %4 倍，超出屏幕=%5），最慢一帧 %3 ms；要求 ≥ 30")
+                    .arg(fpsDown, 0, 'f', 0).arg(fpsUp, 0, 'f', 0).arg(worst, 0, 'f', 1)
+                    .arg(up.value(QStringLiteral("scale")).toDouble(), 0, 'f', 2).arg(up.value(QStringLiteral("clipped")).toBool() ? QStringLiteral("是") : QStringLiteral("否"));
     return r;
 }
 
@@ -408,6 +468,8 @@ ScenarioResult Runner::r08IdleMemory()
 ScenarioResult Runner::r09ElementDetectorHang()
 {
     ScenarioResult r{QStringLiteral("R-09"), QStringLiteral("UI 元素检测：挂起的程序不卡界面，超时后降级")};
+    if (!desktopUnlocked())
+        return skipped(r.id, r.title, QStringLiteral("锁屏中，任务栏与测试窗口都不在输入桌面上"));
     // 1) 正常窗口：任务栏
     const auto screens = win::enumerateScreens();
     QPoint taskbar;

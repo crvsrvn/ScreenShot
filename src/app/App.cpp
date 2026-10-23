@@ -81,8 +81,8 @@ void App::setupHotkeys()
         else if (id == HotkeyPin)
             pinFromClipboard();
     });
-    m_platform.hotkey->registerHotkey(HotkeyCapture, QKeySequence(Qt::Key_F1));
-    m_platform.hotkey->registerHotkey(HotkeyPin, QKeySequence(Qt::Key_F3));
+    m_hotkeyStatus[HotkeyCapture] = m_platform.hotkey->registerHotkey(HotkeyCapture, QKeySequence(Qt::Key_F1));
+    m_hotkeyStatus[HotkeyPin] = m_platform.hotkey->registerHotkey(HotkeyPin, QKeySequence(Qt::Key_F3));
 }
 
 void App::useScreenCapture(std::unique_ptr<IScreenCapture> capture)
@@ -106,6 +106,7 @@ PinWindow* App::pinImage(const QImage& image, QPoint physicalPos)
 {
     auto* pin = new PinWindow(image);
     pin->moveToPhysical(physicalPos);
+    pin->fitToScreen();
     pin->show();
     m_pins.append(pin);
     connect(pin, &PinWindow::closed, this, [this, pin] {

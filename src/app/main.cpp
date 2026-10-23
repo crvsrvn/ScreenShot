@@ -3,8 +3,10 @@
 #include <QApplication>
 #include <QCommandLineParser>
 
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN)
 #include "platform/windows/WinPlatform.h"
+#elif defined(Q_OS_MACOS)
+#include "platform/macos/MacPlatform.h"
 #endif
 #ifdef SCREENSHOT_TEST_BUILD
 #include "app/testapi/TestServer.h"
@@ -24,8 +26,10 @@ int main(int argc, char* argv[])
     parser.process(qapp);
 
     ss::Platform platform;
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN)
     platform = ss::win::makeWindowsPlatform();
+#elif defined(Q_OS_MACOS)
+    platform = ss::mac::makeMacPlatform();
 #endif
     ss::App app(std::move(platform));
 

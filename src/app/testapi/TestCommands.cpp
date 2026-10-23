@@ -36,7 +36,10 @@
 #include <QPainter>
 
 #ifdef Q_OS_WIN
+#include "platform/windows/GdiScreenCapture.h"
 #include "platform/windows/WinProcess.h"
+#include "platform/windows/WinScreens.h"
+#include "platform/windows/WinWindowTools.h"
 #endif
 
 namespace ss {
@@ -134,12 +137,19 @@ QJsonObject cmdState(App& app)
     o[QStringLiteral("capturing")] = app.session().isActive();
     o[QStringLiteral("selection")] = rectToJson(app.session().selection());
     o[QStringLiteral("pins")] = static_cast<int>(app.pins().size());
+    QJsonObject hotkeys;
+    for (auto it = app.hotkeyStatus().cbegin(); it != app.hotkeyStatus().cend(); ++it)
+        hotkeys[QString::number(it.key())] = it.value();
+    o[QStringLiteral("hotkeys")] = hotkeys;
     QJsonArray overlays;
     for (auto* w : app.session().overlays()) {
         QJsonObject ov = screenToJson(w->screenInfo());
         ov[QStringLiteral("visible")] = w->isVisible();
         ov[QStringLiteral("paintCount")] = w->paintCount();
         ov[QStringLiteral("logical")] = rectToJson(w->geometry());
+#ifdef Q_OS_WIN
+        ov[QStringLiteral("native")] = rectToJson(win::windowPhysicalRect(reinterpret_cast<void*>(w->winId())));
+#endif
         overlays.append(ov);
     }
     o[QStringLiteral("overlays")] = overlays;
@@ -173,7 +183,7 @@ QJsonObject cmdDragPin(App& app, const QJsonObject& req)
     const int paintsBefore = pin->paintCount();
     const qint64 t0 = monotonicNs();
     for (int i = 0; i < steps; ++i) {
-        pin->move(pin->pos() + QPoint(dx, dy));
+        pin->moveContentTo(pin->contentTopLeft() + QPointF(dx, dy));
         QApplication::processEvents(QEventLoop::AllEvents);
     }
     const double elapsed = nsToMs(monotonicNs() - t0);
@@ -208,7 +218,8 @@ QJsonObject cmdScalePin(App& app, const QJsonObject& req)
     return ok({{QStringLiteral("elapsedMs"), elapsed}, {QStringLiteral("steps"), steps},
                {QStringLiteral("fps"), steps * 1000.0 / std::max(elapsed, 0.001)},
                {QStringLiteral("paints"), pin->paintCount() - paintsBefore}, {QStringLiteral("maxFrameMs"), maxFrame},
-               {QStringLiteral("frameMs"), frames}, {QStringLiteral("scale"), pin->scale()}});
+               {QStringLiteral("frameMs"), frames}, {QStringLiteral("scale"), pin->scale()},
+               {QStringLiteral("windowW"), pin->width()}, {QStringLiteral("windowH"), pin->height()}, {QStringLiteral("clipped"), pin->isClipped()}});
 }
 
 QJsonObject cmdBenchBlur(const QJsonObject& req)
@@ -413,6 +424,23 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
         return cmdElementAt(app, req);
     if (cmd == QStringLiteral("windows"))
         return cmdWindows(app);
+    if (cmd == QStringLiteral("screenshotDesktop")) {
+        // 用 GDI 抓整个虚拟桌面（含本程序的窗口），用于失败截图和诊断
+#ifdef Q_OS_WIN
+        QRect bounds;
+        for (const auto& s : win::enumerateScreens())
+            bounds = bounds.united(s.physicalGeometry);
+        const QImage img = win::GdiScreenCapture::captureRect(bounds);
+        const QString path = req.value(QStringLiteral("path")).toString();
+        if (img.isNull() || !img.save(path, "PNG"))
+            return fail(QStringLiteral("抓取或保存失败"));
+        QJsonObject o = rectToJson(bounds);
+        o[QStringLiteral("path")] = path;
+        return ok(o);
+#else
+        return fail(QStringLiteral("未实现"));
+#endif
+    }
     if (cmd == QStringLiteral("quit")) {
         QMetaObject::invokeMethod(&app, &App::quit, Qt::QueuedConnection);
         return ok();
