@@ -1,0 +1,1229 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="generator" content="Markdown-2-HTML/2.3.0">
+<meta name="m2h-source" content="04-progress.md">
+<title>ScreenShot 实现进度与交付报告（M0 ~ M8）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style id="hs-style">
+:root {
+  --hs-bg: #FCFCFB;
+  --hs-side: #EDF0F3;
+  --hs-surface: #FFFFFF;
+  --hs-text: #1C2430;
+  --hs-muted: #5A6475;
+  --hs-faint: #8A93A1;
+  --hs-line: #D8DDE4;
+  --hs-line-soft: #E6E9EE;
+  --hs-accent: #1E6A86;
+  --hs-accent-soft: #E1EDF2;
+  --hs-code-bg: #EEF1F5;
+  --hs-code-text: #243041;
+  --hs-quote-bg: #EEF2F5;
+  --hs-row-alt: #F9FAFB;
+  --hs-plate: #FFFFFF;
+  /* ID 色板：同前缀的编号同色，按出现顺序循环取色 */
+  --hs-c1: #DC2626;
+  --hs-c2: #C2410C;
+  --hs-c3: #A16207;
+  --hs-c4: #15803D;
+  --hs-c5: #0E7490;
+  --hs-c6: #2563EB;
+  --hs-c7: #7C3AED;
+  /* 语义色：说明 / 通过 / 注意 / 风险 / 要点 / 备注 */
+  --hs-info: #2563EB;
+  --hs-ok: #15803D;
+  --hs-warn: #B45309;
+  --hs-danger: #DC2626;
+  --hs-key: #7C3AED;
+  --hs-mute: #6B7686;
+  --hs-syn-kw: #9B2F7A;
+  --hs-syn-type: #1E6A86;
+  --hs-syn-str: #2F7D4A;
+  --hs-syn-com: #6B7686;
+  --hs-syn-num: #B45309;
+  --hs-syn-fn: #0B5CAD;
+  --hs-shadow: 0 12px 32px rgba(28, 36, 48, .16);
+  --hs-font: "Comic Sans MS", "Comic Neue", "Chalkboard SE", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --hs-mono: "IBM Plex Mono", "Cascadia Mono", Consolas, "Microsoft YaHei", monospace;
+  --hs-measure: 988px;
+  --hs-toc-w: 300px;
+  /* 图标：24×24 线性图标，用作 mask，颜色取 currentColor 或 --c */
+  --hs-i-info: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M12 11v5M12 7.5v.01'/></svg>");
+  --hs-i-tip: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.6 1 2.5h6c0-.9.2-1.7 1-2.5A6 6 0 0 0 12 3z'/></svg>");
+  --hs-i-ok: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M8 12.5l2.8 2.8L16.5 9.5'/></svg>");
+  --hs-i-warn: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3.5L22 20H2z'/><path d='M12 10v4.5M12 17.5v.01'/></svg>");
+  --hs-i-danger: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M9 9l6 6M15 9l-6 6'/></svg>");
+  --hs-i-flag: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 21V4M5 4h12l-2.5 4.5L17 13H5'/></svg>");
+  --hs-i-note: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 20h4L19 9l-4-4L4 16z'/><path d='M13.5 6.5l4 4'/></svg>");
+  --hs-i-question: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4v.3M12 17v.01'/></svg>");
+  --hs-i-book: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M3 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3z'/><path d='M21 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z'/></svg>");
+  --hs-i-target: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><circle cx='12' cy='12' r='5'/><circle cx='12' cy='12' r='1'/></svg>");
+  --hs-i-compare: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3v18M7 21h10M4 7h16M6 7l-3 7a3 3 0 0 0 6 0zM18 7l-3 7a3 3 0 0 0 6 0z'/></svg>");
+  --hs-i-database: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><ellipse cx='12' cy='5.5' rx='8' ry='3'/><path d='M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3'/></svg>");
+  --hs-i-flow: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='7' height='6' rx='1.5'/><rect x='14' y='15' width='7' height='6' rx='1.5'/><path d='M6.5 9v4a2 2 0 0 0 2 2H14M11.5 12.5L14 15l-2.5 2.5'/></svg>");
+  --hs-i-code: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16'/></svg>");
+  --hs-i-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='16' rx='2'/><circle cx='8.5' cy='9.5' r='1.5'/><path d='M21 16l-5-5-9 9'/></svg>");
+  --hs-i-list: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 6h11M9 12h11M9 18h11M4.5 6v.01M4.5 12v.01M4.5 18v.01'/></svg>");
+  --hs-i-calendar: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='5' width='18' height='16' rx='2'/><path d='M3 10h18M8 3v4M16 3v4'/></svg>");
+  --hs-i-flask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 3h6M10 3v6l-5.5 9.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3M7.5 15h9'/></svg>");
+  --hs-i-layers: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l9 5-9 5-9-5z'/><path d='M3 13l9 5 9-5'/></svg>");
+  --hs-i-branch: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='6' cy='5' r='2'/><circle cx='6' cy='19' r='2'/><circle cx='18' cy='7' r='2'/><path d='M6 7v10M18 9c0 5-6 4-11 8.5'/></svg>");
+  --hs-i-clock: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 2'/></svg>");
+  --hs-i-link: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1'/></svg>");
+  --hs-i-zap: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M13 2L4 14h7l-1 8 9-12h-7z'/></svg>");
+  --hs-i-box: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l8 4.5v9L12 21l-8-4.5v-9z'/><path d='M4 7.5l8 4.5 8-4.5M12 12v9'/></svg>");
+  --hs-i-shield: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z'/></svg>");
+  --hs-i-migrate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 8h15M15 4l4 4-4 4M20 16H5M9 12l-4 4 4 4'/></svg>");
+  --hs-i-search: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='7'/><path d='M20 20l-4-4'/></svg>");
+  --hs-i-arrow-up: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 19V5M5 12l7-7 7 7'/></svg>");
+  --hs-i-expand: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5'/></svg>");
+  --hs-i-shrink: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5'/></svg>");
+  --hs-i-reset: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 12a8 8 0 1 0 2.3-5.7'/><path d='M4 4v4.5h4.5'/></svg>");
+  --hs-i-unfold: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M7 15l5 5 5-5M7 9l5-5 5 5'/></svg>");
+  --hs-i-fold: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M7 20l5-5 5 5M7 4l5 5 5-5'/></svg>");
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --hs-bg: #151515;
+    --hs-side: #151B23;
+    --hs-surface: #171E27;
+    --hs-text: #DCE3EC;
+    --hs-muted: #9AA5B4;
+    --hs-faint: #6F7A8A;
+    --hs-line: #2A3441;
+    --hs-line-soft: #222B36;
+    --hs-accent: #6CB8D4;
+    --hs-accent-soft: #1A2E39;
+    --hs-code-bg: #18202A;
+    --hs-code-text: #D3DBE6;
+    --hs-quote-bg: #162029;
+    --hs-row-alt: #19212B;
+    --hs-c1: #F87171;
+    --hs-c2: #FB923C;
+    --hs-c3: #FACC15;
+    --hs-c4: #4ADE80;
+    --hs-c5: #22D3EE;
+    --hs-c6: #60A5FA;
+    --hs-c7: #A78BFA;
+    --hs-info: #7AA7FF;
+    --hs-ok: #6FD08C;
+    --hs-warn: #F2B25C;
+    --hs-danger: #F87171;
+    --hs-key: #B79CFF;
+    --hs-mute: #8A95A5;
+    --hs-syn-kw: #E08AC6;
+    --hs-syn-type: #6CB8D4;
+    --hs-syn-str: #8CCB9E;
+    --hs-syn-com: #7F8A9A;
+    --hs-syn-num: #E4A55C;
+    --hs-syn-fn: #82B6F0;
+    --hs-shadow: 0 12px 32px rgba(0, 0, 0, .5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --hs-bg: #151515;
+  --hs-side: #151B23;
+  --hs-surface: #171E27;
+  --hs-text: #DCE3EC;
+  --hs-muted: #9AA5B4;
+  --hs-faint: #6F7A8A;
+  --hs-line: #2A3441;
+  --hs-line-soft: #222B36;
+  --hs-accent: #6CB8D4;
+  --hs-accent-soft: #1A2E39;
+  --hs-code-bg: #18202A;
+  --hs-code-text: #D3DBE6;
+  --hs-quote-bg: #162029;
+  --hs-row-alt: #19212B;
+  --hs-c1: #F87171;
+  --hs-c2: #FB923C;
+  --hs-c3: #FACC15;
+  --hs-c4: #4ADE80;
+  --hs-c5: #22D3EE;
+  --hs-c6: #60A5FA;
+  --hs-c7: #A78BFA;
+  --hs-info: #7AA7FF;
+  --hs-ok: #6FD08C;
+  --hs-warn: #F2B25C;
+  --hs-danger: #F87171;
+  --hs-key: #B79CFF;
+  --hs-mute: #8A95A5;
+  --hs-syn-kw: #E08AC6;
+  --hs-syn-type: #6CB8D4;
+  --hs-syn-str: #8CCB9E;
+  --hs-syn-com: #7F8A9A;
+  --hs-syn-num: #E4A55C;
+  --hs-syn-fn: #82B6F0;
+  --hs-shadow: 0 12px 32px rgba(0, 0, 0, .5);
+  color-scheme: dark;
+}
+
+/* 色与图标的映射：ID 色 data-hue，语义 data-kind，图标 data-icon */
+:where(.hs-callout) { --c: var(--hs-info); --icon: var(--hs-i-info); }
+:where(.hs-tag, .hs-mark) { --c: var(--hs-mute); }
+[data-hue="1"] { --hue: var(--hs-c1); }
+[data-hue="2"] { --hue: var(--hs-c2); }
+[data-hue="3"] { --hue: var(--hs-c3); }
+[data-hue="4"] { --hue: var(--hs-c4); }
+[data-hue="5"] { --hue: var(--hs-c5); }
+[data-hue="6"] { --hue: var(--hs-c6); }
+[data-hue="7"] { --hue: var(--hs-c7); }
+[data-kind="info"] { --c: var(--hs-info); --icon: var(--hs-i-info); }
+[data-kind="tip"] { --c: var(--hs-ok); --icon: var(--hs-i-tip); }
+[data-kind="ok"] { --c: var(--hs-ok); --icon: var(--hs-i-ok); }
+[data-kind="warn"] { --c: var(--hs-warn); --icon: var(--hs-i-warn); }
+[data-kind="danger"] { --c: var(--hs-danger); --icon: var(--hs-i-danger); }
+[data-kind="key"] { --c: var(--hs-key); --icon: var(--hs-i-flag); }
+[data-kind="muted"] { --c: var(--hs-mute); --icon: var(--hs-i-note); }
+[data-icon="info"] { --icon: var(--hs-i-info); }
+[data-icon="tip"] { --icon: var(--hs-i-tip); }
+[data-icon="ok"] { --icon: var(--hs-i-ok); }
+[data-icon="warn"] { --icon: var(--hs-i-warn); }
+[data-icon="danger"] { --icon: var(--hs-i-danger); }
+[data-icon="flag"] { --icon: var(--hs-i-flag); }
+[data-icon="note"] { --icon: var(--hs-i-note); }
+[data-icon="question"] { --icon: var(--hs-i-question); }
+[data-icon="book"] { --icon: var(--hs-i-book); }
+[data-icon="target"] { --icon: var(--hs-i-target); }
+[data-icon="compare"] { --icon: var(--hs-i-compare); }
+[data-icon="database"] { --icon: var(--hs-i-database); }
+[data-icon="flow"] { --icon: var(--hs-i-flow); }
+[data-icon="code"] { --icon: var(--hs-i-code); }
+[data-icon="image"] { --icon: var(--hs-i-image); }
+[data-icon="list"] { --icon: var(--hs-i-list); }
+[data-icon="calendar"] { --icon: var(--hs-i-calendar); }
+[data-icon="flask"] { --icon: var(--hs-i-flask); }
+[data-icon="layers"] { --icon: var(--hs-i-layers); }
+[data-icon="branch"] { --icon: var(--hs-i-branch); }
+[data-icon="clock"] { --icon: var(--hs-i-clock); }
+[data-icon="link"] { --icon: var(--hs-i-link); }
+[data-icon="zap"] { --icon: var(--hs-i-zap); }
+[data-icon="box"] { --icon: var(--hs-i-box); }
+[data-icon="shield"] { --icon: var(--hs-i-shield); }
+[data-icon="migrate"] { --icon: var(--hs-i-migrate); }
+[data-icon="search"] { --icon: var(--hs-i-search); }
+[data-icon="arrow-up"] { --icon: var(--hs-i-arrow-up); }
+[data-icon="expand"] { --icon: var(--hs-i-expand); }
+[data-icon="shrink"] { --icon: var(--hs-i-shrink); }
+[data-icon="reset"] { --icon: var(--hs-i-reset); }
+[data-icon="unfold"] { --icon: var(--hs-i-unfold); }
+[data-icon="fold"] { --icon: var(--hs-i-fold); }
+.hs-ico { display: inline-block; width: 1.1em; height: 1.1em; vertical-align: -.18em; background: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+
+/* 所有页内跳转（链接点击、回到顶部、浏览器前进后退）都直接跳转：不设 scroll-behavior: smooth */
+body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.75 var(--hs-font); -webkit-text-size-adjust: 100%; }
+:focus-visible { outline: 2px solid var(--hs-accent); outline-offset: 2px; }
+
+/* 版心：在大纲左侧区域内居中、固定宽度 */
+@media (min-width: 900px) { body.hs-with-toc { padding-right: var(--hs-toc-w); } }
+.hs-doc { box-sizing: content-box; max-width: var(--hs-measure); margin-inline: auto; padding-inline: clamp(16px, 4vw, 56px); padding-block: 40px 120px; overflow-wrap: break-word; }
+
+/* 标题：h1 色条；h2 色条；h3 竖条；序号与标题同色，不带图标 */
+.hs-doc :is(h1, h2, h3, h4, h5, h6) { position: relative; font-weight: 700; line-height: 1.4; text-wrap: balance; scroll-margin-top: 24px; }
+.hs-doc h1 { font-size: 30px; letter-spacing: -.01em; margin: 0 0 16px; }
+.hs-doc h1::after { content: ""; display: block; width: 120px; height: 4px; margin-top: 12px; border-radius: 2px; background: var(--hs-accent); }
+.hs-doc h2 { font-size: 24px; margin: 64px 0 18px; padding-top: 24px; border-top: 1px solid var(--hs-line); background: linear-gradient(var(--hs-accent), var(--hs-accent)) 0 0 / 88px 3px no-repeat border-box; }
+.hs-doc h3 { font-size: 20px; margin: 44px 0 14px; padding-left: 14px; }
+.hs-doc h3::before { content: ""; position: absolute; left: 0; top: .3em; bottom: .3em; width: 4px; border-radius: 2px; background: var(--hs-accent); }
+.hs-doc h4 { font-size: 17.5px; margin: 32px 0 10px; }
+.hs-doc h5 { font-size: 16px; margin: 26px 0 8px; }
+.hs-doc h6 { font-size: 15px; margin: 22px 0 8px; color: var(--hs-muted); }
+.hs-meta { margin: -8px 0 28px; font-size: 13.5px; color: var(--hs-muted); }
+.hs-num { margin-right: .4em; font-variant-numeric: tabular-nums; }
+.hs-anchor { margin-left: .4em; color: var(--hs-faint); font-weight: 400; text-decoration: none; opacity: 0; }
+.hs-doc :is(h2, h3, h4, h5, h6):hover .hs-anchor, .hs-anchor:focus-visible { opacity: 1; }
+
+.hs-doc p { margin: 0 0 14px; }
+.hs-doc :is(ul, ol) { margin: 0 0 14px; padding-left: 1.6em; }
+.hs-doc li { margin: 4px 0; }
+.hs-doc li::marker { color: var(--hs-accent); }
+.hs-doc ol > li::marker { font-weight: 700; }
+.hs-doc li > :is(ul, ol) { margin: 4px 0; }
+.hs-doc strong { font-weight: 700; }
+.hs-doc a { color: var(--hs-accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.hs-doc hr { border: 0; border-top: 1px solid var(--hs-line); margin: 32px 0; }
+.hs-doc :is(blockquote, aside) { margin: 16px 0 22px; padding: 12px 18px; background: var(--hs-quote-bg); border-left: 3px solid var(--hs-accent); }
+.hs-doc :is(blockquote, aside) > :last-child { margin-bottom: 0; }
+
+/* 标记：提示块、状态标签、图例记号、ID 标记 */
+.hs-doc .hs-callout { padding: 12px 18px 12px 16px; background: color-mix(in srgb, var(--c) 7%, var(--hs-surface)); border: 1px solid color-mix(in srgb, var(--c) 24%, transparent); border-left: 4px solid var(--c); border-radius: 6px; }
+.hs-doc .hs-callout-title { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 14.5px; font-weight: 700; color: var(--c); }
+.hs-callout-title::before { content: ""; flex: none; width: 18px; height: 18px; background: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+.hs-tag { display: inline-flex; align-items: center; gap: .4em; padding: 0 .65em; font-size: .86em; font-weight: 700; line-height: 1.7; white-space: nowrap; color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); border: 1px solid color-mix(in srgb, var(--c) 32%, transparent); border-radius: 999px; }
+.hs-tag::before { content: ""; width: .5em; height: .5em; border-radius: 50%; background: currentColor; }
+.hs-mark { display: inline-grid; place-items: center; min-width: 1.6em; height: 1.6em; padding: 0 .25em; font: 700 .88em/1 var(--hs-mono); color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); border: 1px solid color-mix(in srgb, var(--c) 36%, transparent); border-radius: 5px; vertical-align: .08em; cursor: help; }
+.hs-doc code.hs-id { color: var(--hue); background: color-mix(in srgb, var(--hue) 11%, transparent); border: 1px solid color-mix(in srgb, var(--hue) 28%, transparent); font-weight: 500; white-space: nowrap; }
+.hs-doc dl.hs-kv { grid-template-columns: fit-content(12em) minmax(0, 1fr); gap: 8px 18px; }
+.hs-doc .hs-callout dl.hs-kv dt { color: var(--c); }
+
+/* 原生增强：术语表、按键、高亮、缩写、折叠、脚注弹层 */
+.hs-doc dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 18px; margin: 0 0 14px; }
+.hs-doc dt { font-weight: 700; }
+.hs-doc dd { margin: 0; }
+.hs-doc kbd { font: 500 .82em var(--hs-mono); padding: .1em .45em; background: var(--hs-surface); border: 1px solid var(--hs-line); border-bottom-width: 2px; border-radius: 4px; }
+.hs-doc mark { background: color-mix(in srgb, #F5C542 45%, transparent); color: inherit; padding: 0 .15em; border-radius: 3px; }
+.hs-doc abbr[title] { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+.hs-doc details:not(.hs-code) { margin: 16px 0 22px; background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 6px; }
+.hs-doc details:not(.hs-code) > summary { padding: 10px 16px; font-weight: 700; cursor: pointer; }
+.hs-doc details:not(.hs-code) > summary::marker { color: var(--hs-accent); }
+.hs-doc details:not(.hs-code)[open] > summary { border-bottom: 1px solid var(--hs-line-soft); }
+.hs-doc details:not(.hs-code) > :not(summary) { margin-inline: 16px; }
+.hs-doc details:not(.hs-code) > summary + * { margin-top: 12px; }
+.hs-doc details:not(.hs-code) > :last-child { margin-bottom: 14px; }
+.hs-ref { vertical-align: super; padding: 0 .35em; font: 700 11px/1.4 var(--hs-font); color: var(--hs-accent); background: var(--hs-accent-soft); border: 0; border-radius: 4px; cursor: pointer; }
+.hs-pop { max-width: min(440px, 90vw); padding: 14px 18px; color: var(--hs-text); background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 8px; box-shadow: var(--hs-shadow); font: 14.5px/1.7 var(--hs-font); }
+.hs-pop::backdrop { background: rgba(0, 0, 0, .12); }
+
+/* 代码 */
+.hs-doc code { font-family: var(--hs-mono); font-size: .86em; color: var(--hs-code-text); background: var(--hs-code-bg); padding: .12em .38em; border-radius: 4px; overflow-wrap: break-word; }
+.hs-doc pre { margin: 16px 0 22px; padding: 14px 16px; overflow-x: auto; font: 13.5px/1.6 var(--hs-mono); tab-size: 4; background: var(--hs-code-bg); border: 1px solid var(--hs-line); border-radius: 6px; }
+.hs-doc pre code { background: none; padding: 0; font-size: inherit; border-radius: 0; }
+.hs-doc pre.mermaid { padding: 0; background: none; border: 0; overflow: visible; }
+.hs-code { margin: 16px 0 22px; background: var(--hs-code-bg); border: 1px solid var(--hs-line); border-radius: 6px; overflow: hidden; }
+.hs-code pre { margin: 0; border: 0; border-radius: 0; }
+.hs-code > summary { display: flex; align-items: center; gap: 8px; padding: 9px 16px; font: 500 11px/1 var(--hs-mono); letter-spacing: .08em; color: var(--hs-muted); border-bottom: 1px solid var(--hs-line); cursor: pointer; list-style: none; user-select: none; }
+.hs-code > summary::-webkit-details-marker { display: none; }
+.hs-code > summary::before { content: ""; border-left: 5px solid currentColor; border-block: 4px solid transparent; transition: transform .15s; }
+.hs-code[open] > summary::before { transform: rotate(90deg); }
+.hs-code:not([open]) > summary { border-bottom: 0; }
+.hs-code > summary:hover { color: var(--hs-accent); }
+.hs-code-lang { display: inline-flex; align-items: center; gap: 6px; color: var(--hs-accent); font-weight: 500; }
+.hs-code-lang::before { content: ""; width: 14px; height: 14px; background: currentColor; -webkit-mask: var(--hs-i-code) center / contain no-repeat; mask: var(--hs-i-code) center / contain no-repeat; }
+.hs-code-meta { margin-left: auto; color: var(--hs-faint); letter-spacing: 0; }
+.hs-code:not([open]) .hs-code-meta::after { content: " · 点击展开"; }
+.hs-doc pre :is(.k, .kc, .kd, .kn, .kp, .kr) { color: var(--hs-syn-kw); }
+.hs-doc pre :is(.kt, .nc, .nn) { color: var(--hs-syn-type); }
+.hs-doc pre :is(.s, .s1, .s2, .sc, .sd, .se, .sh, .si, .sx, .sr, .ss, .dl, .sa) { color: var(--hs-syn-str); }
+.hs-doc pre :is(.c, .c1, .cm, .cs, .cp, .ch, .cpf) { color: var(--hs-syn-com); font-style: italic; }
+.hs-doc pre :is(.m, .mi, .mf, .mh, .mo, .il, .mb) { color: var(--hs-syn-num); }
+.hs-doc pre .nf { color: var(--hs-syn-fn); }
+
+/* 表格 */
+.hs-table { overflow-x: auto; margin: 16px 0 24px; background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 6px; }
+.hs-doc table { width: 100%; border-collapse: collapse; font-size: 14.5px; line-height: 1.6; }
+.hs-table table { min-width: 560px; }
+.hs-doc caption { padding: 10px 12px 6px; text-align: left; font-weight: 700; color: var(--hs-accent); }
+.hs-doc :is(th, td) { padding: 8px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--hs-line-soft); overflow-wrap: break-word; }
+.hs-doc :is(th + th, td + td) { border-left: 1px solid var(--hs-line-soft); }
+.hs-doc th { font-weight: 700; background: color-mix(in srgb, var(--hs-accent) 10%, var(--hs-surface)); border-bottom: 2px solid color-mix(in srgb, var(--hs-accent) 45%, transparent); }
+.hs-doc tbody tr:nth-child(even) { background: var(--hs-row-alt); }
+.hs-doc tbody tr:hover { background: color-mix(in srgb, var(--hs-accent) 7%, transparent); }
+.hs-doc tbody tr:last-child td { border-bottom: 0; }
+.hs-doc td:first-child > code:only-child { white-space: nowrap; }
+/* 网页全屏（图表与表格共用）：用 fixed 浮层铺满当前窗口，不调用浏览器全屏，视口不变，页面其余部分不重排。
+   浮层强制去掉外边距，不受所在上下文（如 details 子元素的边距）影响 */
+:is(.hs-zoom, .hs-table-box).is-full { margin: 0 !important; }
+/* 表格全屏：右上角图标按钮（悬停或聚焦时出现），全屏内横纵滚动、表头吸顶 */
+.hs-table-box { position: relative; margin: 16px 0 24px; }
+.hs-table-full { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; color: var(--hs-accent); background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 5px; cursor: pointer; opacity: 0; transition: opacity .15s; }
+.hs-table-full::before { content: ""; width: 15px; height: 15px; background: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+.hs-table-full:hover { background: color-mix(in srgb, var(--hs-accent) 12%, var(--hs-surface)); }
+.hs-table-box:is(:hover, :focus-within, .is-full) .hs-table-full { opacity: 1; }
+@media (hover: none) { .hs-table-full { opacity: 1; } }
+.hs-table-box.is-full { position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column; box-sizing: border-box; padding: calc(env(safe-area-inset-top, 0px) + 52px) 24px calc(env(safe-area-inset-bottom, 0px) + 24px); background: var(--hs-bg); }
+.hs-table-box.is-full .hs-table-full { top: calc(env(safe-area-inset-top, 0px) + 12px); right: 24px; }
+.hs-table-box.is-full > .hs-table { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+/* 表头压住表体；首格再高一层，页面若把首列设为横向吸顶，角格不被其他表头盖住 */
+.hs-table-box.is-full thead th { position: sticky; top: 0; z-index: 2; }
+.hs-table-box.is-full thead th:first-child { z-index: 3; }
+.hs-table-box > .hs-table { margin: 0; }
+
+/* 图表：左/右键拖动平移，滚轮以指针为中心缩放，双击全屏 */
+.hs-doc figure { margin: 22px 0 28px; }
+.hs-doc figcaption { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-top: 8px; font-size: 13px; color: var(--hs-muted); }
+.hs-doc figcaption > :first-child::before { content: ""; display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; background: var(--hs-accent); -webkit-mask: var(--hs-i-image) center / contain no-repeat; mask: var(--hs-i-image) center / contain no-repeat; }
+.hs-zoom { position: relative; box-sizing: border-box; max-width: 100%; min-width: 200px; min-height: 120px; height: var(--hs-zoom-h, 320px); overflow: hidden; background: var(--hs-plate); border: 1px solid var(--hs-line); border-radius: 6px; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: contain; }
+.hs-zoom[data-plate="none"] { background: var(--hs-surface); }
+.hs-zoom.is-dragging { cursor: grabbing; }
+/* 图保持原始尺寸，只用 transform 缩放：缩放和切换全屏都不重排大图 */
+.hs-zoom > :is(img, svg, canvas) { position: absolute; left: 0; top: 0; max-width: none; transform-origin: 0 0; -webkit-user-drag: none; }
+.hs-zoom.is-full { position: fixed; inset: 0; z-index: 1000; width: auto !important; height: auto !important; max-width: none; border: 0; border-radius: 0; }
+/* 右下角的尺寸手柄（图表视窗、图片、视频共用）；全屏时隐藏 */
+.hs-resize { position: absolute; right: 0; bottom: 0; z-index: 2; width: 14px; height: 14px; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, transparent 50%, var(--hs-faint) 50% 58%, transparent 58% 70%, var(--hs-faint) 70% 78%, transparent 78%); }
+.is-full > .hs-resize { display: none; }
+.hs-zoom-bar { position: absolute; top: 8px; right: 8px; display: flex; align-items: center; gap: 6px; }
+.hs-zoom.is-full .hs-zoom-bar { top: calc(env(safe-area-inset-top, 0px) + 12px); right: 12px; }
+.hs-zoom-pct { padding: 5px 8px; font: 500 12px/1 var(--hs-mono); color: var(--hs-muted); background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 4px; font-variant-numeric: tabular-nums; }
+.hs-zoom-bar button { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; font: 700 12.5px/1 var(--hs-font); color: var(--hs-accent); background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 4px; cursor: pointer; }
+.hs-zoom-bar button::before { content: ""; width: 13px; height: 13px; background: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+.hs-zoom-bar button:hover { background: color-mix(in srgb, var(--hs-accent) 12%, var(--hs-surface)); }
+.hs-zoom-hint { position: absolute; left: 8px; bottom: 8px; padding: 3px 8px; font-size: 12px; line-height: 1.4; color: var(--hs-muted); background: var(--hs-surface); border: 1px solid var(--hs-line-soft); border-radius: 4px; pointer-events: none; }
+.hs-zoom.is-full .hs-zoom-hint { bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); left: 12px; }
+
+/* 右侧大纲：无底色；当前位置用强调色文字 + 左侧细条 */
+.hs-toc { position: fixed; z-index: 20; top: 0; right: 0; bottom: 0; box-sizing: border-box; width: var(--hs-toc-w); display: flex; flex-direction: column; padding-block: env(safe-area-inset-top, 0px) env(safe-area-inset-bottom, 0px); background: var(--hs-bg); border-left: 1px solid var(--hs-line); }
+.hs-toc-head { display: flex; align-items: center; gap: 8px; padding: 22px 20px 10px; }
+.hs-toc-title { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; color: var(--hs-text); font-weight: 700; font-size: 15px; line-height: 1.4; text-decoration: none; }
+.hs-toc-fold { flex: none; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; color: var(--hs-muted); background: transparent; border: 1px solid var(--hs-line); border-radius: 5px; cursor: pointer; }
+.hs-toc-fold::before { content: ""; width: 16px; height: 16px; background: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+.hs-toc-fold:hover { color: var(--hs-accent); border-color: var(--hs-accent); }
+.hs-toc-title::before { content: ""; flex: none; width: 16px; height: 16px; background: var(--hs-accent); -webkit-mask: var(--hs-i-list) center / contain no-repeat; mask: var(--hs-i-list) center / contain no-repeat; }
+.hs-toc-filter { box-sizing: border-box; width: calc(100% - 24px); margin: 4px 12px 10px; padding: 7px 10px; font: 13px/1.4 var(--hs-font); color: var(--hs-text); background: transparent; border: 1px solid var(--hs-line); border-radius: 5px; }
+.hs-toc-filter::placeholder { color: var(--hs-faint); }
+.hs-toc-panel { flex: 1; min-height: 0; overflow-y: auto; padding: 0 12px 28px; overscroll-behavior: contain; }
+.hs-toc ol { list-style: none; margin: 0; padding: 0; }
+.hs-toc a { display: block; padding: 4px 8px; border-left: 2px solid transparent; color: var(--hs-muted); text-decoration: none; font-size: 13.5px; line-height: 1.45; }
+.hs-toc .hs-l2 > a { color: var(--hs-text); font-weight: 700; margin-top: 10px; }
+.hs-toc .hs-l3 > a { padding-left: 18px; }
+.hs-toc .hs-l4 > a { padding-left: 32px; font-size: 12.5px; }
+.hs-toc a:hover { color: var(--hs-text); }
+.hs-toc a:is([aria-current], .is-within) { color: var(--hs-accent); border-left-color: var(--hs-accent); }
+.hs-toc code { font-size: .92em; background: none; padding: 0; color: inherit; }
+.hs-toc-empty { margin: 8px; font-size: 13px; color: var(--hs-faint); }
+.hs-toc-toggle { display: none; }
+
+/* 回到顶部、跳转高亮：纯 CSS */
+.hs-top { position: fixed; z-index: 15; right: 24px; bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); display: grid; place-items: center; width: 40px; height: 40px; font-size: 18px; color: var(--hs-accent); text-decoration: none; background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 50%; box-shadow: 0 2px 8px rgba(28, 36, 48, .08); }
+@media (min-width: 900px) { body.hs-with-toc .hs-top { right: calc(var(--hs-toc-w) + 24px); } }
+@supports (animation-timeline: scroll()) {
+  .hs-top { animation: hs-appear linear both; animation-timeline: scroll(root); animation-range: 0 480px; }
+  @keyframes hs-appear { from { opacity: 0; visibility: hidden; } to { opacity: 1; visibility: visible; } }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hs-doc :target { animation: hs-flash 1.8s ease-out; }
+  @keyframes hs-flash { from { background-color: color-mix(in srgb, var(--hs-accent) 16%, transparent); } to { background-color: transparent; } }
+}
+
+@media (max-width: 899.98px) {
+  .hs-doc { padding-block: 28px 96px; }
+  .hs-doc :is(h1, h2, h3, h4, h5, h6) { scroll-margin-top: 64px; }
+  .hs-doc h1 { font-size: 25px; }
+  .hs-doc h2 { font-size: 21px; }
+  .hs-doc :is(dl, dl.hs-kv) { grid-template-columns: minmax(0, 1fr); }
+  .hs-doc dd { margin: 0 0 8px 1em; }
+  .hs-toc { width: min(320px, 88vw); box-shadow: var(--hs-shadow); transform: translateX(100%); visibility: hidden; transition: transform .25s ease, visibility .25s; }
+  .hs-toc.is-open { transform: none; visibility: visible; }
+  .hs-toc-head { padding-right: 84px; }
+  .hs-toc-toggle { display: block; position: fixed; z-index: 21; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 16px; padding: 8px 12px; font: 700 13px/1 var(--hs-font); color: var(--hs-accent); background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 5px; box-shadow: 0 2px 8px rgba(28, 36, 48, .08); cursor: pointer; }
+  .hs-scrim { position: fixed; inset: 0; z-index: 19; background: rgba(0, 0, 0, .28); }
+}
+@media (min-width: 900px) { .hs-scrim { display: none; } }
+@media (prefers-reduced-motion: reduce) { .hs-toc, .hs-code > summary::before { transition: none; } }
+</style>
+<style id="m2h-presets">
+/* Markdown-2-HTML 组件样式：只用 --hs-* 令牌，补充 template.html 没有的组件（卡片、热力表、条目卡片、链接胶囊等） */
+
+/* 语法高亮（导出时由 highlight.js 生成） */
+.hs-doc pre :is(.hljs-keyword, .hljs-meta .hljs-keyword, .hljs-selector-tag) { color: var(--hs-syn-kw); }
+.hs-doc pre :is(.hljs-type, .hljs-built_in, .hljs-title.class_, .hljs-section) { color: var(--hs-syn-type); }
+.hs-doc pre :is(.hljs-string, .hljs-regexp, .hljs-attr) { color: var(--hs-syn-str); }
+.hs-doc pre :is(.hljs-comment, .hljs-quote) { color: var(--hs-syn-com); font-style: italic; }
+.hs-doc pre :is(.hljs-number, .hljs-literal, .hljs-symbol) { color: var(--hs-syn-num); }
+.hs-doc pre :is(.hljs-title.function_, .hljs-meta) { color: var(--hs-syn-fn); }
+
+/* 标签字、灰色说明、来源小字 */
+.hs-k { margin-right: .45em; font-size: 12.5px; color: var(--hs-faint); }
+.hs-doc .hs-muted { color: var(--hs-muted); }
+.hs-doc .src { font-size: 13px; color: var(--hs-muted); }
+
+/* 问答式定义列表 */
+.hs-doc .qa { display: grid; grid-template-columns: fit-content(7em) minmax(0, 1fr); gap: 6px 14px; margin: 0 0 14px; }
+.hs-doc .qa > dt { color: var(--hs-accent); }
+@media (max-width: 899.98px) { .hs-doc .qa { grid-template-columns: minmax(0, 1fr); } }
+
+/* 表格变体：首列加粗不换行 */
+.hs-doc .lead td:first-child { font-weight: 700; white-space: nowrap; }
+.hs-doc .lead td { min-width: 120px; }
+
+/* 卡片网格 */
+.hs-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 16px 0 22px; }
+.hs-card { min-width: 0; padding: 12px 14px; background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 6px; }
+.hs-doc .hs-card .hs-card-t { margin: 0 0 6px; font-weight: 700; color: var(--hs-text); }
+.hs-doc .hs-card p:not(.hs-card-t) { margin: 0; font-size: 14.5px; color: var(--hs-muted); }
+
+/* 图片与视频：按导出时测得的默认宽高显示，不超出所在内容栏，高度随宽度等比变化 */
+.hs-doc :not(.hs-zoom) > :is(img, video) { max-width: 100%; height: auto; }
+/* 独占一段的图片、视频：.hs-media 只用来定位手柄，没有边框和底色；手柄在悬停或拖动时显示，压在右下角外侧以免遮住播放器控件 */
+.hs-media { position: relative; display: block; width: fit-content; max-width: 100%; }
+.hs-media > :is(img, video) { display: block; }
+.hs-media > .hs-resize { right: -7px; bottom: -7px; opacity: 0; transition: opacity .15s; }
+.hs-media:is(:hover, .is-resizing) > .hs-resize { opacity: 1; }
+@media (hover: none) { .hs-media > .hs-resize { opacity: 1; } }
+
+/* 链接胶囊（data-kind 取语义色） */
+:where(.hs-pill) { --c: var(--hs-accent); }
+.hs-doc a.hs-pill { display: inline-block; margin: 0 6px 6px 0; padding: 0 10px; font-size: 13px; line-height: 1.8; white-space: nowrap; color: var(--c); text-decoration: none; background: color-mix(in srgb, var(--c) 9%, transparent); border: 1px solid color-mix(in srgb, var(--c) 30%, transparent); border-radius: 999px; }
+.hs-doc a.hs-pill:hover { background: color-mix(in srgb, var(--c) 18%, transparent); }
+
+/* 条目卡片 ```records */
+.hs-rec { padding-bottom: 18px; border-bottom: 1px dashed var(--hs-line); }
+.hs-doc .hs-rec :is(h3, h4, h5) { margin: 28px 0 4px; }
+.hs-doc .hs-rec-sub { margin: 0 0 8px; }
+.hs-doc .hs-rec-facts { display: flex; flex-wrap: wrap; gap: 2px 18px; margin: 0 0 8px; font-size: 14px; line-height: 1.7; color: var(--hs-muted); }
+.hs-doc .hs-rec-links { margin: 0 0 4px; }
+.hs-doc .hs-rec-desc { margin: 0; }
+.hs-doc .hs-rec-desc.is-none { color: var(--hs-faint); }
+
+/* 热力表 ```heatmap */
+.hs-heat table { width: auto; min-width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+.hs-doc .hs-heat :is(th, td) { padding: 4px 7px; text-align: center; vertical-align: middle; }
+.hs-doc .hs-heat th.hs-v { vertical-align: bottom; padding: 8px 4px; }
+.hs-heat th.hs-v > span { display: inline-block; max-height: 12em; writing-mode: vertical-rl; text-align: start; line-height: 1.3; font-size: 12.5px; }
+.hs-heat :is(th, td):first-child { position: sticky; left: 0; z-index: 1; }
+.hs-heat td:first-child { background: var(--hs-surface); }
+.hs-heat tbody tr:nth-child(even) td:first-child { background: var(--hs-row-alt); }
+.hs-doc .hs-heat td a { display: block; color: inherit; text-decoration: none; }
+.hs-doc .hs-heat td a:hover { color: var(--hs-accent); text-decoration: underline; }
+.hs-heat td[data-heat] { font-weight: 700; }
+.hs-heat .hs-total td { font-weight: 700; border-top: 2px solid color-mix(in srgb, var(--hs-accent) 45%, transparent); }
+[data-heat="1"] { background: color-mix(in srgb, var(--hs-accent) 8%, transparent); }
+[data-heat="2"] { background: color-mix(in srgb, var(--hs-accent) 17%, transparent); }
+[data-heat="3"] { background: color-mix(in srgb, var(--hs-accent) 27%, transparent); }
+[data-heat="4"] { background: color-mix(in srgb, var(--hs-accent) 38%, transparent); }
+[data-heat="5"] { background: color-mix(in srgb, var(--hs-accent) 50%, transparent); }
+.hs-doc .hs-heat-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 13px; }
+.hs-sw { padding: 0 8px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<main class="hs-doc" data-toc-levels="2,3">
+<h1 id="top">ScreenShot 实现进度与交付报告（M0 ~ M8）</h1>
+<p class="hs-meta">v1.0 · 2026-10-24 · 输入：<a href="01-requirements.md">需求</a>、<a href="02-architecture.md">架构</a>、<a href="03-m0-report.md">M0 报告</a></p>
+<h2 id="summary"><span class="hs-num">1.</span>结论<a class="hs-anchor" href="#summary" aria-label="本节链接">#</a></h2>
+<p><mark>八个里程碑全部实现并逐里程碑本地提交；246 条需求中 244 条已进入交付范围且每条都有自动用例（覆盖矩阵无空项），余下 2 条（LaTeX 公式贴图、公式识别）需要离线公式引擎，按 <span class="hs-mark" data-kind="muted" title="需要额外组件或设备，本次交付未实现">延后</span> 处理。Debug 与 Release 两套自动测试全部通过，程序零网络导入。需要真实桌面的端到端场景与 macOS 用例已写好，等解锁桌面 / Mac 设备后执行。</mark></p>
+<div class="hs-table lead"><table>
+<caption>里程碑结果</caption>
+<thead>
+<tr>
+<th>里程碑</th>
+<th>内容</th>
+<th>提交</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M0</td>
+<td>工具链、测试框架、内置测试接口、17 项风险验证</td>
+<td>见 <a href="03-m0-report.md">M0 报告</a></td>
+<td><span class="hs-tag" data-kind="ok">完成</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+</tr>
+<tr>
+<td>M1</td>
+<td>截图主流程：热键、冻结画面、框选、检测、输出、单实例、托盘、配置、日志</td>
+<td><code>M1</code> 系列</td>
+<td><span class="hs-tag" data-kind="ok">完成</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+</tr>
+<tr>
+<td>M2</td>
+<td>标注：矢量标注文档、撤销重做、工具栏、文字、马赛克 / 模糊</td>
+<td><code>M2</code> 系列</td>
+<td><span class="hs-tag" data-kind="ok">完成</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+</tr>
+<tr>
+<td>M3</td>
+<td>贴图：物理定位、缩放、透明、穿透、关闭恢复、文本贴图</td>
+<td><code>M3</code> 系列</td>
+<td><span class="hs-tag" data-kind="ok">完成</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+</tr>
+<tr>
+<td>M4</td>
+<td>滚动截图：稳定帧、拼接、自动滚动、到底判定、端到端比对</td>
+<td><code>64010a7</code>、<code>d44615c</code></td>
+<td><span class="hs-tag" data-kind="ok">完成</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+</tr>
+<tr>
+<td>M5</td>
+<td>各模块 P1：截图后动作、输出路径变量、标注扩展、贴图扩展、OCR / 二维码、动作系统、命令行、HDR</td>
+<td><code>741c45b</code> ~ <code>3f11528</code></td>
+<td><span class="hs-tag" data-kind="ok">完成</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+</tr>
+<tr>
+<td>M6</td>
+<td>各模块 P2：PixPin 特性、外观、滚动增强、标注 P2、输出 / 贴图 / 分组 P2、识别 / 动作 / 配置 P2</td>
+<td><code>1232b81</code> ~ <code>d8689b5</code></td>
+<td><span class="hs-tag" data-kind="ok">完成</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+</tr>
+<tr>
+<td>M7</td>
+<td>屏幕录制：录制工具栏、帧率画质、GIF / WebP / MP4、声音、录制中标注、输入可视化、摄像头、回放剪辑、崩溃恢复</td>
+<td><code>9a1a465</code></td>
+<td><span class="hs-tag" data-kind="ok">完成</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+</tr>
+<tr>
+<td>M8</td>
+<td>收尾：非功能需求与验收场景的用例、打包（绿色版 + 安装包）、兼容性门槛、可访问性</td>
+<td>本次</td>
+<td><span class="hs-tag" data-kind="ok">完成</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="env"><span class="hs-num">2.</span>环境<a class="hs-anchor" href="#env" aria-label="本节链接">#</a></h2>
+<ul>
+<li>Windows 10 IoT Enterprise LTSC 2021（19044）x64，两台 2560×1440（125%）显示器；整个开发期间桌面处于锁屏状态。</li>
+<li>Qt 6.12.0 msvc2022_64，MSVC 14.51（VS 2026 Build Tools），C++20，CMake 3.28 预设 <code>win-debug</code> / <code>win-release-test</code> / <code>win-release</code>。</li>
+<li>第三方（FetchContent，静态链接，构建期联网，运行期零网络）：ZXing-C++ 2.3.0（条码）、QuickJS-ng 0.9.0（脚本）、libwebp 1.6.0（动画 WebP）。MP4 / AAC 用 Media Foundation，声音用 WASAPI，摄像头用 Media Foundation 源读取器，OCR 用 Windows.Media.Ocr，均为系统自带。</li>
+<li>打包：windeployqt 收集运行时（含 MSVC 运行库）→ 绿色版 zip；Inno Setup 6（winget 安装）→ 安装包。</li>
+</ul>
+<h2 id="tests"><span class="hs-num">3.</span>测试结果<a class="hs-anchor" href="#tests" aria-label="本节链接">#</a></h2>
+<div class="hs-table"><table>
+<caption>自动测试</caption>
+<thead>
+<tr>
+<th>套件</th>
+<th>内容</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>win-debug</code></td>
+<td>单元 18 + 组件 20 + 覆盖矩阵 + 零网络导入检查</td>
+<td>37 / 37 通过 <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+</tr>
+<tr>
+<td><code>win-release-test</code></td>
+<td>同上，另加绿色版 / 安装包打包与体积检查</td>
+<td>38 / 38 通过；绿色版 zip 17 MB，安装包 13 MB <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+</tr>
+<tr>
+<td>端到端 <code>e2e_m0</code></td>
+<td>测试驱动启动真实程序；需要真实输入的场景在锁屏时跳过</td>
+<td>20 个场景：15 通过、5 因锁屏跳过（<code>R-02</code> <code>R-03</code> <code>HOTKEY</code> <code>R-09</code> <code>M4-SCROLL</code>），<code>AC-12</code> 首轮因驱动进程未声明 DPI 感知误判尺寸，改为按被测程序的显示器布局比对后通过；启动到接口可用 250 ms（<code>NFR-03</code>），空闲私有内存 8.8 MB，50 张 1080p 贴图拖动 ≥ 220 次/秒 <span class="hs-tag" data-kind="ok">通过</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+</tr>
+<tr>
+<td>零网络</td>
+<td>构建产物导入表无 ws2_32 / winhttp / wininet / Qt Network；端到端运行期间无网络端点</td>
+<td><span class="hs-tag" data-kind="ok">通过</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+</tr>
+</tbody>
+</table></div>
+<p>需求覆盖矩阵（<code>build/&lt;preset&gt;/test-results/coverage.md</code>）由 <code>tools/coverage/gen_matrix.py</code> 在每次测试运行时生成：扫描所有用例文件开头的 <code>// REQ:</code> 标签，对 <code>tests/delivered_scope.txt</code> 里的每一条需求检查至少有一个用例，否则测试失败（<code>TST-01</code>）。矩阵统计到 253 个编号，其中 7 个只出现在需求文档的修订记录里（v0.2 删除或改名的 <code>LNG-*</code>、<code>REC-05</code>、<code>PIN-10</code>、<code>GEN-11</code>、<code>GEN-12</code>、<code>OUT-15</code>），不是现行需求；现行需求 246 条，244 条在范围内且全部有用例。</p>
+<blockquote class="hs-callout" data-kind="info">
+<p class="hs-callout-title">覆盖的含义</p>
+<p>“有用例”指该需求的核心行为有自动用例在无显示器（offscreen）或真实桌面上验证；需要真实输入的验收场景（<code>AC-01</code> ~ <code>AC-12</code>）由端到端驱动在解锁桌面后执行，当前只验证了不依赖输入的部分，见 <a href="#pending">5</a>。</p>
+</blockquote>
+<h2 id="delivered"><span class="hs-num">4.</span>各里程碑交付的内容<a class="hs-anchor" href="#delivered" aria-label="本节链接">#</a></h2>
+<h3 id="s4-1"><span class="hs-num">4.1</span>M1 ~ M4（基础功能）<a class="hs-anchor" href="#s4-1" aria-label="本节链接">#</a></h3>
+<ul>
+<li>截图：热键触发冻结全部显示器画面（DXGI，GDI 兜底），混合缩放逐像素精确；UI 元素 / 窗口检测在工作线程带超时；框选、调整、放大镜、取色、历史；输出到剪贴板 / 文件 / 贴图；单实例与命令转交；托盘、自启动、配置、日志、崩溃转储。</li>
+<li>标注：矢量标注文档（矩形、椭圆、线条 / 箭头、铅笔、荧光笔、马赛克、模糊、文字、橡皮），选中 / 移动 / 缩放 / 旋转，撤销重做，工具栏，输出时栅格化。</li>
+<li>贴图：物理像素定位、滚轮缩放、透明度、点穿、关闭 / 恢复、文本贴图、Alt 拖动；CPU 渲染满足性能指标。</li>
+<li>滚动截图：区域锁定、稳定帧检测、行哈希拼接、自动滚动与到底判定、纯色 / 重复内容拒绝并给出原因、横向拼接、边框与预览窗口不参与捕获。</li>
+</ul>
+<h3 id="s4-2"><span class="hs-num">4.2</span>M5 ~ M6（P1 / P2 需求）<a class="hs-anchor" href="#s4-2" aria-label="本节链接">#</a></h3>
+<ul>
+<li>截图：截图后动作组合、自定义截图对话框与预设、快捷截图、层级元素切换、尺寸输入与固定比例、指针截取、圆角 / 阴影 / 边框、白板与透明白板、模式轮换（静态 / 滚动 / 录制）、区域历史、检测排除列表、外观与放大镜设置、辅助线、HDR 色调映射。</li>
+<li>输出：复制为文件、自动质量与透明通道、路径变量与修饰符、自动保存与清理、打印 / PDF 分页、编码预览、保存后复制、元数据、外部命令。</li>
+<li>标注：右键贴合元素、线型与圆角、箭头样式、文字装饰与换行、序号、放大标注、色板、框选多选、自定义工具栏、扇形、端点样式、智能擦除、自动马赛克、聚光灯、水印。</li>
+<li>贴图：HTML / 颜色 / 文件贴图、文字选择与 OCR 可选文字、替换策略、吸附、灰度反色、缩略图、裁剪、分组与组管理、重复贴图策略、亮度、锁定、标题、透明背景、拖出内容、虚拟桌面、独显、重启恢复。</li>
+<li>识别与动作：Windows OCR（语言、精准模式、排版、标点）、表格导出 Excel、二维码 / 条码识别与生成、动作系统与热键、命令行接口与 <code>--wait</code>、QuickJS 脚本、全局鼠标截图、热角、修饰键双击、粘贴为图像 / 纯文本、配置导入导出与高级配置。</li>
+</ul>
+<h3 id="s4-3"><span class="hs-num">4.3</span>M7（屏幕录制）<a class="hs-anchor" href="#s4-3" aria-label="本节链接">#</a></h3>
+<ul>
+<li>录制会话：选区边框 + 工具栏（开始 / 暂停 / 继续 / 停止 / 重录 / 计时 / 延迟），帧率 5 ~ 60，画质轻量 / 标准 / 原始，边框、工具栏与标注层不参与捕获。</li>
+<li>普通模式：帧写入磁盘目录（<code>recording.json</code> 索引每 2 s 落盘），停止后进入回放窗口；快速模式：边录边经 Media Foundation 写 MP4，停止后直接快速保存并复制为文件。</li>
+<li>导出：GIF（自研中位切分量化 + LZW）、动画 WebP（libwebp）、MP4（H.264 + AAC）；回放窗口支持播放 / 暂停 / 跳转 / 倍速、裁剪开头结尾、进度条 / 文字 / 倒计时叠加、保存 / 快速保存 / 复制 / 丢弃。</li>
+<li>声音：麦克风与系统声音（WASAPI 环回）分别调音量，统一重采样到 48 kHz 单声道后混合；无播放时补零保持对齐。</li>
+<li>录制中标注（透明标注层，右键撤销）、鼠标点击涟漪 / 滚轮箭头 / 按键标签（动画时长可调，经低级钩子记录）、摄像头画中画（位置与大小可调）。</li>
+<li>崩溃恢复：启动时扫描未完成的录制目录，询问后打开回放窗口；索引落后于磁盘帧时按帧率补齐时间戳。</li>
+</ul>
+<h3 id="s4-4"><span class="hs-num">4.4</span>M8（收尾）<a class="hs-anchor" href="#s4-4" aria-label="本节链接">#</a></h3>
+<ul>
+<li>验收与非功能需求的用例：30 步撤销重做无残影（<code>AC-04</code>）、输入法事件输入中文并旋转导出一致（<code>AC-03</code>）、命令行 <code>--wait</code> 场景（<code>AC-12</code>）、启动耗时场景（<code>NFR-03</code>）、系统版本门槛（<code>NFR-11</code>，低于 19041 启动即提示退出）、设置项可访问名称与说明（<code>NFR-14</code>）。</li>
+<li>打包（<code>NFR-12</code>）：<code>tests/package/check_package.py</code> 生成绿色版 zip 与 Inno Setup 安装包并检查 ≤ 50 MB、包内无 Qt Network；只在非 Debug 配置下运行。</li>
+<li>已实现但此前未纳入范围的需求（各工具记住颜色、形状旋转、工具快捷键、一键禁用热键、选项说明、贴图尺寸限制、屏幕外贴图恢复）补入交付范围并核对用例。</li>
+</ul>
+<h2 id="pending"><span class="hs-num">5.</span>未完成与待测<a class="hs-anchor" href="#pending" aria-label="本节链接">#</a></h2>
+<div class="hs-table"><table>
+<caption>延后项</caption>
+<thead>
+<tr>
+<th>编号</th>
+<th>内容</th>
+<th>原因与建议</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PIN-09</code></td>
+<td>LaTeX 公式贴图</td>
+<td>需要离线公式渲染引擎（如 KaTeX 经 QuickJS 运行 + 字体，或 MicroTeX）；体积与许可需单独评估</td>
+<td><span class="hs-tag" data-kind="muted">延后</span></td>
+</tr>
+<tr>
+<td><code>REC-09</code></td>
+<td>公式识别</td>
+<td>没有系统自带的离线公式识别模型，需引入独立模型包（需求允许放在离线组件包中）</td>
+<td><span class="hs-tag" data-kind="muted">延后</span></td>
+</tr>
+<tr>
+<td><code>OUT-05</code> 的 AVIF</td>
+<td>AVIF 编码</td>
+<td>Qt 6.12 未内置 AVIF 插件；程序在运行期检测到插件时自动提供该格式</td>
+<td><span class="hs-tag" data-kind="muted">延后</span></td>
+</tr>
+<tr>
+<td><code>PIN-56</code></td>
+<td>所有虚拟桌面可见</td>
+<td>使用未公开的 <code>IVirtualDesktopPinnedApps</code> 接口，Windows 更新后可能失效，失败时静默降级</td>
+<td><span class="hs-tag" data-kind="ok">已实现</span></td>
+</tr>
+<tr>
+<td><code>CAP-34</code></td>
+<td>HDR 截图</td>
+<td>代码路径已实现（R16G16B16A16_FLOAT + 色调映射），没有 HDR 显示器无法实测</td>
+<td><span class="hs-mark" data-kind="warn" title="需要解锁桌面或特定设备后再测">待测</span></td>
+</tr>
+<tr>
+<td><code>NFR-11</code> 的 ARM64</td>
+<td>Windows ARM64</td>
+<td>P2，未构建</td>
+<td><span class="hs-tag" data-kind="muted">延后</span></td>
+</tr>
+<tr>
+<td><code>NFR-12</code> 的 macOS</td>
+<td>签名并公证的磁盘映像</td>
+<td>没有 Mac 设备与证书</td>
+<td><span class="hs-tag" data-kind="muted">延后</span></td>
+</tr>
+</tbody>
+</table></div>
+<div class="hs-table"><table>
+<caption>需要真实桌面或设备的用例</caption>
+<thead>
+<tr>
+<th>用例</th>
+<th>现状</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>端到端 <code>R-02</code> <code>R-03</code> <code>HOTKEY</code> <code>M1-FLOW</code> <code>M2-ANNOTATE</code> <code>M3-PINS</code> <code>M4-SCROLL</code> <code>AC-12</code></td>
+<td>已写好；锁屏期间需要真实输入的部分跳过。解锁后运行 <code>scripts\test.cmd win-release-test -L e2e</code></td>
+</tr>
+<tr>
+<td><code>AC-02</code> 在文件管理器 / 浏览器 / Office / 编辑器上悬停</td>
+<td>端到端 <code>R-09</code> 覆盖任务栏元素与挂起程序；其他程序需人工在解锁桌面上检查</td>
+</tr>
+<tr>
+<td><code>AC-03</code> 输入法候选窗跟随光标</td>
+<td>组件用例用 <code>QInputMethodEvent</code> 模拟输入法提交；候选窗位置需人工用真实输入法检查</td>
+</tr>
+<tr>
+<td><code>AC-06</code> 穿透后点击下方网页链接</td>
+<td>端到端 <code>M3-PINS</code> 验证穿透开关与命中；点击真实网页需人工检查</td>
+</tr>
+<tr>
+<td><code>AC-13</code> <code>AC-14</code> macOS</td>
+<td><code>tests/macos</code> 用例已写好，待 Mac 设备</td>
+</tr>
+<tr>
+<td><code>NFR-03</code> 启动耗时</td>
+<td>端到端场景测量的是二次启动（磁盘缓存已热）；冷启动需重启后人工测一次</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote class="hs-callout" data-kind="warn">
+<p class="hs-callout-title">代码体量</p>
+<p><code>App.cpp</code>（1362 行）、<code>PinWindow.cpp</code>（1525 行）、<code>CaptureSession.cpp</code>（1559 行）超过 1000 行。功能已稳定，建议下一步按职责拆分（例如把命令行、热键、录制接线从 <code>App</code> 拆出；把贴图的内容类型与图像处理从 <code>PinWindow</code> 拆出），拆分不改变行为，用现有用例回归。</p>
+</blockquote>
+<h2 id="howto"><span class="hs-num">6.</span>如何构建与测试<a class="hs-anchor" href="#howto" aria-label="本节链接">#</a></h2>
+<details class="hs-code" open><summary><span class="hs-code-lang">Bash</span><span class="hs-code-meta">1 行</span></summary><pre><code>scripts\build.cmd win-release-test</code></pre></details>
+<details class="hs-code" open><summary><span class="hs-code-lang">Bash</span><span class="hs-code-meta">1 行</span></summary><pre><code>scripts\test.cmd win-release-test</code></pre></details>
+<ul>
+<li>只跑无需桌面的用例：<code>scripts\test.cmd win-release-test -LE e2e</code>；只跑端到端：<code>-L e2e</code>；打包：<code>-L package</code>（产物在 <code>build\win-release-test\dist</code>）。</li>
+<li>发布构建：<code>scripts\build.cmd win-release</code>，然后运行 <code>tests\package\check_package.py</code>（参数见 <code>tests/CMakeLists.txt</code>）生成绿色版与安装包。</li>
+</ul>
+</main>
+<a class="hs-top" href="#top" aria-label="回到顶部"><i class="hs-ico" data-icon="arrow-up"></i></a>
+<script id="hs-script">
+(() => {
+  const doc = document.querySelector('.hs-doc');
+  if (!doc) return;
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const plainLabel = h => {
+    const label = h.cloneNode(true);
+    label.querySelectorAll('.hs-anchor').forEach(n => n.remove());
+    label.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+    return label;
+  };
+
+  // ---------- ID 标记：行内 code 形如 RT-01 / SW-R1.7 / G15 时着色，同前缀同色 ----------
+  const markIds = () => {
+    const ID = /^[A-Z]{1,4}(?:-[A-Z]{1,3})?-?\d+(?:\.\d+)*$/;
+    const hues = new Map();
+    doc.querySelectorAll('code').forEach(code => {
+      const text = code.textContent.trim();
+      if (code.closest('pre') || code.children.length || !ID.test(text)) return;
+      const prefix = text.replace(/-?[\d.]+$/, '');
+      if (!hues.has(prefix)) hues.set(prefix, hues.size % 7 + 1);
+      code.classList.add('hs-id');
+      code.dataset.hue = hues.get(prefix);
+    });
+  };
+
+  // ---------- 右侧大纲：从标题生成条目，每条记录父条目与所属的第一层条目 ----------
+  const createToc = heads => {
+    const h1 = doc.querySelector('h1');
+    if (h1 && !h1.id) h1.id = 'top';
+    const nav = document.createElement('nav');
+    nav.className = 'hs-toc';
+    nav.id = 'hs-toc';
+    nav.setAttribute('aria-label', '大纲');
+    nav.innerHTML = '<div class="hs-toc-head"><a class="hs-toc-title"></a><button type="button" class="hs-toc-fold" aria-controls="hs-toc"></button></div>'
+      + '<input type="search" class="hs-toc-filter" id="hs-toc-filter" aria-label="筛选大纲标题">'
+      + '<div class="hs-toc-panel"><ol></ol><p class="hs-toc-empty" hidden>没有匹配的标题</p></div>';
+    const title = nav.querySelector('.hs-toc-title');
+    title.textContent = h1 ? plainLabel(h1).textContent.trim() : document.title;
+    title.href = h1 ? '#' + h1.id : '#';
+    nav.querySelector('.hs-toc-filter').placeholder = `筛选标题（共 ${heads.length} 节）`;
+    const list = nav.querySelector('ol');
+    const items = [];
+    const stack = [];
+    heads.forEach((h, i) => {
+      if (!h.id) h.id = 'hs-h' + (i + 1);
+      const level = +h.tagName[1];
+      while (stack.length && items[stack[stack.length - 1]].level >= level) stack.pop();
+      const parent = stack.length ? stack[stack.length - 1] : -1;
+      stack.push(i);
+      const li = document.createElement('li');
+      li.className = 'hs-l' + level;
+      const a = document.createElement('a');
+      a.href = '#' + h.id;
+      a.innerHTML = plainLabel(h).innerHTML;
+      li.append(a);
+      list.append(li);
+      items.push({ head: h, li, a, level, parent, root: parent < 0 ? i : items[parent].root });
+    });
+    document.body.append(nav);
+    document.body.classList.add('hs-with-toc');
+    return { nav, items };
+  };
+
+  // 窄屏：大纲收进右上角按钮，从右侧滑出
+  const bindTocDrawer = nav => {
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'hs-toc-toggle';
+    toggle.setAttribute('aria-controls', 'hs-toc');
+    const scrim = document.createElement('div');
+    scrim.className = 'hs-scrim';
+    document.body.append(scrim, toggle);
+    const setOpen = open => {
+      nav.classList.toggle('is-open', open);
+      scrim.hidden = !open;
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.textContent = open ? '关闭' : '大纲';
+    };
+    setOpen(false);
+    toggle.addEventListener('click', () => setOpen(!nav.classList.contains('is-open')));
+    scrim.addEventListener('click', () => setOpen(false));
+    nav.addEventListener('click', e => { if (e.target.closest('a')) setOpen(false); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') setOpen(false); });
+  };
+
+  // 阅读位置：越过阅读线（视口 30% 处）的最后一个标题，还没读到任何标题时为 -1；
+  // 滚到页底时取视口内最后一个标题，保证末尾章节也能成为当前位置
+  const locateHeading = items => {
+    const line = Math.max(96, innerHeight * 0.3);
+    let idx = -1;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].head.getBoundingClientRect().top <= line) idx = i; else break;
+    }
+    if (scrollY > 0 && innerHeight + scrollY >= document.documentElement.scrollHeight - 4) {
+      for (let i = items.length - 1; i > idx; i--) {
+        if (items[i].head.getBoundingClientRect().top < innerHeight) return i;
+      }
+    }
+    return idx;
+  };
+
+  // 折叠 / 展开、筛选、滚动高亮：
+  // 折叠模式（默认）显示第一层，以及当前位置和它各级上级的下一层子标题，其余分支收起；当前位置来自点击或滚动。
+  // 展开模式显示全部；筛选时显示全部匹配项
+  const bindTocTree = ({ nav, items }) => {
+    const panel = nav.querySelector('.hs-toc-panel');
+    const filter = nav.querySelector('.hs-toc-filter');
+    const empty = nav.querySelector('.hs-toc-empty');
+    const fold = nav.querySelector('.hs-toc-fold');
+    let expanded = false, current = -1, queued = false, pinned = -1;
+
+    const pathOf = i => {
+      const path = new Set();
+      for (; i >= 0; i = items[i].parent) path.add(i);
+      return path;
+    };
+    // 当前位置所属的第一层条目也挂上标记；返回面板里实际可见的那一项，供滚动定位
+    const markCurrent = () => {
+      items.forEach(it => it.a.classList.remove('is-within'));
+      if (current < 0) return null;
+      const it = items[current];
+      if (it.root !== current) items[it.root].a.classList.add('is-within');
+      return it.li.hidden ? items[it.root].a : it.a;
+    };
+    const keepVisible = a => {
+      if (!a || a.parentNode.hidden) return;
+      const box = panel.getBoundingClientRect(), r = a.getBoundingClientRect();
+      if (r.top < box.top + 56) panel.scrollTop += r.top - box.top - 56;
+      else if (r.bottom > box.bottom - 24) panel.scrollTop += r.bottom - box.bottom + 24;
+    };
+    const render = () => {
+      const q = filter.value.trim().toLowerCase();
+      const path = pathOf(current);
+      let shown = 0;
+      items.forEach(it => {
+        const visible = q ? it.a.textContent.toLowerCase().includes(q) : expanded || it.parent < 0 || path.has(it.parent);
+        it.li.hidden = !visible;
+        if (visible) shown++;
+      });
+      empty.hidden = shown > 0;
+      const label = expanded ? '折叠大纲' : '展开全部标题';
+      fold.dataset.icon = expanded ? 'fold' : 'unfold';
+      fold.setAttribute('aria-label', label);
+      fold.setAttribute('aria-expanded', String(expanded));
+      fold.title = label;
+      return markCurrent();
+    };
+    // 点击大纲后锁定所点条目，直到用户自己滚动，或该标题离开视口
+    const spy = () => {
+      queued = false;
+      if (pinned >= 0) {
+        const t = items[pinned].head.getBoundingClientRect().top;
+        if (t < -40 || t > innerHeight) pinned = -1;
+      }
+      const idx = pinned >= 0 ? pinned : locateHeading(items);
+      if (idx === current) return;
+      if (current >= 0) items[current].a.removeAttribute('aria-current');
+      current = idx;
+      if (idx >= 0) items[idx].a.setAttribute('aria-current', 'location');
+      keepVisible(render());
+    };
+    const unpin = () => { pinned = -1; };
+
+    fold.addEventListener('click', () => { expanded = !expanded; keepVisible(render()); });
+    filter.addEventListener('input', render);
+    nav.addEventListener('click', e => {
+      const idx = items.findIndex(x => x.a === e.target.closest('a'));
+      if (idx < 0) return;
+      pinned = idx;
+      // 点击时跳转尚未发生，等锚点跳转完成后再定位
+      setTimeout(spy);
+    });
+    addEventListener('wheel', unpin, { passive: true });
+    addEventListener('touchstart', unpin, { passive: true });
+    addEventListener('keydown', unpin);
+    addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(spy); } }, { passive: true });
+    render();
+    spy();
+  };
+
+  markIds();
+  const levels =(doc.dataset.tocLevels || '2,3').split(',').map(n => 'h' + n.trim()).join(',');
+  const heads = [...doc.querySelectorAll(levels)].filter(h => !h.closest('figure, details, .hs-no-toc'));
+  if (heads.length) {
+    const toc = createToc(heads);
+    bindTocDrawer(toc.nav);
+    bindTocTree(toc);
+  }
+
+  // ---------- 网页全屏：图表与表格共用 ----------
+  // 用 fixed 浮层铺满当前窗口（is-full），不调用浏览器全屏：视口不变，页面其余部分不重排，切换是瞬时的。
+  // 占位块撑住原位置，页面高度不变。不用 overflow: hidden 锁页面滚动：滚动条消失会改变视口宽度，引起整页重排；
+  // 改为退出时恢复进入前的滚动位置（全屏时在浮层空白处滚动会带动背后的页面）
+  const bindFullscreen = (box, onToggle) => {
+    const holder = document.createElement('div');
+    let y = 0;
+    const isFull = () => box.classList.contains('is-full');
+    const set = on => {
+      if (on === isFull()) return;
+      if (on) {
+        y = scrollY;
+        holder.style.cssText = `height: ${box.getBoundingClientRect().height}px; margin: ${getComputedStyle(box).margin}`;
+        box.before(holder);
+      } else {
+        holder.remove();
+      }
+      box.classList.toggle('is-full', on);
+      onToggle(on);
+      if (!on && scrollY !== y) scrollTo(0, y);
+    };
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') set(false); });
+    return () => set(!isFull());
+  };
+
+  // ---------- 尺寸手柄：拖动右下角改大小；宽度不超过所在内容栏，宽高不小于 MIN_W × MIN_H ----------
+  const MIN_W = 200, MIN_H = 120;
+  // 在 box 右下角放手柄；拖动时把相对按下点的位移交给 onMove，起止时切换 is-resizing
+  const addGrip = (box, title, onStart, onMove) => {
+    const grip = document.createElement('div');
+    grip.className = 'hs-resize';
+    grip.title = title;
+    box.append(grip);
+    grip.addEventListener('pointerdown', e => {
+      if (box.classList.contains('is-full') || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      grip.setPointerCapture(e.pointerId);
+      onStart();
+      box.classList.add('is-resizing');
+      const move = ev => onMove(ev.clientX - e.clientX, ev.clientY - e.clientY);
+      const end = () => {
+        grip.removeEventListener('pointermove', move);
+        box.classList.remove('is-resizing');
+      };
+      grip.addEventListener('pointermove', move);
+      grip.addEventListener('pointerup', end, { once: true });
+      grip.addEventListener('pointercancel', end, { once: true });
+    });
+    return grip;
+  };
+
+  // 图表视窗：宽高各自可调
+  const bindResize = box => {
+    let r, maxW;
+    addGrip(box, '拖动调整大小', () => {
+      r = box.getBoundingClientRect();
+      maxW = Math.max(MIN_W, box.parentElement.clientWidth);
+    }, (dx, dy) => {
+      box.style.width = clamp(r.width + dx, MIN_W, maxW) + 'px';
+      box.style.height = Math.max(MIN_H, r.height + dy) + 'px';
+    });
+  };
+
+  // 图片、视频：改的是元素本身的宽度，高度随比例变化；双击手柄恢复导出时算好的默认大小
+  const bindMediaResize = wrap => {
+    const el = wrap.querySelector(':scope > img, :scope > video');
+    if (!el) return;
+    let r, ratio, minW, maxW;
+    const grip = addGrip(wrap, '拖动等比缩放，双击恢复默认大小', () => {
+      r = el.getBoundingClientRect();
+      ratio = r.width / r.height || 1;
+      maxW = wrap.parentElement.clientWidth;
+      minW = Math.min(maxW, Math.max(MIN_W, MIN_H * ratio));
+    }, (dx, dy) => {
+      const d = Math.abs(dx) >= Math.abs(dy * ratio) ? dx : dy * ratio;
+      el.style.width = clamp(r.width + d, minW, maxW) + 'px';
+    });
+    grip.addEventListener('dblclick', () => { el.style.width = ''; });
+  };
+
+  // ---------- 图表：左/右键拖动，滚轮定点缩放，双指缩放，双击全屏 ----------
+  const bindZoomInput = (frame, view) => {
+    const points = new Map();
+    let pinch = null;
+    frame.addEventListener('pointerdown', e => {
+      if (e.target.closest('button')) return;
+      if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 2) return;
+      e.preventDefault();
+      frame.setPointerCapture(e.pointerId);
+      points.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      frame.classList.add('is-dragging');
+      if (points.size === 2) {
+        const [a, b] = [...points.values()];
+        pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, s: view.scale() };
+      }
+    });
+    frame.addEventListener('pointermove', e => {
+      const p = points.get(e.pointerId);
+      if (!p) return;
+      const dx = e.clientX - p.x, dy = e.clientY - p.y;
+      p.x = e.clientX;
+      p.y = e.clientY;
+      if (!pinch) { view.pan(dx, dy); return; }
+      // 双指：中点跟随手指平移，再以中点为锚按指距比例缩放
+      const [a, b] = [...points.values()];
+      const r = frame.getBoundingClientRect();
+      view.pan(dx / 2, dy / 2);
+      view.zoomAt((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, pinch.s * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d);
+    });
+    const release = e => {
+      points.delete(e.pointerId);
+      if (points.size < 2) pinch = null;
+      if (!points.size) frame.classList.remove('is-dragging');
+    };
+    frame.addEventListener('pointerup', release);
+    frame.addEventListener('pointercancel', release);
+    frame.addEventListener('contextmenu', e => e.preventDefault());
+    frame.addEventListener('dblclick', e => { if (!e.target.closest('button, .hs-resize')) view.toggleFull(); });
+    frame.addEventListener('wheel', e => {
+      e.preventDefault();
+      const r = frame.getBoundingClientRect();
+      const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? r.height : 1;
+      view.zoomAt(e.clientX - r.left, e.clientY - r.top, view.scale() * Math.exp(-e.deltaY * unit * (e.ctrlKey ? 0.01 : 0.0015)));
+    }, { passive: false });
+    const arrows = { ArrowLeft: [48, 0], ArrowRight: [-48, 0], ArrowUp: [0, 48], ArrowDown: [0, -48] };
+    frame.addEventListener('keydown', e => {
+      const cx = frame.clientWidth / 2, cy = frame.clientHeight / 2;
+      if (e.key === '+' || e.key === '=') view.zoomAt(cx, cy, view.scale() * 1.25);
+      else if (e.key === '-') view.zoomAt(cx, cy, view.scale() / 1.25);
+      else if (e.key === '0') view.reset();
+      else if (e.key === 'f' || e.key === 'F') view.toggleFull();
+      else if (arrows[e.key]) view.pan(...arrows[e.key]);
+      else return;
+      e.preventDefault();
+    });
+  };
+
+  const HINT = '拖动平移 · 滚轮缩放 · 双击全屏';
+  const HINT_FULL = '拖动平移 · 滚轮缩放 · 双击或 Esc 退出全屏';
+  const makeChrome = frame => {
+    const bar = document.createElement('div');
+    bar.className = 'hs-zoom-bar';
+    bar.innerHTML = '<span class="hs-zoom-pct"></span><button type="button" data-icon="reset">复位</button><button type="button" data-icon="expand">全屏</button>';
+    const hint = document.createElement('div');
+    hint.className = 'hs-zoom-hint';
+    hint.textContent = HINT;
+    frame.append(bar, hint);
+    const [pct, resetBtn, fullBtn] = bar.children;
+    return { pct, resetBtn, fullBtn, hint };
+  };
+
+  const initZoom = frame => {
+    if (frame.dataset.hsReady) return;
+    const el = frame.querySelector(':scope > img, :scope > svg, :scope > canvas');
+    if (!el) return;
+    frame.dataset.hsReady = '1';
+    if (!frame.dataset.plate) frame.dataset.plate = el.tagName === 'IMG' ? 'light' : 'none';
+    let natW = 0, natH = 0, s = 1, x = 0, y = 0, fit = 1, touched = false, ui;
+
+    const measure = () => {
+      if (el.tagName === 'IMG') { natW = el.naturalWidth; natH = el.naturalHeight; }
+      else if (el.tagName === 'CANVAS') { natW = +el.getAttribute('width') || el.width; natH = +el.getAttribute('height') || el.height; }
+      else {
+        const vb = el.viewBox.baseVal;
+        natW = (vb && vb.width) || parseFloat(el.getAttribute('width')) || 600;
+        natH = (vb && vb.height) || parseFloat(el.getAttribute('height')) || 400;
+      }
+      return natW > 0 && natH > 0;
+    };
+    const render = () => {
+      el.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
+      ui.pct.textContent = Math.round(s * 100) + '%';
+    };
+    const isFull = () => frame.classList.contains('is-full');
+    const reset = () => {
+      const w = frame.clientWidth;
+      if (isFull()) {
+        fit = Math.min((w - 48) / natW, (frame.clientHeight - 48) / natH, 2);
+      } else {
+        fit = Math.min(1, w / natW);
+        // 用户拖过外框高度时沿用该高度，否则按图高自动适应
+        let h = frame.clientHeight;
+        if (!frame.style.height) {
+          h = clamp(natH * fit, 160, innerHeight * 0.7);
+          frame.style.setProperty('--hs-zoom-h', h + 'px');
+        }
+        fit = Math.min(fit, h / natH);
+      }
+      s = fit;
+      x = (w - natW * s) / 2;
+      y = (frame.clientHeight - natH * s) / 2;
+      touched = false;
+      render();
+    };
+    const zoomAt = (px, py, next) => {
+      next = clamp(next, Math.min(fit, 1) * 0.5, 8);
+      x = px - (px - x) * next / s;
+      y = py - (py - y) * next / s;
+      s = next;
+      touched = true;
+      render();
+    };
+    const pan = (dx, dy) => {
+      x += dx;
+      y += dy;
+      touched = true;
+      render();
+    };
+    const start = () => {
+      if (!measure()) return;
+      el.style.width = natW + 'px';
+      el.style.height = natH + 'px';
+      el.style.maxWidth = 'none';
+      el.setAttribute('draggable', 'false');
+      if (!frame.hasAttribute('tabindex')) frame.tabIndex = 0;
+      if (!frame.hasAttribute('aria-label')) frame.setAttribute('aria-label', '可缩放图表：拖动平移，滚轮缩放，双击全屏');
+      ui = makeChrome(frame);
+      const toggleFull = bindFullscreen(frame, on => {
+        ui.fullBtn.textContent = on ? '退出全屏' : '全屏';
+        ui.fullBtn.dataset.icon = on ? 'shrink' : 'expand';
+        ui.hint.textContent = on ? HINT_FULL : HINT;
+        reset();
+      });
+      ui.resetBtn.addEventListener('click', reset);
+      ui.fullBtn.addEventListener('click', toggleFull);
+      bindResize(frame);
+
+      // 尺寸变化（含拖动外框）后在下一个任务里重新适应，避免在 ResizeObserver 回调内改尺寸
+      let last = '', pending = 0;
+      new ResizeObserver(() => {
+        const key = frame.clientWidth + 'x' + frame.clientHeight;
+        if (key === last) return;
+        last = key;
+        if (!touched && !pending) pending = setTimeout(() => { pending = 0; reset(); });
+      }).observe(frame);
+      reset();
+      bindZoomInput(frame, { scale: () => s, pan, zoomAt, reset, toggleFull });
+    };
+
+    if (el.tagName === 'IMG' && !el.complete) el.addEventListener('load', start, { once: true });
+    else start();
+  };
+
+  const wrap = el => {
+    const frame = document.createElement('div');
+    frame.className = 'hs-zoom';
+    el.replaceWith(frame);
+    frame.append(el);
+    return frame;
+  };
+  doc.querySelectorAll('figure > img, figure > svg, figure > canvas').forEach(wrap);
+  doc.querySelectorAll('.hs-zoom').forEach(initZoom);
+  doc.querySelectorAll('.hs-media').forEach(bindMediaResize);
+
+  // 嵌入的视频：base64 放在不执行的 script 里，视频接近视口时才转成 Blob 地址，打开页面时不一次性解出全部视频
+  const loadVideo = async video => {
+    const data = document.getElementById(video.dataset.hsSrc);
+    if (!data) return;
+    const blob = await (await fetch(`data:${data.dataset.type};base64,${data.textContent}`)).blob();
+    video.src = URL.createObjectURL(blob);
+  };
+  const videoObserver = new IntersectionObserver(entries => entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    videoObserver.unobserve(e.target);
+    loadVideo(e.target);
+  }), { rootMargin: '100% 0px' });
+  doc.querySelectorAll('video[data-hs-src]').forEach(v => videoObserver.observe(v));
+  // Mermaid 由宿主异步渲染，SVG 出现后再接管
+  doc.querySelectorAll('.mermaid').forEach(m => {
+    const adopt = () => {
+      const svg = m.querySelector(':scope > svg');
+      if (svg) initZoom(wrap(svg));
+      return !!svg;
+    };
+    if (!adopt()) {
+      const mo = new MutationObserver(() => { if (adopt()) mo.disconnect(); });
+      mo.observe(m, { childList: true });
+    }
+  });
+
+  // ---------- 表格：右上角按钮全屏；按钮放在滚动容器外，不随表格横向滚动 ----------
+  doc.querySelectorAll('.hs-table').forEach(t => {
+    const box = document.createElement('div');
+    box.className = 'hs-table-box';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'hs-table-full';
+    t.replaceWith(box);
+    box.append(t, btn);
+    const label = on => {
+      btn.dataset.icon = on ? 'shrink' : 'expand';
+      btn.title = on ? '退出全屏（Esc）' : '全屏查看表格';
+      btn.setAttribute('aria-label', btn.title);
+    };
+    label(false);
+    btn.addEventListener('click', bindFullscreen(box, label));
+  });
+})();
+</script>
+</body>
+</html>

@@ -834,11 +834,14 @@ ScenarioResult Runner::cliWait()
     // 退出的瞬间文件必须已经存在（--wait 语义）
     const QStringList files = QDir(dir.path()).entryList({QStringLiteral("cli_*.png")}, QDir::Files);
     const QImage img(files.isEmpty() ? QString() : QDir(dir.path()).filePath(files.first()));
+    // 用被测程序自己看到的物理显示器布局比对（驱动进程未声明 DPI 感知，本地枚举会被虚拟化）
     QRect desktop;
     bool sizeOk = false;
-    for (const auto& s : win::enumerateScreens()) {
-        desktop |= s.physicalGeometry;
-        sizeOk = sizeOk || img.size() == s.physicalGeometry.size(); // 全屏 = 当前显示器或全部显示器（按设置）
+    for (const QJsonValue& v : m_client.call(QStringLiteral("screens")).value(QStringLiteral("screens")).toArray()) {
+        const QJsonObject o = v.toObject();
+        const QRect r(o.value(QStringLiteral("x")).toInt(), o.value(QStringLiteral("y")).toInt(), o.value(QStringLiteral("w")).toInt(), o.value(QStringLiteral("h")).toInt());
+        desktop |= r;
+        sizeOk = sizeOk || img.size() == r.size(); // 全屏 = 当前显示器或全部显示器（按设置）
     }
     sizeOk = !img.isNull() && (sizeOk || img.size() == desktop.size());
     r.data = QJsonObject{{QStringLiteral("exited"), exited}, {QStringLiteral("exitCode"), second.exitCode()}, {QStringLiteral("files"), files.size()},
