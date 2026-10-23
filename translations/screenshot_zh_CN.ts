@@ -3,98 +3,103 @@
 <context>
     <name>App</name>
     <message>
-        <location filename="../src/app/App.cpp" line="102" />
+        <location filename="../src/app/App.cpp" line="104" />
         <source>Screen recording permission</source>
         <translation>屏幕录制权限</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="103" />
+        <location filename="../src/app/App.cpp" line="105" />
         <source>ScreenShot needs the Screen Recording permission to capture the screen. Grant it in System Settings, then restart ScreenShot.</source>
         <translation>ScreenShot 需要“屏幕录制”权限才能截图。请在系统设置里授权，然后重新启动 ScreenShot。</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="104" />
+        <location filename="../src/app/App.cpp" line="106" />
         <source>Open System Settings</source>
         <translation>打开系统设置</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="118" />
+        <location filename="../src/app/App.cpp" line="120" />
         <source>Capture	F1</source>
         <translation>截图	F1</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="119" />
+        <location filename="../src/app/App.cpp" line="121" />
         <source>Pin clipboard	F3</source>
         <translation>贴图	F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="120" />
-        <location filename="../src/app/App.cpp" line="285" />
+        <location filename="../src/app/App.cpp" line="122" />
+        <location filename="../src/app/App.cpp" line="325" />
         <source>Hide all pins	Shift+F3</source>
         <translation>隐藏全部贴图	Shift+F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="121" />
+        <location filename="../src/app/App.cpp" line="123" />
         <source>Restore closed pin	Ctrl+3</source>
         <translation>恢复已关闭的贴图	Ctrl+3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="122" />
+        <location filename="../src/app/App.cpp" line="124" />
         <source>Restore off-screen pins</source>
         <translation>恢复屏幕外贴图</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="124" />
+        <location filename="../src/app/App.cpp" line="126" />
         <source>Disable hotkeys</source>
         <translation>禁用热键</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="127" />
+        <location filename="../src/app/App.cpp" line="129" />
         <source>Preferences...</source>
         <translation>偏好设置...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="128" />
+        <location filename="../src/app/App.cpp" line="130" />
         <source>Help</source>
         <translation>帮助</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="130" />
+        <location filename="../src/app/App.cpp" line="132" />
         <source>Quit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="198" />
+        <location filename="../src/app/App.cpp" line="200" />
         <source>Hotkey conflict</source>
         <translation>热键冲突</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="198" />
+        <location filename="../src/app/App.cpp" line="200" />
         <source>%1 is already used by another program.</source>
         <translation>%1 已被其他程序占用。</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="258" />
+        <location filename="../src/app/App.cpp" line="260" />
         <source>ScreenShot crashed last time</source>
         <translation>ScreenShot 上次异常退出</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="258" />
+        <location filename="../src/app/App.cpp" line="260" />
         <source>A crash dump was written to %1</source>
         <translation>崩溃转储已写入 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="285" />
+        <location filename="../src/app/App.cpp" line="298" />
+        <source>Scrolling capture</source>
+        <translation>滚动截图</translation>
+    </message>
+    <message>
+        <location filename="../src/app/App.cpp" line="325" />
         <source>Show all pins	Shift+F3</source>
         <translation>显示全部贴图	Shift+F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="312" />
+        <location filename="../src/app/App.cpp" line="352" />
         <source>About ScreenShot</source>
         <translation>关于 ScreenShot</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="313" />
+        <location filename="../src/app/App.cpp" line="353" />
         <source>&lt;b&gt;ScreenShot&lt;/b&gt;&lt;br&gt;Screenshot and pin tool.&lt;br&gt;&lt;br&gt;Capture: %1&lt;br&gt;Pin clipboard: %2&lt;br&gt;Hide / show pins: %3&lt;br&gt;&lt;br&gt;While capturing: drag to select, Enter / double-click to copy, Ctrl+S to save, Ctrl+Shift+S to quick save, Ctrl+T to pin, Esc to cancel, Tab to switch window / element detection, C to copy the pixel color, WASD and arrow keys to adjust by one pixel, , and . to recall previous captures.</source>
         <translation>&lt;b&gt;ScreenShot&lt;/b&gt;&lt;br&gt;截图与贴图工具。&lt;br&gt;&lt;br&gt;截图：%1&lt;br&gt;贴图：%2&lt;br&gt;隐藏 / 显示贴图：%3&lt;br&gt;&lt;br&gt;截图时：拖拽框选，Enter / 双击复制，Ctrl+S 保存，Ctrl+Shift+S 快速保存，Ctrl+T 贴图，Esc 取消，Tab 切换窗口 / 元素检测，C 复制像素颜色，WASD 与方向键逐像素调整，, 和 . 回看历史截图。</translation>
     </message>
@@ -102,12 +107,12 @@
 <context>
     <name>CaptureSession</name>
     <message>
-        <location filename="../src/app/CaptureSession.cpp" line="864" />
+        <location filename="../src/app/CaptureSession.cpp" line="879" />
         <source>Cancel capture</source>
         <translation>取消截图</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureSession.cpp" line="864" />
+        <location filename="../src/app/CaptureSession.cpp" line="879" />
         <source>Discard this capture?</source>
         <translation>放弃这次截图？</translation>
     </message>
@@ -186,91 +191,101 @@
     </message>
     <message>
         <location filename="../src/app/CaptureToolbar.cpp" line="109" />
+        <source>Scroll</source>
+        <translation>滚动截图</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CaptureToolbar.cpp" line="109" />
+        <source>Scrolling capture (Ctrl+L)</source>
+        <translation>滚动截图（Ctrl+L）</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CaptureToolbar.cpp" line="112" />
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="109" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="112" />
         <source>Cancel (Esc)</source>
         <translation>取消（Esc）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="154" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="157" />
         <source>Custom</source>
         <translation>自定义</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="154" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="157" />
         <source>Pick a color (with opacity)</source>
         <translation>选择颜色（含透明度）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="156" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="159" />
         <source>Annotation color</source>
         <translation>标注颜色</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="164" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="167" />
         <source>Width</source>
         <translation>笔宽</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="172" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="175" />
         <source>Pen width %1</source>
         <translation>笔宽 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="190" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="193" />
         <source>Fill</source>
         <translation>填充</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="190" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="193" />
         <source>Filled shape</source>
         <translation>填充形状</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Brush</source>
         <translation>画笔</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Rect</source>
         <translation>矩形</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Ellipse</source>
         <translation>椭圆</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Shape</source>
         <translation>形状</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="219" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="222" />
         <source>Strength</source>
         <translation>强度</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="244" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="247" />
         <source>B</source>
         <translation>B</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="244" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="247" />
         <source>Bold</source>
         <translation>粗体</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="245" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="248" />
         <source>I</source>
         <translation>I</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="245" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="248" />
         <source>Italic</source>
         <translation>斜体</translation>
     </message>
@@ -476,6 +491,82 @@
         <location filename="../src/app/PreferencesDialog.cpp" line="136" />
         <source>Choose folder</source>
         <translation>选择文件夹</translation>
+    </message>
+</context>
+<context>
+    <name>QObject</name>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="83" />
+        <source>Auto scroll</source>
+        <translation>自动滚动</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="87" />
+        <source>Finish (Enter)</source>
+        <translation>完成（Enter）</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="90" />
+        <source>Cancel (Esc)</source>
+        <translation>取消（Esc）</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="96" />
+        <source>Copy</source>
+        <translation>复制</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="96" />
+        <source>Save...</source>
+        <translation>保存...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="97" />
+        <source>Quick save</source>
+        <translation>快速保存</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="97" />
+        <source>Pin (annotate on the pin)</source>
+        <translation>贴图（可在贴图上标注）</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="114" />
+        <source>Height: %1 px, frames: %2</source>
+        <translation>高度 %1 像素，帧数 %2</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="116" />
+        <source>Done. Choose an output.</source>
+        <translation>已完成，请选择输出方式。</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="118" />
+        <source>Reached the end.</source>
+        <translation>已滚动到底。</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="120" />
+        <source>Not appended: %1</source>
+        <translation>未追加：%1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="122" />
+        <source>Scroll the content to continue.</source>
+        <translation>滚动内容以继续。</translation>
+    </message>
+</context>
+<context>
+    <name>ScrollCaptureSession</name>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="186" />
+        <source>The area spans monitors with different scaling. Choose an area on one monitor.</source>
+        <translation>区域横跨了缩放比例不同的显示器，请在同一台显示器内选择区域。</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="194" />
+        <source>The area is not on any monitor.</source>
+        <translation>区域不在任何显示器上。</translation>
     </message>
 </context>
 <context>
@@ -1061,132 +1152,202 @@
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="69" />
+        <source>Auto scroll by default</source>
+        <translation>默认自动滚动</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="69" />
+        <source>Start scrolling captures with automatic scrolling on.</source>
+        <translation>开始滚动截图时默认开启自动滚动。</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <source>Auto scroll speed</source>
+        <translation>自动滚动速度</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <source>Wheel notches per step when auto scrolling.</source>
+        <translation>自动滚动时每步滚动的滚轮格数。</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="71" />
+        <source>Scrolling direction</source>
+        <translation>拼接方向</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="71" />
+        <source>Default stitching direction for scrolling captures.</source>
+        <translation>滚动截图的默认拼接方向。</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="71" />
+        <source>Vertical</source>
+        <translation>纵向</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="71" />
+        <source>Horizontal</source>
+        <translation>横向</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="72" />
+        <source>Scrolling capture interval (ms)</source>
+        <translation>滚动截图取帧间隔（毫秒）</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="72" />
+        <source>How often the area is captured while scrolling.</source>
+        <translation>滚动期间多久抓取一次区域画面。</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="73" />
+        <source>Stable frames before stitching</source>
+        <translation>拼接前的稳定帧数</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="73" />
+        <source>Consecutive identical captures required before a frame is used.</source>
+        <translation>连续多少帧相同后才把这一帧用于拼接。</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="74" />
+        <source>Frames without movement that mean the end</source>
+        <translation>判定到底的静止帧数</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="74" />
+        <source>Auto scrolling stops after this many unchanged captures.</source>
+        <translation>连续这么多帧没有变化后自动滚动停止。</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="76" />
         <source>Save folder</source>
         <translation>保存目录</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="69" />
+        <location filename="../src/core/config/Settings.cpp" line="76" />
         <source>Default folder for the save dialog.</source>
         <translation>保存对话框的默认目录。</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <location filename="../src/core/config/Settings.cpp" line="77" />
         <source>Save format</source>
         <translation>保存格式</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <location filename="../src/core/config/Settings.cpp" line="77" />
         <source>Format used by the save dialog and quick save.</source>
         <translation>保存对话框和快速保存使用的格式。</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <location filename="../src/core/config/Settings.cpp" line="77" />
         <source>PNG</source>
         <translation>PNG</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <location filename="../src/core/config/Settings.cpp" line="77" />
         <source>JPEG</source>
         <translation>JPEG</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <location filename="../src/core/config/Settings.cpp" line="77" />
         <source>BMP</source>
         <translation>BMP</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <location filename="../src/core/config/Settings.cpp" line="77" />
         <source>WebP</source>
         <translation>WebP</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="71" />
+        <location filename="../src/core/config/Settings.cpp" line="78" />
         <source>Quick save folder</source>
         <translation>快速保存目录</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="71" />
+        <location filename="../src/core/config/Settings.cpp" line="78" />
         <source>Folder used by quick save (Ctrl+Shift+S). Empty means the Pictures folder.</source>
         <translation>快速保存（Ctrl+Shift+S）使用的目录；留空为“图片”文件夹。</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="72" />
+        <location filename="../src/core/config/Settings.cpp" line="79" />
         <source>File name pattern</source>
         <translation>文件名模板</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="72" />
+        <location filename="../src/core/config/Settings.cpp" line="79" />
         <source>Pattern for generated file names. Variables: {date} {time} {timestamp} {width} {height} {n}.</source>
         <translation>生成文件名的模板。变量：{date} {time} {timestamp} {width} {height} {n}。</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="73" />
+        <location filename="../src/core/config/Settings.cpp" line="80" />
         <source>JPEG / WebP quality</source>
         <translation>JPEG / WebP 质量</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="73" />
+        <location filename="../src/core/config/Settings.cpp" line="80" />
         <source>0 to 100.</source>
         <translation>0 到 100。</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="75" />
+        <location filename="../src/core/config/Settings.cpp" line="82" />
         <location filename="../tests/component/tst_i18n.cpp" line="26" />
         <source>Capture hotkey</source>
         <translation>截图热键</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="75" />
+        <location filename="../src/core/config/Settings.cpp" line="82" />
         <source>Global hotkey that starts a capture.</source>
         <translation>开始截图的全局热键。</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="76" />
+        <location filename="../src/core/config/Settings.cpp" line="83" />
         <source>Pin hotkey</source>
         <translation>贴图热键</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="76" />
+        <location filename="../src/core/config/Settings.cpp" line="83" />
         <source>Global hotkey that pins the clipboard.</source>
         <translation>把剪贴板贴图的全局热键。</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="77" />
+        <location filename="../src/core/config/Settings.cpp" line="84" />
         <source>Hide / show pins hotkey</source>
         <translation>隐藏 / 显示贴图热键</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="77" />
+        <location filename="../src/core/config/Settings.cpp" line="84" />
         <source>Global hotkey that hides or shows all pins.</source>
         <translation>隐藏或显示全部贴图的全局热键。</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="78" />
+        <location filename="../src/core/config/Settings.cpp" line="85" />
         <source>Restore closed pin hotkey</source>
         <translation>恢复已关闭贴图热键</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="78" />
+        <location filename="../src/core/config/Settings.cpp" line="85" />
         <source>Global hotkey that brings back the last closed pin.</source>
         <translation>恢复最近关闭的贴图的全局热键。</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="79" />
+        <location filename="../src/core/config/Settings.cpp" line="86" />
         <source>Click-through hotkey</source>
         <translation>鼠标穿透热键</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="79" />
+        <location filename="../src/core/config/Settings.cpp" line="86" />
         <source>Global hotkey that toggles mouse click-through for the pin under the cursor; with no pin there, turns click-through off for all pins.</source>
         <translation>切换鼠标下方贴图穿透的全局热键；下方没有贴图时取消全部穿透。</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="80" />
+        <location filename="../src/core/config/Settings.cpp" line="87" />
         <source>Global hotkeys enabled</source>
         <translation>启用全局热键</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="80" />
+        <location filename="../src/core/config/Settings.cpp" line="87" />
         <source>Turn all global hotkeys on or off.</source>
         <translation>打开或关闭全部全局热键。</translation>
     </message>
@@ -1297,98 +1458,103 @@
 <context>
     <name>ss::App</name>
     <message>
-        <location filename="../src/app/App.cpp" line="102" />
+        <location filename="../src/app/App.cpp" line="104" />
         <source>Screen recording permission</source>
         <translation>屏幕录制权限</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="103" />
+        <location filename="../src/app/App.cpp" line="105" />
         <source>ScreenShot needs the Screen Recording permission to capture the screen. Grant it in System Settings, then restart ScreenShot.</source>
         <translation>ScreenShot 需要“屏幕录制”权限才能截图。请在系统设置里授权，然后重新启动 ScreenShot。</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="104" />
+        <location filename="../src/app/App.cpp" line="106" />
         <source>Open System Settings</source>
         <translation>打开系统设置</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="118" />
+        <location filename="../src/app/App.cpp" line="120" />
         <source>Capture	F1</source>
         <translation>截图	F1</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="119" />
+        <location filename="../src/app/App.cpp" line="121" />
         <source>Pin clipboard	F3</source>
         <translation>贴图	F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="120" />
-        <location filename="../src/app/App.cpp" line="285" />
+        <location filename="../src/app/App.cpp" line="122" />
+        <location filename="../src/app/App.cpp" line="325" />
         <source>Hide all pins	Shift+F3</source>
         <translation>隐藏全部贴图	Shift+F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="121" />
+        <location filename="../src/app/App.cpp" line="123" />
         <source>Restore closed pin	Ctrl+3</source>
         <translation>恢复已关闭的贴图	Ctrl+3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="122" />
+        <location filename="../src/app/App.cpp" line="124" />
         <source>Restore off-screen pins</source>
         <translation>恢复屏幕外贴图</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="124" />
+        <location filename="../src/app/App.cpp" line="126" />
         <source>Disable hotkeys</source>
         <translation>禁用热键</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="127" />
+        <location filename="../src/app/App.cpp" line="129" />
         <source>Preferences...</source>
         <translation>偏好设置...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="128" />
+        <location filename="../src/app/App.cpp" line="130" />
         <source>Help</source>
         <translation>帮助</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="130" />
+        <location filename="../src/app/App.cpp" line="132" />
         <source>Quit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="198" />
+        <location filename="../src/app/App.cpp" line="200" />
         <source>Hotkey conflict</source>
         <translation>热键冲突</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="198" />
+        <location filename="../src/app/App.cpp" line="200" />
         <source>%1 is already used by another program.</source>
         <translation>%1 已被其他程序占用。</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="258" />
+        <location filename="../src/app/App.cpp" line="260" />
         <source>ScreenShot crashed last time</source>
         <translation>ScreenShot 上次异常退出</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="258" />
+        <location filename="../src/app/App.cpp" line="260" />
         <source>A crash dump was written to %1</source>
         <translation>崩溃转储已写入 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="285" />
+        <location filename="../src/app/App.cpp" line="298" />
+        <source>Scrolling capture</source>
+        <translation>滚动截图</translation>
+    </message>
+    <message>
+        <location filename="../src/app/App.cpp" line="325" />
         <source>Show all pins	Shift+F3</source>
         <translation>显示全部贴图	Shift+F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="312" />
+        <location filename="../src/app/App.cpp" line="352" />
         <source>About ScreenShot</source>
         <translation>关于 ScreenShot</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="313" />
+        <location filename="../src/app/App.cpp" line="353" />
         <source>&lt;b&gt;ScreenShot&lt;/b&gt;&lt;br&gt;Screenshot and pin tool.&lt;br&gt;&lt;br&gt;Capture: %1&lt;br&gt;Pin clipboard: %2&lt;br&gt;Hide / show pins: %3&lt;br&gt;&lt;br&gt;While capturing: drag to select, Enter / double-click to copy, Ctrl+S to save, Ctrl+Shift+S to quick save, Ctrl+T to pin, Esc to cancel, Tab to switch window / element detection, C to copy the pixel color, WASD and arrow keys to adjust by one pixel, , and . to recall previous captures.</source>
         <translation>&lt;b&gt;ScreenShot&lt;/b&gt;&lt;br&gt;截图与贴图工具。&lt;br&gt;&lt;br&gt;截图：%1&lt;br&gt;贴图：%2&lt;br&gt;隐藏 / 显示贴图：%3&lt;br&gt;&lt;br&gt;截图时：拖拽框选，Enter / 双击复制，Ctrl+S 保存，Ctrl+Shift+S 快速保存，Ctrl+T 贴图，Esc 取消，Tab 切换窗口 / 元素检测，C 复制像素颜色，WASD 与方向键逐像素调整，, 和 . 回看历史截图。</translation>
     </message>
@@ -1396,12 +1562,12 @@
 <context>
     <name>ss::CaptureSession</name>
     <message>
-        <location filename="../src/app/CaptureSession.cpp" line="864" />
+        <location filename="../src/app/CaptureSession.cpp" line="879" />
         <source>Cancel capture</source>
         <translation>取消截图</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureSession.cpp" line="864" />
+        <location filename="../src/app/CaptureSession.cpp" line="879" />
         <source>Discard this capture?</source>
         <translation>放弃这次截图？</translation>
     </message>
@@ -1482,91 +1648,101 @@
     </message>
     <message>
         <location filename="../src/app/CaptureToolbar.cpp" line="109" />
+        <source>Scroll</source>
+        <translation>滚动截图</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CaptureToolbar.cpp" line="109" />
+        <source>Scrolling capture (Ctrl+L)</source>
+        <translation>滚动截图（Ctrl+L）</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CaptureToolbar.cpp" line="112" />
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="109" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="112" />
         <source>Cancel (Esc)</source>
         <translation>取消（Esc）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="154" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="157" />
         <source>Custom</source>
         <translation>自定义</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="154" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="157" />
         <source>Pick a color (with opacity)</source>
         <translation>选择颜色（含透明度）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="156" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="159" />
         <source>Annotation color</source>
         <translation>标注颜色</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="164" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="167" />
         <source>Width</source>
         <translation>笔宽</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="172" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="175" />
         <source>Pen width %1</source>
         <translation>笔宽 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="190" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="193" />
         <source>Fill</source>
         <translation>填充</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="190" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="193" />
         <source>Filled shape</source>
         <translation>填充形状</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Brush</source>
         <translation>画笔</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Rect</source>
         <translation>矩形</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Ellipse</source>
         <translation>椭圆</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Shape</source>
         <translation>形状</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="219" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="222" />
         <source>Strength</source>
         <translation>强度</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="244" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="247" />
         <source>B</source>
         <translation>B</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="244" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="247" />
         <source>Bold</source>
         <translation>粗体</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="245" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="248" />
         <source>I</source>
         <translation>I</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="245" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="248" />
         <source>Italic</source>
         <translation>斜体</translation>
     </message>
@@ -1765,6 +1941,19 @@
         <location filename="../src/app/PreferencesDialog.cpp" line="136" />
         <source>Choose folder</source>
         <translation>选择文件夹</translation>
+    </message>
+</context>
+<context>
+    <name>ss::ScrollCaptureSession</name>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="186" />
+        <source>The area spans monitors with different scaling. Choose an area on one monitor.</source>
+        <translation>区域横跨了缩放比例不同的显示器，请在同一台显示器内选择区域。</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="194" />
+        <source>The area is not on any monitor.</source>
+        <translation>区域不在任何显示器上。</translation>
     </message>
 </context>
 </TS>

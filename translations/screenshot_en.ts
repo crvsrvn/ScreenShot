@@ -3,98 +3,103 @@
 <context>
     <name>App</name>
     <message>
-        <location filename="../src/app/App.cpp" line="102" />
+        <location filename="../src/app/App.cpp" line="104" />
         <source>Screen recording permission</source>
         <translation>Screen recording permission</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="103" />
+        <location filename="../src/app/App.cpp" line="105" />
         <source>ScreenShot needs the Screen Recording permission to capture the screen. Grant it in System Settings, then restart ScreenShot.</source>
         <translation>ScreenShot needs the Screen Recording permission to capture the screen. Grant it in System Settings, then restart ScreenShot.</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="104" />
+        <location filename="../src/app/App.cpp" line="106" />
         <source>Open System Settings</source>
         <translation>Open System Settings</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="118" />
+        <location filename="../src/app/App.cpp" line="120" />
         <source>Capture	F1</source>
         <translation>Capture	F1</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="119" />
+        <location filename="../src/app/App.cpp" line="121" />
         <source>Pin clipboard	F3</source>
         <translation>Pin clipboard	F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="120" />
-        <location filename="../src/app/App.cpp" line="285" />
+        <location filename="../src/app/App.cpp" line="122" />
+        <location filename="../src/app/App.cpp" line="325" />
         <source>Hide all pins	Shift+F3</source>
         <translation>Hide all pins	Shift+F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="121" />
+        <location filename="../src/app/App.cpp" line="123" />
         <source>Restore closed pin	Ctrl+3</source>
         <translation>Restore closed pin	Ctrl+3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="122" />
+        <location filename="../src/app/App.cpp" line="124" />
         <source>Restore off-screen pins</source>
         <translation>Restore off-screen pins</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="124" />
+        <location filename="../src/app/App.cpp" line="126" />
         <source>Disable hotkeys</source>
         <translation>Disable hotkeys</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="127" />
+        <location filename="../src/app/App.cpp" line="129" />
         <source>Preferences...</source>
         <translation>Preferences...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="128" />
+        <location filename="../src/app/App.cpp" line="130" />
         <source>Help</source>
         <translation>Help</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="130" />
+        <location filename="../src/app/App.cpp" line="132" />
         <source>Quit</source>
         <translation>Quit</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="198" />
+        <location filename="../src/app/App.cpp" line="200" />
         <source>Hotkey conflict</source>
         <translation>Hotkey conflict</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="198" />
+        <location filename="../src/app/App.cpp" line="200" />
         <source>%1 is already used by another program.</source>
         <translation>%1 is already used by another program.</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="258" />
+        <location filename="../src/app/App.cpp" line="260" />
         <source>ScreenShot crashed last time</source>
         <translation>ScreenShot crashed last time</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="258" />
+        <location filename="../src/app/App.cpp" line="260" />
         <source>A crash dump was written to %1</source>
         <translation>A crash dump was written to %1</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="285" />
+        <location filename="../src/app/App.cpp" line="298" />
+        <source>Scrolling capture</source>
+        <translation>Scrolling capture</translation>
+    </message>
+    <message>
+        <location filename="../src/app/App.cpp" line="325" />
         <source>Show all pins	Shift+F3</source>
         <translation>Show all pins	Shift+F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="312" />
+        <location filename="../src/app/App.cpp" line="352" />
         <source>About ScreenShot</source>
         <translation>About ScreenShot</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="313" />
+        <location filename="../src/app/App.cpp" line="353" />
         <source>&lt;b&gt;ScreenShot&lt;/b&gt;&lt;br&gt;Screenshot and pin tool.&lt;br&gt;&lt;br&gt;Capture: %1&lt;br&gt;Pin clipboard: %2&lt;br&gt;Hide / show pins: %3&lt;br&gt;&lt;br&gt;While capturing: drag to select, Enter / double-click to copy, Ctrl+S to save, Ctrl+Shift+S to quick save, Ctrl+T to pin, Esc to cancel, Tab to switch window / element detection, C to copy the pixel color, WASD and arrow keys to adjust by one pixel, , and . to recall previous captures.</source>
         <translation>&lt;b&gt;ScreenShot&lt;/b&gt;&lt;br&gt;Screenshot and pin tool.&lt;br&gt;&lt;br&gt;Capture: %1&lt;br&gt;Pin clipboard: %2&lt;br&gt;Hide / show pins: %3&lt;br&gt;&lt;br&gt;While capturing: drag to select, Enter / double-click to copy, Ctrl+S to save, Ctrl+Shift+S to quick save, Ctrl+T to pin, Esc to cancel, Tab to switch window / element detection, C to copy the pixel color, WASD and arrow keys to adjust by one pixel, , and . to recall previous captures.</translation>
     </message>
@@ -102,12 +107,12 @@
 <context>
     <name>CaptureSession</name>
     <message>
-        <location filename="../src/app/CaptureSession.cpp" line="864" />
+        <location filename="../src/app/CaptureSession.cpp" line="879" />
         <source>Cancel capture</source>
         <translation>Cancel capture</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureSession.cpp" line="864" />
+        <location filename="../src/app/CaptureSession.cpp" line="879" />
         <source>Discard this capture?</source>
         <translation>Discard this capture?</translation>
     </message>
@@ -186,91 +191,101 @@
     </message>
     <message>
         <location filename="../src/app/CaptureToolbar.cpp" line="109" />
+        <source>Scroll</source>
+        <translation>Scroll</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CaptureToolbar.cpp" line="109" />
+        <source>Scrolling capture (Ctrl+L)</source>
+        <translation>Scrolling capture (Ctrl+L)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CaptureToolbar.cpp" line="112" />
         <source>Cancel</source>
         <translation>Cancel</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="109" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="112" />
         <source>Cancel (Esc)</source>
         <translation>Cancel (Esc)</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="154" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="157" />
         <source>Custom</source>
         <translation>Custom</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="154" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="157" />
         <source>Pick a color (with opacity)</source>
         <translation>Pick a color (with opacity)</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="156" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="159" />
         <source>Annotation color</source>
         <translation>Annotation color</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="164" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="167" />
         <source>Width</source>
         <translation>Width</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="172" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="175" />
         <source>Pen width %1</source>
         <translation>Pen width %1</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="190" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="193" />
         <source>Fill</source>
         <translation>Fill</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="190" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="193" />
         <source>Filled shape</source>
         <translation>Filled shape</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Brush</source>
         <translation>Brush</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Rect</source>
         <translation>Rect</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Ellipse</source>
         <translation>Ellipse</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Shape</source>
         <translation>Shape</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="219" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="222" />
         <source>Strength</source>
         <translation>Strength</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="244" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="247" />
         <source>B</source>
         <translation>B</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="244" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="247" />
         <source>Bold</source>
         <translation>Bold</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="245" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="248" />
         <source>I</source>
         <translation>I</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="245" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="248" />
         <source>Italic</source>
         <translation>Italic</translation>
     </message>
@@ -476,6 +491,82 @@
         <location filename="../src/app/PreferencesDialog.cpp" line="136" />
         <source>Choose folder</source>
         <translation>Choose folder</translation>
+    </message>
+</context>
+<context>
+    <name>QObject</name>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="83" />
+        <source>Auto scroll</source>
+        <translation>Auto scroll</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="87" />
+        <source>Finish (Enter)</source>
+        <translation>Finish (Enter)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="90" />
+        <source>Cancel (Esc)</source>
+        <translation>Cancel (Esc)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="96" />
+        <source>Copy</source>
+        <translation>Copy</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="96" />
+        <source>Save...</source>
+        <translation>Save...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="97" />
+        <source>Quick save</source>
+        <translation>Quick save</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="97" />
+        <source>Pin (annotate on the pin)</source>
+        <translation>Pin (annotate on the pin)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="114" />
+        <source>Height: %1 px, frames: %2</source>
+        <translation>Height: %1 px, frames: %2</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="116" />
+        <source>Done. Choose an output.</source>
+        <translation>Done. Choose an output.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="118" />
+        <source>Reached the end.</source>
+        <translation>Reached the end.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="120" />
+        <source>Not appended: %1</source>
+        <translation>Not appended: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="122" />
+        <source>Scroll the content to continue.</source>
+        <translation>Scroll the content to continue.</translation>
+    </message>
+</context>
+<context>
+    <name>ScrollCaptureSession</name>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="186" />
+        <source>The area spans monitors with different scaling. Choose an area on one monitor.</source>
+        <translation>The area spans monitors with different scaling. Choose an area on one monitor.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="194" />
+        <source>The area is not on any monitor.</source>
+        <translation>The area is not on any monitor.</translation>
     </message>
 </context>
 <context>
@@ -1061,132 +1152,202 @@
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="69" />
+        <source>Auto scroll by default</source>
+        <translation>Auto scroll by default</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="69" />
+        <source>Start scrolling captures with automatic scrolling on.</source>
+        <translation>Start scrolling captures with automatic scrolling on.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <source>Auto scroll speed</source>
+        <translation>Auto scroll speed</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <source>Wheel notches per step when auto scrolling.</source>
+        <translation>Wheel notches per step when auto scrolling.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="71" />
+        <source>Scrolling direction</source>
+        <translation>Scrolling direction</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="71" />
+        <source>Default stitching direction for scrolling captures.</source>
+        <translation>Default stitching direction for scrolling captures.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="71" />
+        <source>Vertical</source>
+        <translation>Vertical</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="71" />
+        <source>Horizontal</source>
+        <translation>Horizontal</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="72" />
+        <source>Scrolling capture interval (ms)</source>
+        <translation>Scrolling capture interval (ms)</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="72" />
+        <source>How often the area is captured while scrolling.</source>
+        <translation>How often the area is captured while scrolling.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="73" />
+        <source>Stable frames before stitching</source>
+        <translation>Stable frames before stitching</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="73" />
+        <source>Consecutive identical captures required before a frame is used.</source>
+        <translation>Consecutive identical captures required before a frame is used.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="74" />
+        <source>Frames without movement that mean the end</source>
+        <translation>Frames without movement that mean the end</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="74" />
+        <source>Auto scrolling stops after this many unchanged captures.</source>
+        <translation>Auto scrolling stops after this many unchanged captures.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="76" />
         <source>Save folder</source>
         <translation>Save folder</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="69" />
+        <location filename="../src/core/config/Settings.cpp" line="76" />
         <source>Default folder for the save dialog.</source>
         <translation>Default folder for the save dialog.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <location filename="../src/core/config/Settings.cpp" line="77" />
         <source>Save format</source>
         <translation>Save format</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <location filename="../src/core/config/Settings.cpp" line="77" />
         <source>Format used by the save dialog and quick save.</source>
         <translation>Format used by the save dialog and quick save.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <location filename="../src/core/config/Settings.cpp" line="77" />
         <source>PNG</source>
         <translation>PNG</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <location filename="../src/core/config/Settings.cpp" line="77" />
         <source>JPEG</source>
         <translation>JPEG</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <location filename="../src/core/config/Settings.cpp" line="77" />
         <source>BMP</source>
         <translation>BMP</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="70" />
+        <location filename="../src/core/config/Settings.cpp" line="77" />
         <source>WebP</source>
         <translation>WebP</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="71" />
+        <location filename="../src/core/config/Settings.cpp" line="78" />
         <source>Quick save folder</source>
         <translation>Quick save folder</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="71" />
+        <location filename="../src/core/config/Settings.cpp" line="78" />
         <source>Folder used by quick save (Ctrl+Shift+S). Empty means the Pictures folder.</source>
         <translation>Folder used by quick save (Ctrl+Shift+S). Empty means the Pictures folder.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="72" />
+        <location filename="../src/core/config/Settings.cpp" line="79" />
         <source>File name pattern</source>
         <translation>File name pattern</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="72" />
+        <location filename="../src/core/config/Settings.cpp" line="79" />
         <source>Pattern for generated file names. Variables: {date} {time} {timestamp} {width} {height} {n}.</source>
         <translation>Pattern for generated file names. Variables: {date} {time} {timestamp} {width} {height} {n}.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="73" />
+        <location filename="../src/core/config/Settings.cpp" line="80" />
         <source>JPEG / WebP quality</source>
         <translation>JPEG / WebP quality</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="73" />
+        <location filename="../src/core/config/Settings.cpp" line="80" />
         <source>0 to 100.</source>
         <translation>0 to 100.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="75" />
+        <location filename="../src/core/config/Settings.cpp" line="82" />
         <location filename="../tests/component/tst_i18n.cpp" line="26" />
         <source>Capture hotkey</source>
         <translation>Capture hotkey</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="75" />
+        <location filename="../src/core/config/Settings.cpp" line="82" />
         <source>Global hotkey that starts a capture.</source>
         <translation>Global hotkey that starts a capture.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="76" />
+        <location filename="../src/core/config/Settings.cpp" line="83" />
         <source>Pin hotkey</source>
         <translation>Pin hotkey</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="76" />
+        <location filename="../src/core/config/Settings.cpp" line="83" />
         <source>Global hotkey that pins the clipboard.</source>
         <translation>Global hotkey that pins the clipboard.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="77" />
+        <location filename="../src/core/config/Settings.cpp" line="84" />
         <source>Hide / show pins hotkey</source>
         <translation>Hide / show pins hotkey</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="77" />
+        <location filename="../src/core/config/Settings.cpp" line="84" />
         <source>Global hotkey that hides or shows all pins.</source>
         <translation>Global hotkey that hides or shows all pins.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="78" />
+        <location filename="../src/core/config/Settings.cpp" line="85" />
         <source>Restore closed pin hotkey</source>
         <translation>Restore closed pin hotkey</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="78" />
+        <location filename="../src/core/config/Settings.cpp" line="85" />
         <source>Global hotkey that brings back the last closed pin.</source>
         <translation>Global hotkey that brings back the last closed pin.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="79" />
+        <location filename="../src/core/config/Settings.cpp" line="86" />
         <source>Click-through hotkey</source>
         <translation>Click-through hotkey</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="79" />
+        <location filename="../src/core/config/Settings.cpp" line="86" />
         <source>Global hotkey that toggles mouse click-through for the pin under the cursor; with no pin there, turns click-through off for all pins.</source>
         <translation>Global hotkey that toggles mouse click-through for the pin under the cursor; with no pin there, turns click-through off for all pins.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="80" />
+        <location filename="../src/core/config/Settings.cpp" line="87" />
         <source>Global hotkeys enabled</source>
         <translation>Global hotkeys enabled</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="80" />
+        <location filename="../src/core/config/Settings.cpp" line="87" />
         <source>Turn all global hotkeys on or off.</source>
         <translation>Turn all global hotkeys on or off.</translation>
     </message>
@@ -1297,98 +1458,103 @@
 <context>
     <name>ss::App</name>
     <message>
-        <location filename="../src/app/App.cpp" line="102" />
+        <location filename="../src/app/App.cpp" line="104" />
         <source>Screen recording permission</source>
         <translation>Screen recording permission</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="103" />
+        <location filename="../src/app/App.cpp" line="105" />
         <source>ScreenShot needs the Screen Recording permission to capture the screen. Grant it in System Settings, then restart ScreenShot.</source>
         <translation>ScreenShot needs the Screen Recording permission to capture the screen. Grant it in System Settings, then restart ScreenShot.</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="104" />
+        <location filename="../src/app/App.cpp" line="106" />
         <source>Open System Settings</source>
         <translation>Open System Settings</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="118" />
+        <location filename="../src/app/App.cpp" line="120" />
         <source>Capture	F1</source>
         <translation>Capture	F1</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="119" />
+        <location filename="../src/app/App.cpp" line="121" />
         <source>Pin clipboard	F3</source>
         <translation>Pin clipboard	F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="120" />
-        <location filename="../src/app/App.cpp" line="285" />
+        <location filename="../src/app/App.cpp" line="122" />
+        <location filename="../src/app/App.cpp" line="325" />
         <source>Hide all pins	Shift+F3</source>
         <translation>Hide all pins	Shift+F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="121" />
+        <location filename="../src/app/App.cpp" line="123" />
         <source>Restore closed pin	Ctrl+3</source>
         <translation>Restore closed pin	Ctrl+3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="122" />
+        <location filename="../src/app/App.cpp" line="124" />
         <source>Restore off-screen pins</source>
         <translation>Restore off-screen pins</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="124" />
+        <location filename="../src/app/App.cpp" line="126" />
         <source>Disable hotkeys</source>
         <translation>Disable hotkeys</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="127" />
+        <location filename="../src/app/App.cpp" line="129" />
         <source>Preferences...</source>
         <translation>Preferences...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="128" />
+        <location filename="../src/app/App.cpp" line="130" />
         <source>Help</source>
         <translation>Help</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="130" />
+        <location filename="../src/app/App.cpp" line="132" />
         <source>Quit</source>
         <translation>Quit</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="198" />
+        <location filename="../src/app/App.cpp" line="200" />
         <source>Hotkey conflict</source>
         <translation>Hotkey conflict</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="198" />
+        <location filename="../src/app/App.cpp" line="200" />
         <source>%1 is already used by another program.</source>
         <translation>%1 is already used by another program.</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="258" />
+        <location filename="../src/app/App.cpp" line="260" />
         <source>ScreenShot crashed last time</source>
         <translation>ScreenShot crashed last time</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="258" />
+        <location filename="../src/app/App.cpp" line="260" />
         <source>A crash dump was written to %1</source>
         <translation>A crash dump was written to %1</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="285" />
+        <location filename="../src/app/App.cpp" line="298" />
+        <source>Scrolling capture</source>
+        <translation>Scrolling capture</translation>
+    </message>
+    <message>
+        <location filename="../src/app/App.cpp" line="325" />
         <source>Show all pins	Shift+F3</source>
         <translation>Show all pins	Shift+F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="312" />
+        <location filename="../src/app/App.cpp" line="352" />
         <source>About ScreenShot</source>
         <translation>About ScreenShot</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="313" />
+        <location filename="../src/app/App.cpp" line="353" />
         <source>&lt;b&gt;ScreenShot&lt;/b&gt;&lt;br&gt;Screenshot and pin tool.&lt;br&gt;&lt;br&gt;Capture: %1&lt;br&gt;Pin clipboard: %2&lt;br&gt;Hide / show pins: %3&lt;br&gt;&lt;br&gt;While capturing: drag to select, Enter / double-click to copy, Ctrl+S to save, Ctrl+Shift+S to quick save, Ctrl+T to pin, Esc to cancel, Tab to switch window / element detection, C to copy the pixel color, WASD and arrow keys to adjust by one pixel, , and . to recall previous captures.</source>
         <translation>&lt;b&gt;ScreenShot&lt;/b&gt;&lt;br&gt;Screenshot and pin tool.&lt;br&gt;&lt;br&gt;Capture: %1&lt;br&gt;Pin clipboard: %2&lt;br&gt;Hide / show pins: %3&lt;br&gt;&lt;br&gt;While capturing: drag to select, Enter / double-click to copy, Ctrl+S to save, Ctrl+Shift+S to quick save, Ctrl+T to pin, Esc to cancel, Tab to switch window / element detection, C to copy the pixel color, WASD and arrow keys to adjust by one pixel, , and . to recall previous captures.</translation>
     </message>
@@ -1396,12 +1562,12 @@
 <context>
     <name>ss::CaptureSession</name>
     <message>
-        <location filename="../src/app/CaptureSession.cpp" line="864" />
+        <location filename="../src/app/CaptureSession.cpp" line="879" />
         <source>Cancel capture</source>
         <translation>Cancel capture</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureSession.cpp" line="864" />
+        <location filename="../src/app/CaptureSession.cpp" line="879" />
         <source>Discard this capture?</source>
         <translation>Discard this capture?</translation>
     </message>
@@ -1482,91 +1648,101 @@
     </message>
     <message>
         <location filename="../src/app/CaptureToolbar.cpp" line="109" />
+        <source>Scroll</source>
+        <translation>Scroll</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CaptureToolbar.cpp" line="109" />
+        <source>Scrolling capture (Ctrl+L)</source>
+        <translation>Scrolling capture (Ctrl+L)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CaptureToolbar.cpp" line="112" />
         <source>Cancel</source>
         <translation>Cancel</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="109" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="112" />
         <source>Cancel (Esc)</source>
         <translation>Cancel (Esc)</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="154" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="157" />
         <source>Custom</source>
         <translation>Custom</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="154" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="157" />
         <source>Pick a color (with opacity)</source>
         <translation>Pick a color (with opacity)</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="156" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="159" />
         <source>Annotation color</source>
         <translation>Annotation color</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="164" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="167" />
         <source>Width</source>
         <translation>Width</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="172" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="175" />
         <source>Pen width %1</source>
         <translation>Pen width %1</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="190" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="193" />
         <source>Fill</source>
         <translation>Fill</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="190" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="193" />
         <source>Filled shape</source>
         <translation>Filled shape</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Brush</source>
         <translation>Brush</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Rect</source>
         <translation>Rect</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Ellipse</source>
         <translation>Ellipse</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="203" />
         <source>Shape</source>
         <translation>Shape</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="219" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="222" />
         <source>Strength</source>
         <translation>Strength</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="244" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="247" />
         <source>B</source>
         <translation>B</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="244" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="247" />
         <source>Bold</source>
         <translation>Bold</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="245" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="248" />
         <source>I</source>
         <translation>I</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="245" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="248" />
         <source>Italic</source>
         <translation>Italic</translation>
     </message>
@@ -1765,6 +1941,19 @@
         <location filename="../src/app/PreferencesDialog.cpp" line="136" />
         <source>Choose folder</source>
         <translation>Choose folder</translation>
+    </message>
+</context>
+<context>
+    <name>ss::ScrollCaptureSession</name>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="186" />
+        <source>The area spans monitors with different scaling. Choose an area on one monitor.</source>
+        <translation>The area spans monitors with different scaling. Choose an area on one monitor.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/ScrollCaptureSession.cpp" line="194" />
+        <source>The area is not on any monitor.</source>
+        <translation>The area is not on any monitor.</translation>
     </message>
 </context>
 </TS>

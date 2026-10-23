@@ -1,6 +1,7 @@
 // REQ: TST-03 TST-06 TST-09 TST-10 NFR-01 NFR-02 NFR-04 NFR-05 NFR-10
 #include "Scenarios.h"
 
+#include "ScrollTestWindow.h"
 #include "core/util/Clock.h"
 #include "platform/windows/GdiScreenCapture.h"
 #include "platform/windows/WinProcess.h"
@@ -159,7 +160,8 @@ QList<ScenarioResult> Runner::runAll()
     const QStringList ids{QStringLiteral("R-01"), QStringLiteral("R-08"), QStringLiteral("R-16"), QStringLiteral("R-02"),
                           QStringLiteral("R-03"), QStringLiteral("HOTKEY"), QStringLiteral("R-06"), QStringLiteral("R-05"),
                           QStringLiteral("R-07"), QStringLiteral("R-09"), QStringLiteral("R-11"), QStringLiteral("R-17"),
-                          QStringLiteral("M1-FLOW"), QStringLiteral("M1-INSTANCE"), QStringLiteral("M2-ANNOTATE"), QStringLiteral("M3-PINS")};
+                          QStringLiteral("M1-FLOW"), QStringLiteral("M1-INSTANCE"), QStringLiteral("M2-ANNOTATE"), QStringLiteral("M3-PINS"),
+                          QStringLiteral("M4-SCROLL")};
     QList<ScenarioResult> results;
     logLine(QStringLiteral("交互桌面：%1").arg(desktopUnlocked() ? QStringLiteral("可用") : QStringLiteral("锁屏中，真实输入场景将跳过")));
     for (const auto& id : ids) {
@@ -194,6 +196,7 @@ ScenarioResult Runner::run(const QString& id)
     if (id == QStringLiteral("M1-INSTANCE")) return m1SingleInstance();
     if (id == QStringLiteral("M2-ANNOTATE")) return m2Annotate();
     if (id == QStringLiteral("M3-PINS")) return m3Pins();
+    if (id == QStringLiteral("M4-SCROLL")) return m4Scroll();
     ScenarioResult r;
     r.id = id;
     r.summary = QStringLiteral("未知场景");
@@ -723,6 +726,55 @@ ScenarioResult Runner::m3Pins()
                     .arg(placed ? QStringLiteral("ok") : QStringLiteral("FAIL"), nativeOk ? QStringLiteral("ok") : QStringLiteral("FAIL"), zoomed ? QStringLiteral("ok") : QStringLiteral("FAIL"),
                          through ? QStringLiteral("ok") : QStringLiteral("FAIL"), throughOff ? QStringLiteral("ok") : QStringLiteral("FAIL"), restored ? QStringLiteral("ok") : QStringLiteral("FAIL"),
                          textOk ? QStringLiteral("ok") : QStringLiteral("FAIL"));
+    return r;
+}
+
+ScenarioResult Runner::m4Scroll()
+{
+    // REQ: CAP-61 CAP-62 CAP-64 CAP-72 CAP-73 NFR-06
+    ScenarioResult r{QStringLiteral("M4-SCROLL"), QStringLiteral("M4：自动滚动一个真实窗口（12 屏长）到底，长图与文档逐像素一致")};
+    if (!desktopUnlocked())
+        return skipped(r.id, r.title, QStringLiteral("锁屏中，无法模拟滚轮与显示测试窗口"));
+    const QRect g = win::enumerateScreens().first().physicalGeometry;
+    ScrollTestWindow window(480, 360, 360 * 12);
+    if (!window.create(g.left() + 200, g.top() + 150)) {
+        r.summary = QStringLiteral("无法创建测试窗口");
+        return r;
+    }
+    QThread::msleep(300);
+    window.pump();
+    const QRect region = window.clientPhysicalRect();
+    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("scroll.speed")}, {QStringLiteral("value"), 3}});
+    const QJsonObject start = m_client.call(QStringLiteral("scrollStart"), {{QStringLiteral("x"), region.x()}, {QStringLiteral("y"), region.y()}, {QStringLiteral("w"), region.width()},
+                                                                            {QStringLiteral("h"), region.height()}, {QStringLiteral("auto"), true}});
+    if (!start.value(QStringLiteral("ok")).toBool()) {
+        r.summary = QStringLiteral("scrollStart 失败：") + start.value(QStringLiteral("error")).toString();
+        return r;
+    }
+    // 会话由程序内定时器驱动；这里只泵测试窗口的消息并等待到底
+    QElapsedTimer t;
+    t.start();
+    QJsonObject st;
+    while (t.elapsed() < 60000) {
+        window.pump();
+        QThread::msleep(50);
+        st = m_client.call(QStringLiteral("scrollState"));
+        if (st.value(QStringLiteral("reachedEnd")).toBool())
+            break;
+    }
+    const QString path = tempPng(QStringLiteral("m4-scroll"));
+    const QJsonObject fin = m_client.call(QStringLiteral("scrollFinish"), {{QStringLiteral("path"), path}});
+    m_client.call(QStringLiteral("scrollCancel"));
+    const QImage out(path);
+    const QImage doc = window.renderDocument();
+    const auto cmp = testing::compareImages(out, doc);
+    r.data = QJsonObject{{QStringLiteral("elapsedMs"), static_cast<double>(t.elapsed())}, {QStringLiteral("reachedEnd"), st.value(QStringLiteral("reachedEnd")).toBool()},
+                         {QStringLiteral("frames"), st.value(QStringLiteral("frames")).toInt()}, {QStringLiteral("rejected"), st.value(QStringLiteral("rejected")).toInt()},
+                         {QStringLiteral("height"), fin.value(QStringLiteral("h")).toInt()}, {QStringLiteral("docHeight"), doc.height()}, {QStringLiteral("pixels"), cmp.summary()}};
+    r.passed = st.value(QStringLiteral("reachedEnd")).toBool() && cmp.passed;
+    r.summary = QStringLiteral("到底=%1，%2 帧（拒绝 %3），长图 %4 px / 文档 %5 px，%6，耗时 %7 s")
+                    .arg(st.value(QStringLiteral("reachedEnd")).toBool() ? QStringLiteral("ok") : QStringLiteral("FAIL")).arg(st.value(QStringLiteral("frames")).toInt())
+                    .arg(st.value(QStringLiteral("rejected")).toInt()).arg(fin.value(QStringLiteral("h")).toInt()).arg(doc.height()).arg(cmp.summary()).arg(t.elapsed() / 1000.0, 0, 'f', 1);
     return r;
 }
 
