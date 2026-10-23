@@ -107,6 +107,9 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
     QToolButton* pinButton = addButton(m_tools, QStringLiteral("pin"), tr("Pin"), tr("Pin to screen (Ctrl+T)"));
     connect(pinButton, &QToolButton::clicked, this, [this] { m_target->pin(); });
     pinButton->setVisible(target->supportsPin());
+    QToolButton* printButton = addButton(m_tools, QStringLiteral("print"), tr("Print"), tr("Print (Ctrl+P)"));
+    connect(printButton, &QToolButton::clicked, this, [this] { m_target->print(); });
+    printButton->setVisible(target->supportsCaptureOptions());
     QToolButton* scrollButton = addButton(m_tools, QStringLiteral("scroll"), tr("Scroll"), tr("Scrolling capture (Ctrl+L)"));
     connect(scrollButton, &QToolButton::clicked, this, [this] { m_target->startScroll(); });
     scrollButton->setVisible(target->supportsScroll());

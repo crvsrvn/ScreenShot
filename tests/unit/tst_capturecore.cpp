@@ -134,7 +134,7 @@ void TestCaptureCore::fileNamePattern()
     ctx.sequence = 7;
     QCOMPARE(expandFileNamePattern(QStringLiteral("Shot_{date}_{time}"), ctx), QStringLiteral("Shot_2026-10-23_20-30-45"));
     QCOMPARE(expandFileNamePattern(QStringLiteral("{date:yyyyMMdd}-{width}x{height}-{n}"), ctx), QStringLiteral("20261023-640x480-7"));
-    QCOMPARE(expandFileNamePattern(QStringLiteral("a/b:c*{unknown}"), ctx), QStringLiteral("a_b_c_{unknown}"));
+    QCOMPARE(expandFileNamePattern(QStringLiteral("a/b:c*{unknown}"), ctx), QStringLiteral("a/b_c_{unknown}")); // 模板里的 / 是子目录（OUT-10）
     QCOMPARE(expandFileNamePattern(QStringLiteral("   "), ctx), QStringLiteral("Screenshot"));
     QCOMPARE(expandFileNamePattern(QStringLiteral("{timestamp}"), ctx), QString::number(ctx.time.toSecsSinceEpoch()));
 }

@@ -30,6 +30,7 @@ public:
     virtual void setShadowEnabled(bool) {}
     virtual bool borderEnabled() const { return false; }
     virtual void setBorderEnabled(bool) {}
+    virtual void print() {}
 };
 
 } // namespace ss

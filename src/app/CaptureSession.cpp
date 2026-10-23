@@ -432,6 +432,10 @@ void CaptureSession::setBorderEnabled(bool on)
 
 QImage CaptureSession::finalImage() const
 {
+    if (m_output) {
+        const auto w = sourceWindow();
+        m_output->setSource(w ? w->title : QString(), w ? w->processName : QString());
+    }
     QImage image = currentImage();
     if (image.isNull())
         return image;
@@ -849,6 +853,12 @@ bool CaptureSession::handleKeyPress(QKeyEvent* e)
             return true;
         }
         break;
+    case Qt::Key_P:
+        if (ctrl) {
+            print();
+            return true;
+        }
+        break;
     case Qt::Key_A:
         if (ctrl) {
             selectFullScreen();
@@ -1104,6 +1114,32 @@ void CaptureSession::quickSave()
         return;
     recordHistory(image, region);
     emit captured(image, region);
+    finish();
+}
+
+std::optional<WindowInfo> CaptureSession::sourceWindow() const
+{
+    if (m_selection.isEmpty())
+        return m_windowFinder.windowAt(m_cursor);
+    return m_windowFinder.windowAt(m_selection.center());
+}
+
+void CaptureSession::print()
+{
+    if (!isActive() || !m_output)
+        return;
+    const QImage image = finalImage();
+    if (image.isNull())
+        return;
+    hideOverlaysTemporarily(true);
+    const bool ok = m_output->print(image, nullptr);
+    if (!ok) {
+        if (isActive())
+            hideOverlaysTemporarily(false);
+        return;
+    }
+    recordHistory(image, m_selection);
+    emit captured(image, m_selection);
     finish();
 }
 

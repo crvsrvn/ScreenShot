@@ -151,6 +151,9 @@ public:
     void save() override;        // OUT-03
     void quickSave() override;   // OUT-08
     void pin() override;         // PIN-02
+    void print() override;       // OUT-11
+    // 截图来源窗口（选区中心所在的窗口），用于文件名变量（OUT-10）
+    std::optional<WindowInfo> sourceWindow() const;
     void cancel() override;
     void startScroll() override; // CAP-60：结束本会话并以当前选区开始滚动截图
     bool supportsScroll() const override { return true; }

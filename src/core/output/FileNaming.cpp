@@ -3,12 +3,37 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QRegularExpression>
+#include <QSysInfo>
+#include <QUuid>
 
 namespace ss {
 
-QString expandFileNamePattern(const QString& pattern, const FileNameContext& ctx)
+namespace {
+
+QString applyModifiers(QString value, const QStringList& modifiers)
 {
-    static const QRegularExpression re(QStringLiteral("\\{(\\w+)(?::([^}]*))?\\}"));
+    for (const QString& m : modifiers) {
+        const QString mod = m.trimmed();
+        if (mod.startsWith(QStringLiteral("trunc:"))) {
+            const int n = mod.mid(6).toInt();
+            if (n > 0 && value.size() > n)
+                value = value.left(n);
+        } else if (mod == QLatin1String("noext")) {
+            const int dot = static_cast<int>(value.lastIndexOf(QLatin1Char('.')));
+            if (dot > 0)
+                value = value.left(dot);
+        } else if (mod == QLatin1String("lower")) {
+            value = value.toLower();
+        } else if (mod == QLatin1String("upper")) {
+            value = value.toUpper();
+        }
+    }
+    return value;
+}
+
+QString expandSegment(const QString& pattern, const FileNameContext& ctx)
+{
+    static const QRegularExpression re(QStringLiteral("\\{([A-Za-z]+)(?::([^}|]*))?((?:\\|[^}]*)?)\\}"));
     QString out;
     qsizetype last = 0;
     auto it = re.globalMatch(pattern);
@@ -17,25 +42,41 @@ QString expandFileNamePattern(const QString& pattern, const FileNameContext& ctx
         out += pattern.mid(last, m.capturedStart() - last);
         const QString var = m.captured(1).toLower();
         const QString fmt = m.captured(2);
+        QStringList modifiers = m.captured(3).split(QLatin1Char('|'), Qt::SkipEmptyParts);
+        QString value;
+        bool known = true;
         if (var == QLatin1String("date"))
-            out += ctx.time.toString(fmt.isEmpty() ? QStringLiteral("yyyy-MM-dd") : fmt);
+            value = ctx.time.toString(fmt.isEmpty() ? QStringLiteral("yyyy-MM-dd") : fmt);
         else if (var == QLatin1String("time"))
-            out += ctx.time.toString(fmt.isEmpty() ? QStringLiteral("HH-mm-ss") : fmt);
+            value = ctx.time.toString(fmt.isEmpty() ? QStringLiteral("HH-mm-ss") : fmt);
         else if (var == QLatin1String("timestamp"))
-            out += QString::number(ctx.time.toSecsSinceEpoch());
+            value = QString::number(ctx.time.toSecsSinceEpoch());
         else if (var == QLatin1String("width"))
-            out += QString::number(ctx.imageSize.width());
+            value = QString::number(ctx.imageSize.width());
         else if (var == QLatin1String("height"))
-            out += QString::number(ctx.imageSize.height());
+            value = QString::number(ctx.imageSize.height());
         else if (var == QLatin1String("n"))
-            out += QString::number(ctx.sequence);
+            value = QString::number(ctx.sequence);
+        else if (var == QLatin1String("title"))
+            value = ctx.windowTitle;
+        else if (var == QLatin1String("process"))
+            value = ctx.processName;
+        else if (var == QLatin1String("uuid"))
+            value = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        else if (var == QLatin1String("computer"))
+            value = ctx.computerName.isEmpty() ? QSysInfo::machineHostName() : ctx.computerName;
+        else if (var == QLatin1String("env"))
+            value = qEnvironmentVariable(fmt.toUtf8().constData());
         else
-            out += m.captured(0); // 未知变量原样保留
+            known = false;
+        out += known ? applyModifiers(value, modifiers) : m.captured(0);
         last = m.capturedEnd();
     }
     out += pattern.mid(last);
-    return sanitizeFileName(out);
+    return out;
 }
+
+} // namespace
 
 QString sanitizeFileName(const QString& name)
 {
@@ -46,6 +87,17 @@ QString sanitizeFileName(const QString& name)
     while (s.endsWith(QLatin1Char('.')))
         s.chop(1);
     return s.isEmpty() ? QStringLiteral("Screenshot") : s;
+}
+
+QString expandFileNamePattern(const QString& pattern, const FileNameContext& ctx)
+{
+    // 先按模板里的 / 分段，再逐段展开并清理，保证变量值里的 / 不会变成子目录
+    QStringList segments;
+    for (const QString& seg : pattern.split(QRegularExpression(QStringLiteral("[\\\\/]+")), Qt::SkipEmptyParts))
+        segments << sanitizeFileName(expandSegment(seg, ctx));
+    if (segments.isEmpty())
+        return QStringLiteral("Screenshot");
+    return segments.join(QLatin1Char('/'));
 }
 
 QString uniqueFilePath(const QString& dir, const QString& baseName, const QString& extension)

@@ -70,9 +70,11 @@ App::App(Platform platform, Settings& settings, QObject* parent)
     connect(m_session.get(), &CaptureSession::scrollRequested, this, [this](const QRect& region) { startScroll(region); });
     connect(m_session.get(), &CaptureSession::sizeInputRequested, this, &App::onSizeInputRequested);
     connect(m_session.get(), &CaptureSession::ocrCopyRequested, this, &App::onOcrCopyRequested);
-    connect(m_session.get(), &CaptureSession::captured, this, [this](const QImage&, const QRect& region) {
+    connect(m_session.get(), &CaptureSession::captured, this, [this](const QImage& image, const QRect& region) {
         m_settings.setValue(QStringLiteral("capture.lastRegion"), QStringLiteral("%1,%2,%3,%4").arg(region.x()).arg(region.y()).arg(region.width()).arg(region.height()));
+        m_output->autoSave(image); // OUT-09：截图成功时额外存一份
     });
+    m_output->cleanupAutoSave();
     connect(&m_settings, &Settings::changed, this, [this](const QString& key, const QVariant&) { applySetting(key); });
     m_session->prepareOverlays();
     setupTray();

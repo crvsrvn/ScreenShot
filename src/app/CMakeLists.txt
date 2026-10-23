@@ -19,7 +19,7 @@ if(SCREENSHOT_TEST_BUILD)
 endif()
 
 qt_add_library(screenshot_applib STATIC ${APPLIB_SOURCES})
-target_link_libraries(screenshot_applib PUBLIC screenshot_core Qt6::Widgets)
+target_link_libraries(screenshot_applib PUBLIC screenshot_core Qt6::Widgets Qt6::PrintSupport)
 if(WIN32)
     target_link_libraries(screenshot_applib PUBLIC platform_windows)
 elseif(APPLE)
