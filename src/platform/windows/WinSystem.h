@@ -1,9 +1,15 @@
 #pragma once
 
+#include <QOperatingSystemVersion>
+
 #include <QString>
 #include <QStringList>
 
 namespace ss::win {
+
+// 支持的最低系统版本（NFR-11）：Windows 10 2004（19041）
+QOperatingSystemVersion minimumOsVersion();
+bool osSupported();
 
 // 单实例（GEN-01）：拿到命名互斥体返回 true；已有实例返回 false。句柄保持到进程退出。
 bool acquireSingleInstance(const QString& name);

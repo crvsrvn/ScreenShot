@@ -1529,12 +1529,12 @@
         <translation>Recording</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="132" />
+        <location filename="../src/app/PreferencesDialog.cpp" line="135" />
         <source>Browse...</source>
         <translation>Browse...</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="137" />
+        <location filename="../src/app/PreferencesDialog.cpp" line="140" />
         <source>Choose folder</source>
         <translation>Choose folder</translation>
     </message>
@@ -1600,6 +1600,11 @@
         <location filename="../src/app/ScrollCaptureSession.cpp" line="137" />
         <source>Scroll the content to continue.</source>
         <translation>Scroll the content to continue.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/main.cpp" line="81" />
+        <source>Windows 10 version 2004 (build 19041) or newer is required.</source>
+        <translation>Windows 10 version 2004 (build 19041) or newer is required.</translation>
     </message>
 </context>
 <context>
@@ -6451,12 +6456,12 @@
         <translation>Recording</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="132" />
+        <location filename="../src/app/PreferencesDialog.cpp" line="135" />
         <source>Browse...</source>
         <translation>Browse...</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="137" />
+        <location filename="../src/app/PreferencesDialog.cpp" line="140" />
         <source>Choose folder</source>
         <translation>Choose folder</translation>
     </message>

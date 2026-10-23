@@ -59,6 +59,8 @@ private:
     ScenarioResult m2Annotate();        // 真实桌面上画一个填充矩形并快速保存
     ScenarioResult m3Pins();            // 贴图：物理定位、缩放、穿透、关闭 / 恢复、文本贴图
     ScenarioResult m4Scroll();          // 真实窗口上的自动滚动长截图，与文档逐像素比对（AC-11）
+    ScenarioResult startupTime();       // 冷启动到测试接口可用的时间（NFR-03）
+    ScenarioResult cliWait();           // 命令行触发全屏截图并等待完成（AC-12）
 
     // 每个场景开始前把程序恢复到空闲状态（取消截图、关闭贴图）
     void resetApp();

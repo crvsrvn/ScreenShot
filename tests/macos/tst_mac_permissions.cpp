@@ -1,4 +1,4 @@
-// REQ: GEN-14 NFR-16
+// REQ: GEN-14 NFR-16 AC-13
 // macOS 权限（只在 macOS 上编译运行；目前没有设备，未验证）：
 // 没有屏幕录制权限时捕获返回空而不崩溃；权限查询接口可调用。
 #include "platform/macos/MacPermissions.h"

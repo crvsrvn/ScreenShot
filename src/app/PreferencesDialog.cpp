@@ -73,6 +73,9 @@ void PreferencesDialog::buildPages()
             label->setToolTip(tr2(spec.description));
             QWidget* editor = makeEditor(spec);
             editor->setToolTip(tr2(spec.description));
+            editor->setAccessibleName(tr2(spec.title));            // NFR-14：屏幕阅读器读出选项名与说明
+            editor->setAccessibleDescription(tr2(spec.description));
+            label->setBuddy(editor);
             editor->setObjectName(spec.key); // 测试按键名查找
             form->addRow(label, editor);
         }

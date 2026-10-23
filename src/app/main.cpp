@@ -4,6 +4,7 @@
 #include "core/util/Log.h"
 
 #include <QApplication>
+#include <QMessageBox>
 #include <QCommandLineParser>
 #include <QDir>
 #include <QFileInfo>
@@ -76,6 +77,10 @@ int main(int argc, char* argv[])
     // 单实例（GEN-01）：已有实例时把命令转交给它
     const QString channel = parser.isSet(channelOpt) ? parser.value(channelOpt) : ss::CommandServer::defaultChannelName();
 #ifdef Q_OS_WIN
+    if (!ss::win::osSupported()) { // NFR-11
+        QMessageBox::critical(nullptr, QStringLiteral("ScreenShot"), QObject::tr("Windows 10 version 2004 (build 19041) or newer is required."));
+        return 3;
+    }
     const bool allowMultiple = parser.isSet(multiInstance);
     if (!allowMultiple && !ss::win::acquireSingleInstance(QStringLiteral("ScreenShot-") + channel)) {
         ss::CommandServer::sendToRunningInstance(channel, command.isEmpty() ? QStringList{QStringLiteral("snip")} : command);

@@ -1,4 +1,4 @@
-// REQ: GEN-01 GEN-04 GEN-05 GEN-09 NFR-10 ACT-01 ACT-02
+// REQ: GEN-01 GEN-04 GEN-05 GEN-09 NFR-10 NFR-11 ACT-01 ACT-02
 // Windows 系统工具：单实例互斥体、开机自启注册表项、崩溃转储目录、命名管道往返（拒绝远程）、热键映射（含 PrtSc 与字符键）
 #include "platform/windows/WinGlobalHotkey.h"
 #include "platform/windows/WinPipeServer.h"
@@ -7,6 +7,7 @@
 #include <windows.h>
 
 #include <QCoreApplication>
+#include <QOperatingSystemVersion>
 #include <QDir>
 #include <QFile>
 #include <QTemporaryDir>
@@ -23,7 +24,17 @@ private slots:
     void pipeServerRoundTrip();
     void hotkeyMapping();
     void elevationHelpers();
+    void osVersionSupported();
 };
+
+void TestWinSystem::osVersionSupported()
+{
+    // NFR-11：Windows 10 2004（19041）及以上 x64；程序启动时用同一条件拒绝更旧的系统
+    QVERIFY(ss::win::osSupported());
+    QVERIFY(QOperatingSystemVersion::current() >= ss::win::minimumOsVersion());
+    QCOMPARE(ss::win::minimumOsVersion().microVersion(), 19041);
+    QCOMPARE(QSysInfo::currentCpuArchitecture(), QStringLiteral("x86_64"));
+}
 
 void TestWinSystem::elevationHelpers()
 {

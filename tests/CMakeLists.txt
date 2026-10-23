@@ -96,8 +96,19 @@ if(Python3_FOUND)
     add_test(NAME coverage_matrix
         COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_SOURCE_DIR}/tools/coverage/gen_matrix.py
             --docs ${CMAKE_SOURCE_DIR}/docs/01-requirements.md
-            --tests ${CMAKE_SOURCE_DIR}/tests ${CMAKE_SOURCE_DIR}/tools/testdriver
+            --tests ${CMAKE_SOURCE_DIR}/tests ${CMAKE_SOURCE_DIR}/tools/testdriver ${CMAKE_SOURCE_DIR}/tools/coverage
             --scope ${CMAKE_SOURCE_DIR}/tests/delivered_scope.txt
             --out ${CMAKE_BINARY_DIR}/test-results/coverage.md)
     set_tests_properties(coverage_matrix PROPERTIES LABELS unit)
+endif()
+
+# 绿色版 / 安装包（NFR-12）：windeployqt 收集运行时打成 zip，体积 ≤ 50 MB，包内不得有 Qt Network；有 Inno Setup 时再生成安装包。
+# 只在非 Debug 配置下跑（Debug 的 Qt 运行时体积不代表发布版）
+if(WIN32 AND Python3_FOUND AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_test(NAME package_portable
+        COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_SOURCE_DIR}/tests/package/check_package.py
+            --exe $<TARGET_FILE:screenshot_app> --windeployqt ${SS_QT_BIN}/windeployqt.exe
+            --translations ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/translations --version ${PROJECT_VERSION}
+            --out ${CMAKE_BINARY_DIR}/dist --iss ${CMAKE_SOURCE_DIR}/scripts/installer.iss)
+    set_tests_properties(package_portable PROPERTIES LABELS package TIMEOUT 900 ENVIRONMENT_MODIFICATION "${SS_PATH_MOD}")
 endif()

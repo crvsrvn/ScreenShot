@@ -1,4 +1,4 @@
-// REQ: GEN-07 CAP-41 PIN-08 PIN-13 PIN-54
+// REQ: GEN-07 CAP-41 PIN-08 PIN-13 PIN-54 AC-07
 // M6 PixPin P1：保存通知、区域历史、文件卡片贴图、新贴图位置策略、重启恢复贴图
 #include "app/App.h"
 #include "app/CaptureSession.h"

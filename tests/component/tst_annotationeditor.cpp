@@ -1,4 +1,4 @@
-// REQ: ANN-01 ANN-02 ANN-03 ANN-05 ANN-06 ANN-07 ANN-09 ANN-13 ANN-17 ANN-20 ANN-23 ANN-27 ANN-28 ANN-29 ANN-32 ANN-36 NFR-08
+// REQ: ANN-01 ANN-02 ANN-03 ANN-05 ANN-06 ANN-07 ANN-09 ANN-10 ANN-13 ANN-17 ANN-20 ANN-23 ANN-27 ANN-28 ANN-29 ANN-32 ANN-36 NFR-08 AC-03 AC-04
 // 标注编辑器与会话、覆盖窗口、工具栏的集成：工具绘制、Shift 约束、二次编辑、折线、文字输入、复制粘贴、显示与导出一致
 #include "app/AnnotationEditor.h"
 #include "app/CaptureSession.h"
@@ -13,6 +13,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QKeyEvent>
+#include <QInputMethodEvent>
 #include <QPlainTextEdit>
 #include <QSignalSpy>
 #include <QTest>
@@ -88,7 +89,76 @@ private slots:
     void rightClickLeavesAnnotatingKeepsResult();
     void magnifierAndColorWhileAnnotating();
     void toolbarButtonsDriveEditor();
+    void undoRedoThirtyOperations();
+    void imeTextRotateExport();
 };
+
+void TestAnnotationEditor::undoRedoThirtyOperations()
+{
+    // AC-04：连续 30 个标注操作后撤销到底再重做到底，每一步状态正确，无残影
+    Fixture f;
+    f.startWith(Tool::Rect);
+    const QImage empty = f.editor().document().render();
+    QList<QImage> renders;
+    for (int i = 0; i < 30; ++i) {
+        const QPoint at(110 + (i % 10) * 30, 110 + (i / 10) * 30);
+        f.drag(at, at + QPoint(14, 14));
+        QCOMPARE(f.editor().document().count(), i + 1);
+        renders.append(f.editor().document().render());
+    }
+    for (int i = 29; i >= 0; --i) {
+        QCOMPARE(f.editor().document().render(), renders[i]);
+        f.editor().document().undo();
+        QCOMPARE(f.editor().document().count(), i);
+    }
+    QVERIFY(!f.editor().document().canUndo());
+    QCOMPARE(f.editor().document().render(), empty); // 撤销到底后没有残影
+    for (int i = 0; i < 30; ++i) {
+        f.editor().document().redo();
+        QCOMPARE(f.editor().document().count(), i + 1);
+        QCOMPARE(f.editor().document().render(), renders[i]);
+    }
+    QVERIFY(!f.editor().document().canRedo());
+    QCOMPARE(f.session->finalImage().size(), f.sel.size());
+}
+
+void TestAnnotationEditor::imeTextRotateExport()
+{
+    // AC-03：文字工具经输入法事件（预编辑 → 提交）输入中文，旋转后导出，导出图与屏幕渲染逐像素一致
+    Fixture f;
+    f.startWith(Tool::Text);
+    f.click(QPoint(150, 150));
+    QPlainTextEdit* edit = nullptr;
+    for (auto* w : f.session->overlays())
+        if (auto* e = w->findChild<QPlainTextEdit*>())
+            edit = e;
+    QVERIFY(edit);
+    QInputMethodEvent preedit(QStringLiteral("zhongwen"), {});
+    QCoreApplication::sendEvent(edit, &preedit);
+    QInputMethodEvent commit;
+    commit.setCommitString(QStringLiteral("中文输入"));
+    QCoreApplication::sendEvent(edit, &commit);
+    QCOMPARE(edit->toPlainText(), QStringLiteral("中文输入"));
+    f.editor().commitText();
+    QCOMPARE(f.editor().document().count(), 1);
+    const int id = f.editor().document().at(0)->id();
+    QCOMPARE(static_cast<const TextAnnotation*>(f.editor().document().find(id))->text(), QStringLiteral("中文输入"));
+    const QImage before = f.editor().document().render();
+    // 旋转柄拖到正右方 → 90°（ANN-10）
+    f.editor().select(id);
+    const QPoint rhPhys = f.sel.topLeft() + f.editor().rotateHandleImage().toPoint();
+    const QPoint right = f.sel.topLeft() + f.editor().document().find(id)->bounds().center().toPoint() + QPoint(100, 0);
+    f.session->pressAt(rhPhys, Qt::LeftButton);
+    f.session->dragTo(rhPhys + QPoint(40, 40));
+    f.session->dragTo(right);
+    f.session->releaseAt(right, Qt::LeftButton);
+    QVERIFY(std::abs(f.editor().document().find(id)->rotation() - 90.0) < 0.5);
+    const QImage shown = f.editor().document().render();
+    QVERIFY(shown != before);
+    const QImage exported = f.session->finalImage();
+    QCOMPARE(exported.size(), shown.size());
+    QCOMPARE(exported.convertToFormat(QImage::Format_ARGB32), shown.convertToFormat(QImage::Format_ARGB32));
+}
 
 void TestAnnotationEditor::drawRectEntersAnnotatingAndExports()
 {

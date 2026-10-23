@@ -14,6 +14,16 @@
 
 namespace ss::win {
 
+QOperatingSystemVersion minimumOsVersion()
+{
+    return QOperatingSystemVersion(QOperatingSystemVersion::Windows, 10, 0, 19041);
+}
+
+bool osSupported()
+{
+    return QOperatingSystemVersion::current() >= minimumOsVersion();
+}
+
 bool acquireSingleInstance(const QString& name)
 {
     const QString mutexName = QStringLiteral("Local\\") + name;

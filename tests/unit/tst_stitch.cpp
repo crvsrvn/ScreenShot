@@ -1,4 +1,4 @@
-// REQ: CAP-61 CAP-63 CAP-65 CAP-66 CAP-70 CAP-74 NFR-06 TST-07
+// REQ: CAP-61 CAP-63 CAP-65 CAP-66 CAP-70 CAP-74 NFR-06 TST-07 AC-10
 // 滚动拼接算法：合成长内容逐帧滚动 → 拼接结果与原内容逐像素一致；固定栏只出现一次；
 // 纯色 / 重复内容 / 滚动过快时拒绝；反向滚动裁剪；横向拼接；随机化长跑；分块长图
 #include "core/stitch/Stitcher.h"

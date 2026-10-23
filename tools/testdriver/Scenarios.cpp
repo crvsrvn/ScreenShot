@@ -1,4 +1,4 @@
-// REQ: TST-03 TST-06 TST-09 TST-10 NFR-01 NFR-02 NFR-04 NFR-05 NFR-10
+// REQ: TST-03 TST-05 TST-06 TST-09 TST-10 NFR-01 NFR-02 NFR-03 NFR-04 NFR-05 NFR-09 NFR-10 AC-01 AC-02 AC-05 AC-08 AC-12
 #include "Scenarios.h"
 
 #include "ScrollTestWindow.h"
@@ -161,7 +161,7 @@ QList<ScenarioResult> Runner::runAll()
                           QStringLiteral("R-03"), QStringLiteral("HOTKEY"), QStringLiteral("R-06"), QStringLiteral("R-05"),
                           QStringLiteral("R-07"), QStringLiteral("R-09"), QStringLiteral("R-11"), QStringLiteral("R-17"),
                           QStringLiteral("M1-FLOW"), QStringLiteral("M1-INSTANCE"), QStringLiteral("M2-ANNOTATE"), QStringLiteral("M3-PINS"),
-                          QStringLiteral("M4-SCROLL")};
+                          QStringLiteral("M4-SCROLL"), QStringLiteral("NFR-03"), QStringLiteral("AC-12")};
     QList<ScenarioResult> results;
     logLine(QStringLiteral("交互桌面：%1").arg(desktopUnlocked() ? QStringLiteral("可用") : QStringLiteral("锁屏中，真实输入场景将跳过")));
     for (const auto& id : ids) {
@@ -197,6 +197,8 @@ ScenarioResult Runner::run(const QString& id)
     if (id == QStringLiteral("M2-ANNOTATE")) return m2Annotate();
     if (id == QStringLiteral("M3-PINS")) return m3Pins();
     if (id == QStringLiteral("M4-SCROLL")) return m4Scroll();
+    if (id == QStringLiteral("NFR-03")) return startupTime();
+    if (id == QStringLiteral("AC-12")) return cliWait();
     ScenarioResult r;
     r.id = id;
     r.summary = QStringLiteral("未知场景");
@@ -681,7 +683,7 @@ ScenarioResult Runner::m2Annotate()
 
 ScenarioResult Runner::m3Pins()
 {
-    // REQ: PIN-02 PIN-04 PIN-22 PIN-33 PIN-50
+    // REQ: PIN-02 PIN-04 PIN-22 PIN-33 PIN-50 AC-06 AC-07
     ScenarioResult r{QStringLiteral("M3-PINS"), QStringLiteral("M3：贴图在真实桌面上的物理定位、缩放、穿透、关闭恢复、文本贴图")};
     const QRect g = win::enumerateScreens().first().physicalGeometry;
     const QPoint at = g.topLeft() + QPoint(400, 300);
@@ -741,7 +743,7 @@ ScenarioResult Runner::m3Pins()
 
 ScenarioResult Runner::m4Scroll()
 {
-    // REQ: CAP-61 CAP-62 CAP-64 CAP-72 CAP-73 NFR-06
+    // REQ: CAP-61 CAP-62 CAP-64 CAP-72 CAP-73 NFR-06 AC-09 AC-11
     ScenarioResult r{QStringLiteral("M4-SCROLL"), QStringLiteral("M4：自动滚动一个真实窗口（12 屏长）到底，长图与文档逐像素一致")};
     if (!desktopUnlocked())
         return skipped(r.id, r.title, QStringLiteral("锁屏中，无法模拟滚轮与显示测试窗口"));
@@ -785,6 +787,65 @@ ScenarioResult Runner::m4Scroll()
     r.summary = QStringLiteral("到底=%1，%2 帧（拒绝 %3），长图 %4 px / 文档 %5 px，%6，耗时 %7 s")
                     .arg(st.value(QStringLiteral("reachedEnd")).toBool() ? QStringLiteral("ok") : QStringLiteral("FAIL")).arg(st.value(QStringLiteral("frames")).toInt())
                     .arg(st.value(QStringLiteral("rejected")).toInt()).arg(fin.value(QStringLiteral("h")).toInt()).arg(doc.height()).arg(cmp.summary()).arg(t.elapsed() / 1000.0, 0, 'f', 1);
+    return r;
+}
+
+ScenarioResult Runner::startupTime()
+{
+    // REQ: NFR-03
+    ScenarioResult r{QStringLiteral("NFR-03"), QStringLiteral("启动：进程创建到托盘与测试接口可用 ≤ 1.5 s")};
+    const QString pipe = QStringLiteral("e2e-start-%1").arg(QCoreApplication::applicationPid());
+    const QString config = QDir::temp().filePath(QStringLiteral("screenshot-e2e-start-%1.json").arg(QCoreApplication::applicationPid()));
+    QProcess proc;
+    proc.setProgram(m_options.appPath);
+    proc.setArguments({QStringLiteral("--test-pipe"), pipe, QStringLiteral("--channel"), pipe, QStringLiteral("--config"), config, QStringLiteral("--allow-multiple")});
+    QElapsedTimer t;
+    t.start();
+    proc.start();
+    PipeClient client;
+    const bool connected = proc.waitForStarted(5000) && client.connect(pipe, 15000);
+    const qint64 ms = t.elapsed();
+    if (connected)
+        client.call(QStringLiteral("quit"));
+    client.close();
+    if (!proc.waitForFinished(5000))
+        proc.kill();
+    QFile::remove(config);
+    r.data = QJsonObject{{QStringLiteral("startupMs"), static_cast<double>(ms)}, {QStringLiteral("connected"), connected}};
+    r.passed = connected && ms <= 1500;
+    r.summary = QStringLiteral("启动到接口可用 %1 ms（要求 ≤ 1500）").arg(ms);
+    return r;
+}
+
+ScenarioResult Runner::cliWait()
+{
+    // REQ: AC-12 ACT-06
+    ScenarioResult r{QStringLiteral("AC-12"), QStringLiteral("命令行：第二实例触发全屏截图并快速保存，加 --wait 时在保存完成后才退出")};
+    QTemporaryDir dir;
+    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("output.quickSaveDir")}, {QStringLiteral("value"), dir.path()}});
+    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("output.fileNamePattern")}, {QStringLiteral("value"), QStringLiteral("cli_{n}")}});
+    QProcess second;
+    second.setProgram(m_options.appPath);
+    second.setArguments({QStringLiteral("--channel"), m_options.channel, QStringLiteral("snip"), QStringLiteral("full"), QStringLiteral("--output"), QStringLiteral("quickSave"), QStringLiteral("--wait")});
+    QElapsedTimer t;
+    t.start();
+    second.start();
+    const bool exited = second.waitForFinished(20000);
+    // 退出的瞬间文件必须已经存在（--wait 语义）
+    const QStringList files = QDir(dir.path()).entryList({QStringLiteral("cli_*.png")}, QDir::Files);
+    const QImage img(files.isEmpty() ? QString() : QDir(dir.path()).filePath(files.first()));
+    QRect desktop;
+    bool sizeOk = false;
+    for (const auto& s : win::enumerateScreens()) {
+        desktop |= s.physicalGeometry;
+        sizeOk = sizeOk || img.size() == s.physicalGeometry.size(); // 全屏 = 当前显示器或全部显示器（按设置）
+    }
+    sizeOk = !img.isNull() && (sizeOk || img.size() == desktop.size());
+    r.data = QJsonObject{{QStringLiteral("exited"), exited}, {QStringLiteral("exitCode"), second.exitCode()}, {QStringLiteral("files"), files.size()},
+                         {QStringLiteral("elapsedMs"), static_cast<double>(t.elapsed())}, {QStringLiteral("imageSize"), QStringLiteral("%1x%2").arg(img.width()).arg(img.height())}};
+    r.passed = exited && second.exitCode() == 0 && files.size() == 1 && sizeOk;
+    r.summary = QStringLiteral("第二实例退出码 %1，退出时文件%2存在，尺寸 %3x%4（桌面 %5x%6）")
+                    .arg(second.exitCode()).arg(files.isEmpty() ? QStringLiteral("不") : QStringLiteral("已")).arg(img.width()).arg(img.height()).arg(desktop.width()).arg(desktop.height());
     return r;
 }
 

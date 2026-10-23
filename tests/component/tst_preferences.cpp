@@ -1,4 +1,4 @@
-// REQ: CFG-01 CFG-04 CFG-07
+// REQ: CFG-01 CFG-04 CFG-07 NFR-14
 #include "app/PreferencesDialog.h"
 #include "core/config/Settings.h"
 
@@ -16,6 +16,7 @@ private slots:
     void pagesMatchSettingsTable();
     void everyEditorHasTooltip();
     void editsApplyImmediately();
+    void editorsAccessible();
 };
 
 void TestPreferences::pagesMatchSettingsTable()
@@ -43,6 +44,21 @@ void TestPreferences::everyEditorHasTooltip()
         QWidget* editor = d.findChild<QWidget*>(spec.key);
         QVERIFY2(editor, qPrintable(spec.key));
         QVERIFY2(!editor->toolTip().isEmpty(), qPrintable(spec.key));
+    }
+}
+
+void TestPreferences::editorsAccessible()
+{
+    // NFR-14：每个选项编辑器都有可访问名称与说明，标签与编辑器绑定（屏幕阅读器可读）
+    Settings s;
+    PreferencesDialog d(s);
+    for (const auto& spec : settingSpecs()) {
+        if (spec.page == QLatin1String("hidden"))
+            continue;
+        QWidget* editor = d.findChild<QWidget*>(spec.key);
+        QVERIFY2(editor, qPrintable(spec.key));
+        QVERIFY2(!editor->accessibleName().isEmpty(), qPrintable(spec.key));
+        QVERIFY2(!editor->accessibleDescription().isEmpty(), qPrintable(spec.key));
     }
 }
 
