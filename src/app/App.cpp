@@ -14,10 +14,10 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QCursor>
-#include <QInputDialog>
 #include <QRegularExpression>
 #include <QTimer>
 #include <QGuiApplication>
+#include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
 #include <QPainter>
@@ -141,6 +141,9 @@ void App::setupTray()
     m_togglePinsAction = m_trayMenu->addAction(tr("Hide all pins\tShift+F3"), this, &App::togglePinsHidden);
     m_trayMenu->addAction(tr("Restore closed pin\tCtrl+3"), this, &App::restoreClosedPin);
     m_trayMenu->addAction(tr("Restore off-screen pins"), this, &App::restoreOffscreenPins);
+    m_groupMenu = m_trayMenu->addMenu(tr("Pin groups"));
+    connect(m_pins.get(), &PinManager::groupChanged, this, [this] { rebuildGroupMenu(); });
+    rebuildGroupMenu();
     m_trayMenu->addSeparator();
     m_hotkeysAction = m_trayMenu->addAction(tr("Disable hotkeys"), this, [this](bool checked) { setHotkeysEnabled(!checked); });
     m_hotkeysAction->setCheckable(true);
@@ -156,6 +159,30 @@ void App::setupTray()
     m_tray->setContextMenu(m_trayMenu);
     connect(m_tray, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) { trayActivated(reason); });
     m_tray->show();
+}
+
+void App::rebuildGroupMenu()
+{
+    if (!m_groupMenu)
+        return;
+    m_groupMenu->clear();
+    m_groupMenu->addAction(tr("New group..."), this, [this] {
+        bool ok = false;
+        const QString name = QInputDialog::getText(nullptr, tr("New pin group"), tr("Group name:"), QLineEdit::Normal, QString(), &ok);
+        if (ok)
+            m_pins->newGroup(name);
+        rebuildGroupMenu();
+    });
+    m_groupMenu->addAction(tr("Next group\tCtrl+Shift+3"), this, [this] { m_pins->nextGroup(); });
+    m_groupMenu->addAction(tr("Previous group"), this, [this] { m_pins->previousGroup(); });
+    m_groupMenu->addAction(tr("Clear this group"), this, [this] { m_pins->clearCurrentGroup(); });
+    m_groupMenu->addSeparator();
+    const QStringList names = m_pins->groupNames();
+    for (int i = 0; i < names.size(); ++i) {
+        QAction* a = m_groupMenu->addAction(names[i], this, [this, i] { m_pins->switchToGroup(i); });
+        a->setCheckable(true);
+        a->setChecked(i == m_pins->currentGroupIndex());
+    }
 }
 
 void App::trayActivated(int reason)
@@ -186,6 +213,8 @@ void App::setupHotkeys()
         case HotkeyTogglePins: togglePinsHidden(); break;
         case HotkeyRestorePin: restoreClosedPin(); break;
         case HotkeyPassthrough: togglePassthroughAtCursor(); break;
+        case HotkeyNextGroup: m_pins->nextGroup(); break;
+        case HotkeyPreviousGroup: m_pins->previousGroup(); break;
         default: break;
         }
     });
@@ -201,14 +230,15 @@ void App::registerHotkeys()
 {
     if (!m_platform.hotkey)
         return;
-    for (int id : {HotkeyCapture, HotkeyPin, HotkeyTogglePins, HotkeyRestorePin, HotkeyPassthrough})
+    for (int id : {HotkeyCapture, HotkeyPin, HotkeyTogglePins, HotkeyRestorePin, HotkeyPassthrough, HotkeyNextGroup, HotkeyPreviousGroup})
         m_platform.hotkey->unregisterHotkey(id);
     m_hotkeyStatus.clear();
     if (!hotkeysEnabled())
         return;
     const QList<QPair<int, QString>> keys{{HotkeyCapture, QStringLiteral("hotkey.capture")}, {HotkeyPin, QStringLiteral("hotkey.pin")},
                                           {HotkeyTogglePins, QStringLiteral("hotkey.togglePins")}, {HotkeyRestorePin, QStringLiteral("hotkey.restorePin")},
-                                          {HotkeyPassthrough, QStringLiteral("hotkey.togglePassthrough")}};
+                                          {HotkeyPassthrough, QStringLiteral("hotkey.togglePassthrough")}, {HotkeyNextGroup, QStringLiteral("hotkey.nextGroup")},
+                                          {HotkeyPreviousGroup, QStringLiteral("hotkey.previousGroup")}};
     for (const auto& [id, settingKey] : keys) {
         const QKeySequence seq(m_settings.stringValue(settingKey));
         const bool ok = !seq.isEmpty() && m_platform.hotkey->registerHotkey(id, seq);

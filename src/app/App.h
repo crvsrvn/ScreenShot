@@ -29,7 +29,7 @@ public:
     App(Platform platform, Settings& settings, QObject* parent = nullptr);
     ~App() override;
 
-    enum HotkeyId { HotkeyCapture = 1, HotkeyPin = 2, HotkeyTogglePins = 3, HotkeyRestorePin = 4, HotkeyPassthrough = 5 };
+    enum HotkeyId { HotkeyCapture = 1, HotkeyPin = 2, HotkeyTogglePins = 3, HotkeyRestorePin = 4, HotkeyPassthrough = 5, HotkeyNextGroup = 6, HotkeyPreviousGroup = 7 };
 
     Platform& platform() { return m_platform; }
     Settings& settings() { return m_settings; }
@@ -102,6 +102,8 @@ private:
     QMenu* m_trayMenu = nullptr;
     QAction* m_hotkeysAction = nullptr;
     QAction* m_togglePinsAction = nullptr;
+    QMenu* m_groupMenu = nullptr;
+    void rebuildGroupMenu();
 };
 
 } // namespace ss

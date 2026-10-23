@@ -6,7 +6,7 @@ set(APPLIB_SOURCES
     CaptureToolbar.h CaptureToolbar.cpp
     AnnotationEditor.h AnnotationEditor.cpp
     ToolbarTarget.h
-    PinWindow.h PinWindow.cpp
+    PinWindow.h PinWindow.cpp PinWindowContent.cpp
     PinManager.h PinManager.cpp
     ScrollCaptureSession.h ScrollCaptureSession.cpp
     CustomCaptureDialog.h CustomCaptureDialog.cpp

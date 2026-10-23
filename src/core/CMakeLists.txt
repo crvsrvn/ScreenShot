@@ -27,6 +27,7 @@ qt_add_library(screenshot_core STATIC
     annotation/Extras.h annotation/Extras.cpp
     annotation/AnnotationDocument.h annotation/AnnotationDocument.cpp
     pin/TextPin.h pin/TextPin.cpp
+    pin/ColorPin.h pin/ColorPin.cpp
     stitch/Stitcher.h stitch/Stitcher.cpp
 )
 target_include_directories(screenshot_core PUBLIC ${CMAKE_SOURCE_DIR}/src)

@@ -3,6 +3,7 @@
 #include "app/AnnotationEditor.h"
 #include "app/ToolbarTarget.h"
 #include "core/geometry/VirtualDesktop.h"
+#include "core/pin/TextPin.h"
 #include "core/util/Mipmap.h"
 
 #include <QImage>
@@ -10,9 +11,12 @@
 #include <QPixmap>
 #include <QTimer>
 #include <QWidget>
+#include <functional>
 #include <memory>
+#include <utility>
 
 class QMenu;
+class QMimeData;
 
 namespace ss {
 
@@ -27,8 +31,62 @@ class CaptureToolbar;
 class PinWindow : public QWidget, public ToolbarTarget {
     Q_OBJECT
 public:
+    enum class ContentKind { Image, Text, Color };
+
     PinWindow(const QImage& image, Settings& settings, OutputActions* output = nullptr);
     ~PinWindow() override;
+
+    // ---- 内容（PIN-05 ~ PIN-07）----
+    ContentKind contentKind() const { return m_kind; }
+    void setTextContent(const QString& text, const TextPinOptions& options); // 纯文本或 HTML
+    void setIgnoreFormatting(bool ignore);                                   // HTML 贴图：忽略 / 恢复格式
+    bool ignoringFormatting() const { return m_kind == ContentKind::Text && !m_textOptions.html; }
+    QString textPlain() const;
+    QString textHtml() const;
+    void copyText();                       // 全文或选中部分（纯文本 + HTML）
+    void setTextSelectionMode(bool on);    // 文本选择模式：拖动只选部分文字
+    bool textSelectionMode() const { return m_textSelecting; }
+    void selectTextRange(int from, int to);
+    QString selectedText() const;
+    QList<QRectF> textSelectionRectsImage() const;
+    void setColorContent(const QColor& color, qreal scale);
+    QColor color() const { return m_color; }
+    void copyColorAs(const QString& format); // hex / rgb / hsv / hsl / float
+    void editColorValue();
+
+    // ---- 灰度 / 反色（PIN-27）----
+    bool grayscale() const { return m_gray; }
+    void setGrayscale(bool on);
+    bool inverted() const { return m_invert; }
+    void setInverted(bool on);
+
+    // ---- 缩略图 / 显示范围 / 裁剪（PIN-29 ~ PIN-31）----
+    bool thumbnail() const { return m_thumbnail; }
+    void toggleThumbnail();
+    QRectF viewRect() const { return m_viewRect; }   // 完整显示图坐标；空 = 全部
+    void setViewRect(const QRectF& displayRect);     // 以当前显示图坐标给出
+    void clearViewRect();
+    void panView(QPointF imageDelta);
+    QRect cropRect() const { return m_cropRect; }    // 原图坐标；空 = 未裁剪
+    void cropTo(const QRectF& displayRect);
+    void restoreCrop();
+    void confirmCrop();
+
+    // ---- 置顶（PIN-32）、阴影（PIN-36）、选中（PIN-60）、分组 ----
+    bool topmost() const { return m_topmost; }
+    void setTopmost(bool on);
+    QColor shadowColor() const;
+    void setSelected(bool on);
+    bool selected() const { return m_selected; }
+    void setGroupIndex(int index);
+    int groupIndex() const { return m_groupIndex; }
+
+    // ---- 吸附（PIN-21）：Shift 拖动时吸附到这些矩形（逻辑桌面坐标）的边 ----
+    void setSnapTargets(std::function<QList<QRectF>()> targets) { m_snapTargets = std::move(targets); }
+    QPointF snappedTopLeft(QPointF proposed) const;
+
+    // 关闭 / 销毁前的确认（PIN-53）；测试可替换
+    static std::function<bool(QWidget*, const QString&)> confirmHandler;
 
     // ---- 几何（物理像素）----
     void moveToPhysical(QPoint physicalTopLeft);
@@ -88,8 +146,8 @@ public:
     bool supportsPin() const override { return true; }
 
     // ---- 生命周期（PIN-50、PIN-51）----
-    void closePin();   // 进入历史
-    void destroyPin(); // 不进历史
+    void closePin(bool userGesture = false);   // 进入历史；userGesture 时按设置二次确认（PIN-53）
+    void destroyPin(bool userGesture = false); // 不进历史
     QJsonObject stateJson() const; // 恢复 / 重启用
     void applyStateJson(const QJsonObject& o);
 
@@ -106,6 +164,12 @@ signals:
     void closed(ss::PinWindow* pin);
     void destroyed(ss::PinWindow* pin);
     void pinRequested(const QImage& image, QPoint physicalTopLeft);
+    void replaceRequested(ss::PinWindow* pin, const QMimeData* mime); // PIN-11：Ctrl+V / 拖入
+    void selectToggleRequested(ss::PinWindow* pin);                   // PIN-60：Ctrl+单击
+    void selectAllRequested();                                        // PIN-60：Ctrl+A
+    // 多选时的联动（由管理器转发给其他选中贴图）
+    void groupMoved(ss::PinWindow* pin, QPointF logicalDelta);
+    void groupAction(ss::PinWindow* pin, const QString& action, double arg); // close / destroy / reset / opacity
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -119,6 +183,9 @@ protected:
     void contextMenuEvent(QContextMenuEvent* event) override;
     void moveEvent(QMoveEvent* event) override;
     void showEvent(QShowEvent* event) override;
+    void dragEnterEvent(QDragEnterEvent* event) override;
+    void dropEvent(QDropEvent* event) override;
+    void changeEvent(QEvent* event) override;
 
 private:
     QSizeF contentSizeLogical() const;
@@ -134,14 +201,46 @@ private:
     QPoint toPhysical(QPointF logicalInWindow) const;
     bool onContentEdge(QPointF logicalInWindow) const;
     void ensureMagnifierDesktop();
+    void replaceSource(const QImage& image);
+    QImage croppedSource() const;
+    QRect displayToSource(const QRectF& displayRect) const;
+    void textSelectAt(QPointF imagePos, bool extend);
+    void showAreaMenu(const QRectF& displayRect, QPoint globalPos);
 
     static constexpr int kShadowMargin = 24;
 
     Settings& m_settings;
     OutputActions* m_output;
-    QImage m_source;       // 原图
-    QImage m_transformed;  // 旋转 / 翻转后
-    QImage m_display;      // 加标注后（原始像素尺寸）
+    QImage m_source;          // 原图
+    QImage m_transformedFull; // 裁剪 + 旋转 / 翻转 + 灰度 / 反色后的完整图
+    QImage m_transformed;     // 再按显示范围裁出的部分
+    QImage m_display;         // 加标注后（原始像素尺寸）
+    // 内容
+    ContentKind m_kind = ContentKind::Image;
+    QString m_textSource;
+    QString m_textHtmlSource;
+    TextPinOptions m_textOptions;
+    std::unique_ptr<TextPinDocument> m_textDoc;
+    bool m_textSelecting = false;
+    std::pair<int, int> m_textSelection{0, 0};
+    QColor m_color;
+    bool m_gray = false;
+    bool m_invert = false;
+    bool m_thumbnail = false;
+    qreal m_scaleBeforeThumbnail = 1.0;
+    QRectF m_viewRect;
+    QRect m_cropRect;
+    bool m_topmost = true;
+    bool m_selected = false;
+    int m_groupIndex = 0;
+    std::function<QList<QRectF>()> m_snapTargets;
+    // 右键拖选（PIN-30 / PIN-31）与 Shift 平移
+    bool m_rubberActive = false;
+    QPointF m_rubberStart;
+    QRectF m_rubberRect;
+    bool m_suppressMenu = false;
+    bool m_panning = false;
+    QPointF m_panLast;
     Mipmap m_mipmap;
     std::unique_ptr<AnnotationEditor> m_editor;
     CaptureToolbar* m_toolbar = nullptr;

@@ -507,6 +507,13 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
             o[QStringLiteral("passthrough")] = p->passthrough();
             o[QStringLiteral("visible")] = p->isVisible();
             o[QStringLiteral("annotating")] = p->annotating();
+            o[QStringLiteral("gray")] = p->grayscale();
+            o[QStringLiteral("invert")] = p->inverted();
+            o[QStringLiteral("thumbnail")] = p->thumbnail();
+            o[QStringLiteral("topmost")] = p->topmost();
+            o[QStringLiteral("selected")] = p->selected();
+            o[QStringLiteral("kind")] = static_cast<int>(p->contentKind());
+            o[QStringLiteral("cropped")] = !p->cropRect().isNull();
             o[QStringLiteral("imageW")] = p->originalImage().width();
             o[QStringLiteral("imageH")] = p->originalImage().height();
 #ifdef Q_OS_WIN
@@ -515,6 +522,22 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
             arr.append(o);
         }
         return ok({{QStringLiteral("pins"), arr}, {QStringLiteral("closed"), static_cast<int>(app.pinManager().closedPins().size())}, {QStringLiteral("hidden"), app.pinsHidden()}});
+    }
+    if (cmd == QStringLiteral("pinGroups")) {
+        // {action: new|switch|next|previous|clear, name}
+        PinManager& m = app.pinManager();
+        const QString action = req.value(QStringLiteral("action")).toString();
+        if (action == QLatin1String("new"))
+            m.newGroup(req.value(QStringLiteral("name")).toString());
+        else if (action == QLatin1String("switch"))
+            m.switchToGroupNamed(req.value(QStringLiteral("name")).toString());
+        else if (action == QLatin1String("next"))
+            m.nextGroup();
+        else if (action == QLatin1String("previous"))
+            m.previousGroup();
+        else if (action == QLatin1String("clear"))
+            m.clearCurrentGroup();
+        return ok({{QStringLiteral("groups"), QJsonArray::fromStringList(m.groupNames())}, {QStringLiteral("current"), m.currentGroupIndex()}, {QStringLiteral("pins"), static_cast<int>(m.pins().size())}});
     }
     if (cmd == QStringLiteral("pinAction")) {
         const int index = req.value(QStringLiteral("index")).toInt(0);
@@ -557,6 +580,32 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
             pin->flipVertical();
         else if (action == QLatin1String("reset"))
             pin->toggleReset();
+        else if (action == QLatin1String("gray"))
+            pin->setGrayscale(!pin->grayscale());
+        else if (action == QLatin1String("invert"))
+            pin->setInverted(!pin->inverted());
+        else if (action == QLatin1String("thumbnail"))
+            pin->toggleThumbnail();
+        else if (action == QLatin1String("topmost"))
+            pin->setTopmost(!pin->topmost());
+        else if (action == QLatin1String("copyText"))
+            pin->copyText();
+        else if (action == QLatin1String("crop"))
+            pin->cropTo(QRectF(req.value(QStringLiteral("x")).toDouble(), req.value(QStringLiteral("y")).toDouble(), req.value(QStringLiteral("w")).toDouble(), req.value(QStringLiteral("h")).toDouble()));
+        else if (action == QLatin1String("restoreCrop"))
+            pin->restoreCrop();
+        else if (action == QLatin1String("confirmCrop"))
+            pin->confirmCrop();
+        else if (action == QLatin1String("view"))
+            pin->setViewRect(QRectF(req.value(QStringLiteral("x")).toDouble(), req.value(QStringLiteral("y")).toDouble(), req.value(QStringLiteral("w")).toDouble(), req.value(QStringLiteral("h")).toDouble()));
+        else if (action == QLatin1String("clearView"))
+            pin->clearViewRect();
+        else if (action == QLatin1String("select"))
+            app.pinManager().toggleSelected(pin);
+        else if (action == QLatin1String("selectAll"))
+            app.pinManager().selectAllVisible();
+        else if (action == QLatin1String("replaceClipboard"))
+            app.pinManager().replacePin(pin, QApplication::clipboard()->mimeData());
         else if (action == QLatin1String("passthrough"))
             pin->setPassthrough(req.value(QStringLiteral("on")).toBool(true));
         else if (action == QLatin1String("close"))
