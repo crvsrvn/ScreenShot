@@ -26,4 +26,10 @@ struct ScreenSnapshot {
     qint64 capturedAtNs = 0; // 单调时钟，见 util/Clock.h
 };
 
+// 鼠标指针图像（带透明通道）及其左上角的物理位置
+struct CursorImage {
+    QImage image;
+    QPoint physicalTopLeft;
+};
+
 } // namespace ss

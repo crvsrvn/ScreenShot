@@ -52,17 +52,17 @@ void WinElementDetector::workerLoop()
     CoUninitialize();
 }
 
-std::optional<QRect> WinElementDetector::elementAt(QPoint physicalPos, std::chrono::milliseconds timeout)
+QList<QRect> WinElementDetector::runChain(QPoint physicalPos, std::chrono::milliseconds timeout)
 {
     if (m_busy.load())
-        return std::nullopt; // 上一个请求还卡着，直接拒绝，不排队
+        return {}; // 上一个请求还卡着，直接拒绝，不排队
 
-    auto promise = std::make_shared<std::promise<std::optional<QRect>>>();
+    auto promise = std::make_shared<std::promise<QList<QRect>>>();
     auto future = promise->get_future();
     {
         std::lock_guard lock(m_mutex);
         m_pending = [promise, physicalPos] {
-            std::optional<QRect> result;
+            QList<QRect> chain;
             ComPtr<IUIAutomation> automation;
             // 每个任务重新取一次接口（同一 MTA 内 CoCreateInstance 很便宜，也避免跨线程传递 COM 指针）
             if (SUCCEEDED(CoCreateInstance(CLSID_CUIAutomation8, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&automation)))) {
@@ -75,20 +75,51 @@ std::optional<QRect> WinElementDetector::elementAt(QPoint physicalPos, std::chro
                 ComPtr<IUIAutomationElement> element;
                 POINT pt{physicalPos.x(), physicalPos.y()};
                 if (SUCCEEDED(automation->ElementFromPoint(pt, &element)) && element) {
-                    RECT r{};
-                    if (SUCCEEDED(element->get_CurrentBoundingRectangle(&r)) && r.right > r.left && r.bottom > r.top)
-                        result = QRect(r.left, r.top, r.right - r.left, r.bottom - r.top);
+                    ComPtr<IUIAutomationTreeWalker> walker;
+                    automation->get_ControlViewWalker(&walker);
+                    ComPtr<IUIAutomationElement> root;
+                    automation->GetRootElement(&root);
+                    ComPtr<IUIAutomationElement> current = element;
+                    // 从最内层向上走到桌面之前（CAP-13 层级）
+                    for (int depth = 0; current && depth < 64; ++depth) {
+                        RECT r{};
+                        if (SUCCEEDED(current->get_CurrentBoundingRectangle(&r)) && r.right > r.left && r.bottom > r.top) {
+                            const QRect rect(r.left, r.top, r.right - r.left, r.bottom - r.top);
+                            if (chain.isEmpty() || chain.last() != rect)
+                                chain.append(rect);
+                        }
+                        ComPtr<IUIAutomationElement> parent;
+                        if (!walker || FAILED(walker->GetParentElement(current.Get(), &parent)) || !parent)
+                            break;
+                        BOOL same = FALSE;
+                        if (root && SUCCEEDED(automation->CompareElements(parent.Get(), root.Get(), &same)) && same)
+                            break;
+                        current = parent;
+                    }
                 }
             }
-            promise->set_value(result);
+            promise->set_value(chain);
         };
     }
     m_cv.notify_one();
     if (future.wait_for(timeout) != std::future_status::ready) {
         ++m_timeouts;
-        return std::nullopt;
+        return {};
     }
     return future.get();
+}
+
+std::optional<QRect> WinElementDetector::elementAt(QPoint physicalPos, std::chrono::milliseconds timeout)
+{
+    const QList<QRect> chain = runChain(physicalPos, timeout);
+    if (chain.isEmpty())
+        return std::nullopt;
+    return chain.first();
+}
+
+QList<QRect> WinElementDetector::elementChainAt(QPoint physicalPos, std::chrono::milliseconds timeout)
+{
+    return runChain(physicalPos, timeout);
 }
 
 } // namespace ss::win

@@ -17,6 +17,7 @@ qt_add_library(screenshot_core STATIC
     config/Settings.h config/Settings.cpp
     color/ColorFormat.h color/ColorFormat.cpp
     output/FileNaming.h output/FileNaming.cpp
+    output/Decorate.h output/Decorate.cpp
     capture/CaptureHistory.h capture/CaptureHistory.cpp
     capture/SelectionGeometry.h capture/SelectionGeometry.cpp
     capture/Magnifier.h capture/Magnifier.cpp

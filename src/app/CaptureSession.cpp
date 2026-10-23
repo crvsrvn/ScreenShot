@@ -4,6 +4,7 @@
 #include "app/OutputActions.h"
 #include "app/OverlayWindow.h"
 #include "core/config/Settings.h"
+#include "core/output/Decorate.h"
 #include "core/util/Clock.h"
 
 #include <QApplication>
@@ -172,13 +173,63 @@ bool CaptureSession::start(qint64 triggerNs, bool showOverlays)
         return false;
     m_timings = Timings{};
     m_timings.triggerNs = triggerNs;
-    m_showOverlays = showOverlays;
-
     QList<ScreenSnapshot> snapshots = m_capture->captureAll();
     if (snapshots.isEmpty())
         return false;
     m_timings.captureDoneNs = monotonicNs();
+    m_includeCursor = m_settings.boolValue(QStringLiteral("capture.includeCursor"));
+    m_cursorImage = m_capture->captureCursor();
+    m_whiteboard = false;
+    return startWithSnapshots(triggerNs, std::move(snapshots), showOverlays);
+}
 
+bool CaptureSession::startWhiteboard(const QColor& color, bool currentScreenOnly, bool showOverlays)
+{
+    if (isActive() || !m_capture)
+        return false;
+    m_timings = Timings{};
+    m_timings.triggerNs = monotonicNs();
+    const QPoint cursor = m_cursor;
+    QList<ScreenSnapshot> snapshots;
+    const QList<ScreenInfo> screens = m_capture->screens();
+    for (const auto& screen : screens) {
+        if (currentScreenOnly && !screen.physicalGeometry.contains(cursor))
+            continue;
+        QImage canvas(screen.physicalGeometry.size(), QImage::Format_RGB32);
+        canvas.fill(color);
+        canvas.setDevicePixelRatio(screen.scale);
+        snapshots.append(ScreenSnapshot{screen, canvas, monotonicNs()});
+    }
+    if (snapshots.isEmpty() && !screens.isEmpty()) {
+        // 光标不在任何显示器上：用主屏
+        for (const auto& screen : screens) {
+            if (!screen.primary && screens.size() > 1)
+                continue;
+            QImage canvas(screen.physicalGeometry.size(), QImage::Format_RGB32);
+            canvas.fill(color);
+            canvas.setDevicePixelRatio(screen.scale);
+            snapshots.append(ScreenSnapshot{screen, canvas, monotonicNs()});
+            break;
+        }
+    }
+    if (snapshots.isEmpty())
+        return false;
+    m_timings.captureDoneNs = monotonicNs();
+    m_includeCursor = false;
+    m_cursorImage.reset();
+    m_whiteboard = true;
+    if (!startWithSnapshots(m_timings.triggerNs, std::move(snapshots), showOverlays))
+        return false;
+    // 整块画布作为选区并直接进入标注
+    setSelection(m_desktop.bounds());
+    setTool(AnnotationEditor::Tool::Pencil);
+    return true;
+}
+
+bool CaptureSession::startWithSnapshots(qint64 triggerNs, QList<ScreenSnapshot> snapshots, bool showOverlays)
+{
+    m_timings.triggerNs = triggerNs;
+    m_showOverlays = showOverlays;
     bool layoutChanged = snapshots.size() != m_overlays.size();
     for (const auto& s : snapshots) {
         auto it = m_overlays.find(s.screen.id);
@@ -187,20 +238,39 @@ bool CaptureSession::start(qint64 triggerNs, bool showOverlays)
             break;
         }
     }
-    if (layoutChanged)
-        prepareOverlays();
+    if (layoutChanged) {
+        // 按快照建覆盖窗口（白板可能只覆盖部分显示器）
+        QHash<QString, OverlayWindow*> next;
+        for (const auto& snap : snapshots) {
+            OverlayWindow* w = m_overlays.take(snap.screen.id);
+            if (!w) {
+                w = new OverlayWindow(this);
+                connect(w, &OverlayWindow::firstPainted, this, &CaptureSession::onOverlayFirstPaint);
+            }
+            w->setScreenInfo(snap.screen);
+            next.insert(snap.screen.id, w);
+        }
+        qDeleteAll(m_overlays);
+        m_overlays = next;
+    }
 
     m_desktop = VirtualDesktop(std::move(snapshots));
-    m_windowFinder = WindowFinder(m_windows ? m_windows->topLevelWindows() : QList<WindowInfo>{}, m_desktop.bounds());
+    m_windowFinder = WindowFinder(m_windows && !m_whiteboard ? m_windows->topLevelWindows() : QList<WindowInfo>{}, m_desktop.bounds());
     m_selection = QRect();
     m_highlight.reset();
     m_windowHighlight.reset();
+    m_elementChain.clear();
+    m_elementLevel = 0;
     m_drag = Drag::None;
     m_altHeld = false;
+    m_spaceHeld = false;
+    m_ratioLocked = false;
     m_fullScreenAll = m_settings.boolValue(QStringLiteral("capture.fullScreenAllMonitors"));
     const QString mode = m_settings.stringValue(QStringLiteral("capture.detectMode"));
-    m_detectMode = mode == QLatin1String("window") ? DetectMode::Window : mode == QLatin1String("off") ? DetectMode::Off : DetectMode::Element;
+    m_detectMode = m_whiteboard ? DetectMode::Off : mode == QLatin1String("window") ? DetectMode::Window : mode == QLatin1String("off") ? DetectMode::Off : DetectMode::Element;
     m_colorFormat = colorFormatFromName(m_settings.stringValue(QStringLiteral("capture.colorFormat")));
+    m_shadow = m_settings.boolValue(QStringLiteral("output.shadow"));
+    m_border = m_settings.boolValue(QStringLiteral("output.border"));
     m_historyCursor = m_history ? std::make_unique<HistoryCursor>(*m_history) : nullptr;
     m_state = State::Detecting;
 
@@ -215,6 +285,36 @@ bool CaptureSession::start(qint64 triggerNs, bool showOverlays)
     m_timings.shownNs = monotonicNs();
     emit started();
     emit stateChanged(m_state);
+    return true;
+}
+
+bool CaptureSession::refresh()
+{
+    if (!isActive() || m_whiteboard || !m_capture)
+        return false;
+    // 隐藏覆盖窗口再抓，避免把自己抓进去
+    for (auto* w : std::as_const(m_overlays))
+        w->setVisible(false);
+    QList<ScreenSnapshot> snapshots = m_capture->captureAll();
+    if (snapshots.isEmpty()) {
+        for (auto* w : std::as_const(m_overlays))
+            w->setVisible(m_showOverlays);
+        return false;
+    }
+    m_desktop = VirtualDesktop(std::move(snapshots));
+    m_windowFinder = WindowFinder(m_windows ? m_windows->topLevelWindows() : QList<WindowInfo>{}, m_desktop.bounds());
+    m_cursorImage = m_capture->captureCursor();
+    for (const auto& snap : m_desktop.snapshots())
+        if (auto* w = m_overlays.value(snap.screen.id))
+            w->setSnapshot(snap);
+    if (m_state == State::Annotating) {
+        m_annotatedBase = m_desktop.crop(m_selection);
+        m_editor.document().setBaseImage(m_annotatedBase);
+    }
+    if (m_showOverlays)
+        for (auto* w : std::as_const(m_overlays))
+            w->showOnScreen();
+    updateOverlays();
     return true;
 }
 
@@ -255,6 +355,139 @@ void CaptureSession::setSelection(const QRect& physical)
     emit selectionChanged(m_selection);
     layoutToolbar();
     updateOverlays();
+}
+
+void CaptureSession::setSelectionSize(int width, int height)
+{
+    if (!isActive() || m_selection.isEmpty() || width < 1 || height < 1)
+        return;
+    QRect r(m_selection.topLeft(), QSize(width, height));
+    setSelection(r.intersected(m_desktop.bounds()));
+}
+
+void CaptureSession::setRatioLocked(bool locked)
+{
+    m_ratioLocked = locked && !m_selection.isEmpty();
+    if (m_ratioLocked)
+        m_lockedRatio = static_cast<double>(m_selection.width()) / m_selection.height();
+    updateOverlays();
+}
+
+QRect CaptureSession::applyRatio(const QRect& r, SelectionHandle handle) const
+{
+    // Shift：1:1；锁定：保持开始时的宽高比。以宽为准，按锚点决定扩展方向
+    const double ratio = m_shiftHeld ? 1.0 : m_ratioLocked ? m_lockedRatio : 0.0;
+    if (ratio <= 0 || r.isEmpty())
+        return r;
+    const int h = std::max(1, static_cast<int>(std::lround(r.width() / ratio)));
+    QRect out = r;
+    const bool anchorBottom = handle == SelectionHandle::TopLeft || handle == SelectionHandle::Top || handle == SelectionHandle::TopRight;
+    if (anchorBottom)
+        out.setTop(out.bottom() - h + 1);
+    else
+        out.setHeight(h);
+    return out;
+}
+
+void CaptureSession::setSpaceHeld(bool held)
+{
+    m_spaceHeld = held;
+    if (held && (m_drag == Drag::Resize || m_drag == Drag::Create)) {
+        // 调整大小中按住 Space：改为移动整个选区（CAP-16）
+        m_drag = Drag::Move;
+        m_dragOrigin = m_selection;
+        m_dragStart = m_cursor;
+    }
+}
+
+void CaptureSession::setIncludeCursor(bool on)
+{
+    m_includeCursor = on;
+    updateOverlays();
+}
+
+void CaptureSession::cycleElement(int delta)
+{
+    if (m_state != State::Detecting || m_elementChain.size() < 2)
+        return;
+    m_elementLevel = std::clamp(m_elementLevel + delta, 0, static_cast<int>(m_elementChain.size()) - 1);
+    m_highlight = m_elementChain[m_elementLevel];
+    emit highlightChanged();
+    updateOverlays();
+}
+
+void CaptureSession::setShadowEnabled(bool on)
+{
+    m_shadow = on;
+    m_settings.setValue(QStringLiteral("output.shadow"), on);
+    updateOverlays();
+}
+
+void CaptureSession::setBorderEnabled(bool on)
+{
+    m_border = on;
+    m_settings.setValue(QStringLiteral("output.border"), on);
+    updateOverlays();
+}
+
+QImage CaptureSession::finalImage() const
+{
+    QImage image = currentImage();
+    if (image.isNull())
+        return image;
+    if (m_includeCursor && m_cursorImage && m_state != State::History)
+        image = composeCursor(image, m_cursorImage->image, m_cursorImage->physicalTopLeft - m_selection.topLeft());
+    DecorateOptions o;
+    o.cornerRadius = m_settings.intValue(QStringLiteral("output.cornerRadius"));
+    o.shadow = m_shadow;
+    o.shadowColor = QColor::fromString(m_settings.stringValue(QStringLiteral("output.shadowColor")));
+    o.border = m_border;
+    o.borderColor = QColor::fromString(m_settings.stringValue(QStringLiteral("output.borderColor")));
+    o.borderWidth = m_settings.intValue(QStringLiteral("output.borderWidth"));
+    return decorateImage(image, o);
+}
+
+void CaptureSession::runActions(const QStringList& actionsIn)
+{
+    if (!isActive())
+        return;
+    const QImage image = finalImage();
+    if (image.isNull())
+        return;
+    const QRect region = m_selection;
+    // 固定顺序：复制 → 贴图 → 保存 → 快速保存 → OCR 复制（CAP-04）
+    static const QStringList order{QStringLiteral("copy"), QStringLiteral("pin"), QStringLiteral("save"), QStringLiteral("quickSave"), QStringLiteral("ocrCopy")};
+    QStringList actions;
+    for (const QString& a : order)
+        if (actionsIn.contains(a, Qt::CaseInsensitive))
+            actions << a;
+    if (actions.isEmpty())
+        actions << QStringLiteral("copy");
+    bool wantPin = false;
+    for (const QString& a : actions) {
+        if (a == QLatin1String("copy")) {
+            if (m_output)
+                m_output->copy(image);
+            else
+                QApplication::clipboard()->setImage(image);
+        } else if (a == QLatin1String("pin")) {
+            wantPin = true;
+        } else if (a == QLatin1String("save") && m_output) {
+            hideOverlaysTemporarily(true);
+            m_output->saveWithDialog(image, nullptr);
+            if (isActive())
+                hideOverlaysTemporarily(false);
+        } else if (a == QLatin1String("quickSave") && m_output) {
+            m_output->quickSave(image);
+        } else if (a == QLatin1String("ocrCopy")) {
+            emit ocrCopyRequested(image);
+        }
+    }
+    recordHistory(image, region);
+    emit captured(image, region);
+    finish();
+    if (wantPin)
+        emit pinRequested(image, region);
 }
 
 QRect CaptureSession::screenRectAt(QPoint physical) const
@@ -338,7 +571,12 @@ void CaptureSession::requestElementAt(QPoint physical)
     m_elementPending = true;
     m_elementRequested = physical;
     IElementDetector* detector = m_elements;
-    m_elementWatcher.setFuture(QtConcurrent::run([detector, physical] { return detector->elementAt(physical, std::chrono::milliseconds(300)); }));
+    m_elementWatcher.setFuture(QtConcurrent::run([detector, physical]() -> std::optional<QRect> {
+        const QList<QRect> chain = detector->elementChainAt(physical, std::chrono::milliseconds(300));
+        if (chain.isEmpty())
+            return std::nullopt;
+        return chain.first();
+    }));
 }
 
 void CaptureSession::onElementResult()
@@ -351,6 +589,13 @@ void CaptureSession::onElementResult()
             if (m_windowHighlight)
                 r = r.intersected(*m_windowHighlight); // 元素不超出其窗口
             if (!r.isEmpty()) {
+                // 层级链（CAP-13）：最内层元素 … 窗口；滚轮切换
+                m_elementChain = m_elements->elementChainAt(m_elementRequested, std::chrono::milliseconds(50));
+                if (m_elementChain.isEmpty())
+                    m_elementChain = {r};
+                if (m_windowHighlight && !m_elementChain.contains(*m_windowHighlight))
+                    m_elementChain.append(*m_windowHighlight);
+                m_elementLevel = 0;
                 m_highlight = r;
                 emit highlightChanged();
                 updateOverlays();
@@ -455,6 +700,7 @@ void CaptureSession::dragTo(QPoint physical)
         m_dragCurrent = physical;
         m_selection = QRect(QPoint(std::min(m_dragStart.x(), physical.x()), std::min(m_dragStart.y(), physical.y())),
                             QPoint(std::max(m_dragStart.x(), physical.x()), std::max(m_dragStart.y(), physical.y())));
+        m_selection = applyRatio(m_selection, physical.y() < m_dragStart.y() ? SelectionHandle::TopRight : SelectionHandle::BottomRight);
         emit selectionChanged(m_selection);
         break;
     case Drag::Move:
@@ -463,7 +709,7 @@ void CaptureSession::dragTo(QPoint physical)
         layoutToolbar();
         break;
     case Drag::Resize:
-        m_selection = resizeSelection(m_dragOrigin, m_dragHandle, physical - m_dragStart).intersected(m_desktop.bounds());
+        m_selection = applyRatio(resizeSelection(m_dragOrigin, m_dragHandle, physical - m_dragStart), m_dragHandle).intersected(m_desktop.bounds());
         emit selectionChanged(m_selection);
         layoutToolbar();
         break;
@@ -536,10 +782,24 @@ bool CaptureSession::handleKeyPress(QKeyEvent* e)
     const bool shift = mods & Qt::ShiftModifier;
     if (key != Qt::Key_Shift)
         m_shiftAlone = false;
-    if (key == Qt::Key_Shift)
+    if (key == Qt::Key_Shift) {
         m_editor.setShiftHeld(true);
+        m_shiftHeld = true;
+    }
     if (m_state == State::Annotating && handleAnnotationKey(e))
         return true;
+    if (key == Qt::Key_F5) {
+        refresh();
+        return true;
+    }
+    if (key == Qt::Key_QuoteLeft) {
+        setIncludeCursor(!m_includeCursor);
+        return true;
+    }
+    if (key == Qt::Key_Space && m_state != State::Annotating) {
+        setSpaceHeld(true);
+        return true;
+    }
     // 工具快捷键（ANN-13）：Ctrl+数字；从已选定状态直接进入标注
     if (ctrl && !shift && key >= Qt::Key_1 && key <= Qt::Key_8 && (m_state == State::Selected || m_state == State::History || m_state == State::Annotating)) {
         static const AnnotationEditor::Tool tools[] = {AnnotationEditor::Tool::Rect, AnnotationEditor::Tool::Ellipse, AnnotationEditor::Tool::Line,
@@ -657,8 +917,13 @@ bool CaptureSession::handleKeyRelease(QKeyEvent* e)
         setAltHeld(false);
         return true;
     }
+    if (e->key() == Qt::Key_Space) {
+        setSpaceHeld(false);
+        return true;
+    }
     if (e->key() == Qt::Key_Shift) {
         m_editor.setShiftHeld(false);
+        m_shiftHeld = false;
         if (m_shiftAlone)
             cycleColorFormat(); // 单独按一下 Shift 轮换颜色格式
         m_shiftAlone = false;
@@ -793,17 +1058,10 @@ QImage CaptureSession::accept()
 {
     if (!isActive())
         return {};
-    const QImage image = currentImage();
+    const QImage image = finalImage();
     if (image.isNull())
         return {};
-    const QRect region = m_selection;
-    if (m_output)
-        m_output->copy(image);
-    else
-        QApplication::clipboard()->setImage(image);
-    recordHistory(image, region);
-    emit captured(image, region);
-    finish();
+    runActions(m_settings.stringValue(QStringLiteral("capture.enterActions")).split(QLatin1Char(','), Qt::SkipEmptyParts));
     return image;
 }
 
@@ -818,7 +1076,7 @@ void CaptureSession::save()
 {
     if (!isActive() || !m_output)
         return;
-    const QImage image = currentImage();
+    const QImage image = finalImage();
     if (image.isNull())
         return;
     const QRect region = m_selection;
@@ -838,7 +1096,7 @@ void CaptureSession::quickSave()
 {
     if (!isActive() || !m_output)
         return;
-    const QImage image = currentImage();
+    const QImage image = finalImage();
     if (image.isNull())
         return;
     const QRect region = m_selection;
@@ -853,7 +1111,7 @@ void CaptureSession::pin()
 {
     if (!isActive())
         return;
-    const QImage image = currentImage();
+    const QImage image = finalImage();
     if (image.isNull())
         return;
     const QRect region = m_selection;

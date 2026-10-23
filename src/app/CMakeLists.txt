@@ -9,6 +9,7 @@ set(APPLIB_SOURCES
     PinWindow.h PinWindow.cpp
     PinManager.h PinManager.cpp
     ScrollCaptureSession.h ScrollCaptureSession.cpp
+    CustomCaptureDialog.h CustomCaptureDialog.cpp
     OutputActions.h OutputActions.cpp
     PreferencesDialog.h PreferencesDialog.cpp
     CommandServer.h CommandServer.cpp

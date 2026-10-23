@@ -19,6 +19,7 @@ public:
     ~WinElementDetector() override;
 
     std::optional<QRect> elementAt(QPoint physicalPos, std::chrono::milliseconds timeout) override;
+    QList<QRect> elementChainAt(QPoint physicalPos, std::chrono::milliseconds timeout) override;
 
     // 上一次超时的次数（测试用）
     int timeoutCount() const { return m_timeouts.load(); }
@@ -26,6 +27,7 @@ public:
 
 private:
     void workerLoop();
+    QList<QRect> runChain(QPoint physicalPos, std::chrono::milliseconds timeout);
 
     std::thread m_thread;
     std::mutex m_mutex;

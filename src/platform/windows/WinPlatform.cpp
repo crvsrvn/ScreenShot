@@ -4,6 +4,7 @@
 #include "platform/windows/GdiScreenCapture.h"
 #include "platform/windows/WinElementDetector.h"
 #include "platform/windows/WinGlobalHotkey.h"
+#include "platform/windows/WinCursor.h"
 #include "platform/windows/WinInputSimulator.h"
 #include "platform/windows/WinOcr.h"
 #include "platform/windows/WinWindowDetector.h"
@@ -28,6 +29,7 @@ public:
     }
 
     QString backendName() const override { return m_lastBackend; }
+    std::optional<CursorImage> captureCursor() override { return captureCursorImage(); }
 
 private:
     DxgiScreenCapture m_dxgi;

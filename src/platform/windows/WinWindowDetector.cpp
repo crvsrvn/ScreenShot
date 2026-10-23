@@ -68,4 +68,15 @@ QList<WindowInfo> WinWindowDetector::topLevelWindows()
     return list;
 }
 
+std::optional<WindowInfo> WinWindowDetector::activeWindow()
+{
+    HWND fg = GetForegroundWindow();
+    if (!fg)
+        return std::nullopt;
+    for (const auto& w : topLevelWindows())
+        if (w.handle == reinterpret_cast<quintptr>(fg))
+            return w;
+    return std::nullopt;
+}
+
 } // namespace ss::win

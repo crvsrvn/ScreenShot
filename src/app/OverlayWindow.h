@@ -43,6 +43,7 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
     void keyReleaseEvent(QKeyEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
 
 private:
     void paintContent(QPainter& painter);
@@ -56,6 +57,7 @@ private:
     QImage m_image; // devicePixelRatio == m_screen.scale
     bool m_awaitingFirstPaint = false;
     int m_paintCount = 0;
+    QRectF m_sizeLabel; // 尺寸标签的逻辑矩形（点击可输入宽高，CAP-17）
 };
 
 } // namespace ss

@@ -610,7 +610,8 @@ ScenarioResult Runner::m1CaptureFlow()
     const auto cmp = testing::compareImages(out, ref, testing::CompareOptions{0, static_cast<qint64>(330) * 250 / 50});
     m_client.call(QStringLiteral("key"), {{QStringLiteral("key"), QStringLiteral("Ctrl+Shift+S")}});
     const QJsonObject after = m_client.call(QStringLiteral("state"));
-    const QString saved = QDir(dir.path()).filePath(QStringLiteral("e2e_1.png"));
+    const QStringList savedFiles = QDir(dir.path()).entryList({QStringLiteral("e2e_*.png")}, QDir::Files, QDir::Time);
+    const QString saved = savedFiles.isEmpty() ? QString() : QDir(dir.path()).filePath(savedFiles.first());
     const bool savedOk = QFile::exists(saved) && QImage(saved).size() == QSize(330, 250) && !after.value(QStringLiteral("capturing")).toBool()
         && after.value(QStringLiteral("historySize")).toInt() >= 1;
     // 历史回放
@@ -668,7 +669,8 @@ ScenarioResult Runner::m2Annotate()
     const QJsonObject st = m_client.call(QStringLiteral("annotateState"));
     const bool oneItem = st.value(QStringLiteral("count")).toInt() == 1 && m_client.call(QStringLiteral("state")).value(QStringLiteral("state")).toString() == QLatin1String("annotating");
     m_client.call(QStringLiteral("key"), {{QStringLiteral("key"), QStringLiteral("Ctrl+Shift+S")}});
-    const QString saved = QDir(dir.path()).filePath(QStringLiteral("ann_1.png"));
+    const QStringList files = QDir(dir.path()).entryList({QStringLiteral("ann_*.png")}, QDir::Files, QDir::Time);
+    const QString saved = files.isEmpty() ? QString() : QDir(dir.path()).filePath(files.first());
     const QImage img(saved);
     const bool pixelsOk = !img.isNull() && img.size() == QSize(200, 150) && img.pixel(60, 60) == qRgb(0, 255, 0) && img.pixel(5, 5) != qRgb(0, 255, 0);
     r.data = QJsonObject{{QStringLiteral("toolbarShown"), toolbarShown}, {QStringLiteral("oneItem"), oneItem}, {QStringLiteral("pixelsOk"), pixelsOk}, {QStringLiteral("file"), saved}};
@@ -683,11 +685,19 @@ ScenarioResult Runner::m3Pins()
     ScenarioResult r{QStringLiteral("M3-PINS"), QStringLiteral("M3：贴图在真实桌面上的物理定位、缩放、穿透、关闭恢复、文本贴图")};
     const QRect g = win::enumerateScreens().first().physicalGeometry;
     const QPoint at = g.topLeft() + QPoint(400, 300);
-    if (!m_client.call(QStringLiteral("pinAction"), {{QStringLiteral("action"), QStringLiteral("clipboardImage")}, {QStringLiteral("x"), at.x()}, {QStringLiteral("y"), at.y()}, {QStringLiteral("width"), 320}, {QStringLiteral("height"), 200}}).value(QStringLiteral("ok")).toBool()) {
-        r.summary = QStringLiteral("剪贴板贴图失败");
-        return r;
+    bool clipboardOk = true;
+    if (desktopUnlocked()) {
+        clipboardOk = m_client.call(QStringLiteral("pinAction"), {{QStringLiteral("action"), QStringLiteral("clipboardImage")}, {QStringLiteral("x"), at.x()}, {QStringLiteral("y"), at.y()}, {QStringLiteral("width"), 320}, {QStringLiteral("height"), 200}}).value(QStringLiteral("ok")).toBool();
+    } else {
+        // 锁屏时剪贴板不可用：直接创建贴图再移到目标位置
+        m_client.call(QStringLiteral("createPins"), {{QStringLiteral("count"), 1}, {QStringLiteral("width"), 320}, {QStringLiteral("height"), 200}});
+        m_client.call(QStringLiteral("pinAction"), {{QStringLiteral("index"), 0}, {QStringLiteral("action"), QStringLiteral("move")}, {QStringLiteral("x"), at.x()}, {QStringLiteral("y"), at.y()}});
     }
     QThread::msleep(200);
+    if (m_client.call(QStringLiteral("pins")).value(QStringLiteral("pins")).toArray().isEmpty()) {
+        r.summary = QStringLiteral("没有创建出贴图");
+        return r;
+    }
     QJsonObject pins = m_client.call(QStringLiteral("pins"));
     QJsonObject p = pins.value(QStringLiteral("pins")).toArray().first().toObject();
     const QRect content(p.value(QStringLiteral("x")).toInt(), p.value(QStringLiteral("y")).toInt(), p.value(QStringLiteral("w")).toInt(), p.value(QStringLiteral("h")).toInt());
@@ -721,11 +731,11 @@ ScenarioResult Runner::m3Pins()
                          {QStringLiteral("native"), QStringLiteral("%1,%2 %3x%4").arg(native.x()).arg(native.y()).arg(native.width()).arg(native.height())},
                          {QStringLiteral("placed"), placed}, {QStringLiteral("nativeOk"), nativeOk}, {QStringLiteral("zoomed"), zoomed}, {QStringLiteral("through"), through},
                          {QStringLiteral("throughOff"), throughOff}, {QStringLiteral("restored"), restored}, {QStringLiteral("textOk"), textOk}};
-    r.passed = placed && nativeOk && zoomed && through && throughOff && restored && textOk;
-    r.summary = QStringLiteral("定位%1 原生%2 缩放%3 穿透%4/%5 恢复%6 文本%7")
+    r.passed = clipboardOk && placed && nativeOk && zoomed && through && throughOff && restored && textOk;
+    r.summary = QStringLiteral("剪贴板%8 定位%1 原生%2 缩放%3 穿透%4/%5 恢复%6 文本%7")
                     .arg(placed ? QStringLiteral("ok") : QStringLiteral("FAIL"), nativeOk ? QStringLiteral("ok") : QStringLiteral("FAIL"), zoomed ? QStringLiteral("ok") : QStringLiteral("FAIL"),
                          through ? QStringLiteral("ok") : QStringLiteral("FAIL"), throughOff ? QStringLiteral("ok") : QStringLiteral("FAIL"), restored ? QStringLiteral("ok") : QStringLiteral("FAIL"),
-                         textOk ? QStringLiteral("ok") : QStringLiteral("FAIL"));
+                         textOk ? QStringLiteral("ok") : QStringLiteral("FAIL"), clipboardOk ? QStringLiteral("ok") : QStringLiteral("FAIL"));
     return r;
 }
 

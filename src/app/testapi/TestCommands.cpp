@@ -703,6 +703,24 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
         QApplication::processEvents();
         return ::ss::ok();
     }
+    if (cmd == QStringLiteral("quickCapture"))
+        return app.quickCapture(req.value(QStringLiteral("kind")).toString()) ? ::ss::ok() : fail(QStringLiteral("quick capture failed"));
+    if (cmd == QStringLiteral("whiteboard")) {
+        app.startWhiteboard();
+        return ::ss::ok({{QStringLiteral("state"), stateName(session.state())}});
+    }
+    if (cmd == QStringLiteral("cursorToggle")) {
+        session.setIncludeCursor(!session.includeCursor());
+        return ::ss::ok({{QStringLiteral("includeCursor"), session.includeCursor()}});
+    }
+    if (cmd == QStringLiteral("refresh"))
+        return session.refresh() ? ::ss::ok() : fail(QStringLiteral("refresh failed"));
+    if (cmd == QStringLiteral("finalImage")) {
+        const QImage img = session.finalImage();
+        if (img.isNull() || !img.save(req.value(QStringLiteral("path")).toString(), "PNG"))
+            return fail(QStringLiteral("no image"));
+        return ::ss::ok({{QStringLiteral("w"), img.width()}, {QStringLiteral("h"), img.height()}});
+    }
     if (cmd == QStringLiteral("runCommand")) {
         QStringList args;
         for (const auto& v : req.value(QStringLiteral("args")).toArray())

@@ -20,6 +20,8 @@ public:
     QList<ScreenInfo> screens() override { return m_screens; }
     std::optional<ScreenSnapshot> capture(const ScreenInfo& screen) override;
     QString backendName() const override { return QStringLiteral("fake"); }
+    void setCursor(std::optional<CursorImage> cursor) { m_cursor = std::move(cursor); }
+    std::optional<CursorImage> captureCursor() override { return m_cursor; }
 
     int captureCount() const { return m_captureCount; }
 
@@ -32,6 +34,7 @@ private:
     QList<QImage> m_images;
     QList<bool> m_failing;
     int m_captureCount = 0;
+    std::optional<CursorImage> m_cursor;
 };
 
 } // namespace ss::testing

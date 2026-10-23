@@ -31,6 +31,9 @@ public:
 
     // 实现名称，用于日志和测试报告（例如 "dxgi"、"gdi"、"fake"）。
     virtual QString backendName() const = 0;
+
+    // 当前鼠标指针图像及其左上角的物理位置（CAP-30）；不可用返回空
+    virtual std::optional<CursorImage> captureCursor() { return std::nullopt; }
 };
 
 } // namespace ss

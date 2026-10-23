@@ -14,6 +14,7 @@
 #include <QPainter>
 #include <QScreen>
 #include <QTimer>
+#include <QWheelEvent>
 #include <QWindow>
 
 #if defined(Q_OS_WIN)
@@ -167,6 +168,20 @@ void OverlayWindow::paintSelection(QPainter& p, const QRect& selection)
         p.fillRect(label, QColor(0, 0, 0, 160));
         p.setPen(Qt::white);
         p.drawText(label.adjusted(4, 0, 0, 0), Qt::AlignVCenter | Qt::AlignLeft, text);
+        m_sizeLabel = label;
+    } else {
+        m_sizeLabel = QRectF();
+    }
+    // 指针预览（CAP-30）
+    if (m_session->includeCursor()) {
+        if (auto cur = m_session->cursorImage(); cur && !cur->image.isNull()) {
+            const QRect curRect(cur->physicalTopLeft, cur->image.size());
+            if (curRect.intersects(m_screen.physicalGeometry)) {
+                QImage img = cur->image;
+                img.setDevicePixelRatio(m_screen.scale);
+                p.drawImage(toLogical(curRect).topLeft(), img);
+            }
+        }
     }
 }
 
@@ -310,7 +325,20 @@ void OverlayWindow::moveCursorTo(QPoint physical)
 
 void OverlayWindow::mousePressEvent(QMouseEvent* event)
 {
+    if (event->button() == Qt::LeftButton && !m_sizeLabel.isNull() && m_sizeLabel.contains(event->position())
+        && (m_session->state() == CaptureSession::State::Selected || m_session->state() == CaptureSession::State::History)) {
+        emit m_session->sizeInputRequested(); // CAP-17：点击尺寸文字输入宽高
+        return;
+    }
     m_session->pressAt(toPhysical(event->position()), event->button());
+}
+
+void OverlayWindow::wheelEvent(QWheelEvent* event)
+{
+    // CAP-13：检测状态下滚轮在父 / 子元素间切换（向上 = 父元素）
+    const int steps = event->angleDelta().y() / 120;
+    if (steps != 0 && m_session->state() == CaptureSession::State::Detecting)
+        m_session->cycleElement(steps > 0 ? 1 : -1);
 }
 
 void OverlayWindow::mouseMoveEvent(QMouseEvent* event)

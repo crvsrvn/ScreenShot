@@ -12,6 +12,7 @@ qt_add_library(platform_windows STATIC
     WinPipeServer.h WinPipeServer.cpp
     WinSystem.h WinSystem.cpp
     WinInputSimulator.h WinInputSimulator.cpp
+    WinCursor.h WinCursor.cpp
     WinPlatform.h WinPlatform.cpp
 )
 target_link_libraries(platform_windows

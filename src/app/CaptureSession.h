@@ -60,6 +60,10 @@ public:
     // ---- 生命周期 ----
     void prepareOverlays();
     bool start(qint64 triggerNs, bool showOverlays = true);
+    // 白板（CAP-50）：纯色全屏画布，直接进入标注
+    bool startWhiteboard(const QColor& color, bool currentScreenOnly, bool showOverlays = true);
+    // 刷新截图（CAP-31）：保留选区重新抓取
+    bool refresh();
     bool isActive() const { return m_state != State::Idle; }
     State state() const { return m_state; }
 
@@ -67,6 +71,30 @@ public:
     QRect selection() const { return m_selection; }
     void setSelection(const QRect& physical);
     void selectFullScreen(); // Ctrl+A：当前屏幕 / 全部屏幕轮换（CAP-15）
+    // 直接输入宽高（CAP-17）：保持左上角
+    void setSelectionSize(int width, int height);
+    // 固定比例（CAP-18）：锁定当前宽高比；Shift 拖拽为 1:1
+    void setRatioLocked(bool locked) override;
+    bool ratioLocked() const override { return m_ratioLocked; }
+    bool supportsCaptureOptions() const override { return true; }
+    // 拖拽调整大小时按住 Space 改为移动（CAP-16）
+    void setSpaceHeld(bool held);
+    // 截取鼠标指针（CAP-30）：` 切换
+    bool includeCursor() const { return m_includeCursor; }
+    void setIncludeCursor(bool on);
+    // 层级元素（CAP-13）：滚轮切换父 / 子元素
+    void cycleElement(int delta);
+    int elementLevel() const { return m_elementLevel; }
+    // 输出装饰（CAP-32、CAP-33）：圆角 / 阴影 / 边框开关，作用于复制、保存、贴图
+    bool shadowEnabled() const override { return m_shadow; }
+    bool borderEnabled() const override { return m_border; }
+    void setShadowEnabled(bool on) override;
+    void setBorderEnabled(bool on) override;
+    std::optional<CursorImage> cursorImage() const { return m_cursorImage; }
+    // 应用装饰与指针后的最终输出图
+    QImage finalImage() const;
+    // 截图后动作（CAP-04）：按固定顺序执行列表里的动作，然后结束
+    void runActions(const QStringList& actions);
 
     // ---- 检测（CAP-11、CAP-12）----
     DetectMode detectMode() const { return m_detectMode; }
@@ -146,6 +174,8 @@ signals:
     void started();
     void pinRequested(const QImage& image, const QRect& physicalRegion);
     void scrollRequested(const QRect& physicalRegion); // CAP-60：选区后点“滚动截图”
+    void ocrCopyRequested(const QImage& image);         // CAP-04 的 OCR 复制动作
+    void sizeInputRequested();                          // CAP-17：点击尺寸文字
     void colorCopied(const QString& text);
     void cursorMoveRequested(QPoint physical);
 
@@ -167,6 +197,8 @@ private:
 
     bool handleAnnotationKey(QKeyEvent* e);
     QPointF toImage(QPoint physical) const { return QPointF(physical - m_selection.topLeft()); }
+    bool startWithSnapshots(qint64 triggerNs, QList<ScreenSnapshot> snapshots, bool showOverlays);
+    QRect applyRatio(const QRect& r, SelectionHandle handle) const;
 
     IScreenCapture* m_capture;
     IWindowDetector* m_windows;
@@ -200,7 +232,18 @@ private:
     // 键盘与放大镜
     bool m_altHeld = false;
     bool m_shiftAlone = false;
+    bool m_shiftHeld = false;
+    bool m_spaceHeld = false;
     bool m_fullScreenAll = false;
+    bool m_ratioLocked = false;
+    double m_lockedRatio = 1.0;
+    bool m_includeCursor = false;
+    std::optional<CursorImage> m_cursorImage;
+    QList<QRect> m_elementChain;
+    int m_elementLevel = 0;
+    bool m_shadow = false;
+    bool m_border = false;
+    bool m_whiteboard = false;
     ColorFormat m_colorFormat = ColorFormat::Hex;
     // 历史
     std::unique_ptr<HistoryCursor> m_historyCursor;

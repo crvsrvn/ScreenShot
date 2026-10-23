@@ -56,6 +56,13 @@ public:
     // 当前光标的物理位置（贴图放置位置）
     static QPoint cursorPhysical();
 
+    // 快捷截图（CAP-06）：不交互，直接按设置的动作输出。kind：full | last | activeWindow | activeScreen | cursorScreen
+    bool quickCapture(const QString& kind);
+    // 指定区域（CAP-05 自定义截图 / 命令行）：delayMs 后截图并输出；interactive=false 时不显示界面
+    void captureRegion(const QRect& physical, int delayMs = 0, bool interactive = false);
+    void showCustomCaptureDialog();
+    void startWhiteboard();
+
 public slots:
     void startCapture(qint64 triggerNs);
     PinWindow* pinImage(const QImage& image, QPoint physicalPos);
@@ -73,6 +80,8 @@ public slots:
 private:
     void setupTray();
     void setupHotkeys();
+    void onSizeInputRequested();
+    void onOcrCopyRequested(const QImage& image);
     void registerHotkeys();
     void applySetting(const QString& key);
 

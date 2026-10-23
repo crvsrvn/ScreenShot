@@ -8,6 +8,7 @@ namespace ss::win {
 class WinWindowDetector : public IWindowDetector {
 public:
     QList<WindowInfo> topLevelWindows() override;
+    std::optional<WindowInfo> activeWindow() override;
 };
 
 } // namespace ss::win

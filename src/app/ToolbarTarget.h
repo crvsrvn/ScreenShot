@@ -22,6 +22,14 @@ public:
     virtual bool supportsPin() const { return true; }
     virtual bool supportsScroll() const { return false; } // 截图会话支持“滚动截图”
     virtual void startScroll() {}
+    // 截图会话的输出选项（CAP-18 固定比例、CAP-33 阴影 / 边框）；贴图宿主不提供
+    virtual bool supportsCaptureOptions() const { return false; }
+    virtual bool ratioLocked() const { return false; }
+    virtual void setRatioLocked(bool) {}
+    virtual bool shadowEnabled() const { return false; }
+    virtual void setShadowEnabled(bool) {}
+    virtual bool borderEnabled() const { return false; }
+    virtual void setBorderEnabled(bool) {}
 };
 
 } // namespace ss

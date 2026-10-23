@@ -11,6 +11,7 @@
 #include <QSpinBox>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <tuple>
 
 namespace ss {
 
@@ -109,6 +110,21 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
     QToolButton* scrollButton = addButton(m_tools, QStringLiteral("scroll"), tr("Scroll"), tr("Scrolling capture (Ctrl+L)"));
     connect(scrollButton, &QToolButton::clicked, this, [this] { m_target->startScroll(); });
     scrollButton->setVisible(target->supportsScroll());
+    for (const auto& [name, text, tip] : QList<std::tuple<QString, QString, QString>>{{QStringLiteral("ratio"), tr("1:1 lock"), tr("Keep the current aspect ratio while resizing (Shift drags a square)")},
+                                                                                     {QStringLiteral("shadow"), tr("Shadow"), tr("Add a shadow to the output")},
+                                                                                     {QStringLiteral("border"), tr("Border"), tr("Add a border to the output")}}) {
+        QToolButton* b = addButton(m_tools, name, text, tip, true);
+        b->setVisible(target->supportsCaptureOptions());
+        const QString n = name;
+        connect(b, &QToolButton::clicked, this, [this, n](bool checked) {
+            if (n == QLatin1String("ratio"))
+                m_target->setRatioLocked(checked);
+            else if (n == QLatin1String("shadow"))
+                m_target->setShadowEnabled(checked);
+            else
+                m_target->setBorderEnabled(checked);
+        });
+    }
     connect(addButton(m_tools, QStringLiteral("cancel"), tr("Cancel"), tr("Cancel (Esc)")), &QToolButton::clicked, this, [this] { m_target->cancel(); });
 
     buildOptions();
@@ -280,6 +296,12 @@ void CaptureToolbar::syncFromEditor()
     const AnnotationEditor::Tool tool = e.tool();
     for (auto it = m_toolButtons.cbegin(); it != m_toolButtons.cend(); ++it)
         it.value()->setChecked(annotating && toolFromName(it.key()) == tool);
+    if (auto* b = button(QStringLiteral("ratio")))
+        b->setChecked(m_target->ratioLocked());
+    if (auto* b = button(QStringLiteral("shadow")))
+        b->setChecked(m_target->shadowEnabled());
+    if (auto* b = button(QStringLiteral("border")))
+        b->setChecked(m_target->borderEnabled());
     const bool showOptions = annotating && (tool != AnnotationEditor::Tool::None || e.selectedId() >= 0);
     m_options->setVisible(showOptions);
     if (showOptions) {

@@ -2,6 +2,7 @@
 
 #include "app/CaptureSession.h"
 #include "app/CommandServer.h"
+#include "app/CustomCaptureDialog.h"
 #include "app/OutputActions.h"
 #include "app/PinManager.h"
 #include "app/PinWindow.h"
@@ -13,6 +14,9 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QCursor>
+#include <QInputDialog>
+#include <QRegularExpression>
+#include <QTimer>
 #include <QGuiApplication>
 #include <QMenu>
 #include <QMessageBox>
@@ -64,6 +68,11 @@ App::App(Platform platform, Settings& settings, QObject* parent)
     m_session->setOutput(m_output.get());
     connect(m_session.get(), &CaptureSession::pinRequested, this, [this](const QImage& image, const QRect& region) { pinImage(image, region.topLeft()); });
     connect(m_session.get(), &CaptureSession::scrollRequested, this, [this](const QRect& region) { startScroll(region); });
+    connect(m_session.get(), &CaptureSession::sizeInputRequested, this, &App::onSizeInputRequested);
+    connect(m_session.get(), &CaptureSession::ocrCopyRequested, this, &App::onOcrCopyRequested);
+    connect(m_session.get(), &CaptureSession::captured, this, [this](const QImage&, const QRect& region) {
+        m_settings.setValue(QStringLiteral("capture.lastRegion"), QStringLiteral("%1,%2,%3,%4").arg(region.x()).arg(region.y()).arg(region.width()).arg(region.height()));
+    });
     connect(&m_settings, &Settings::changed, this, [this](const QString& key, const QVariant&) { applySetting(key); });
     m_session->prepareOverlays();
     setupTray();
@@ -118,6 +127,14 @@ void App::setupTray()
 {
     m_trayMenu = new QMenu();
     m_trayMenu->addAction(tr("Capture\tF1"), this, [this] { startCapture(monotonicNs()); });
+    m_trayMenu->addAction(tr("Custom capture..."), this, &App::showCustomCaptureDialog);
+    QMenu* quick = m_trayMenu->addMenu(tr("Quick capture"));
+    quick->addAction(tr("Full screen"), this, [this] { quickCapture(QStringLiteral("full")); });
+    quick->addAction(tr("Last area"), this, [this] { quickCapture(QStringLiteral("last")); });
+    quick->addAction(tr("Active window"), this, [this] { quickCapture(QStringLiteral("activeWindow")); });
+    quick->addAction(tr("Active screen"), this, [this] { quickCapture(QStringLiteral("activeScreen")); });
+    quick->addAction(tr("Screen under cursor"), this, [this] { quickCapture(QStringLiteral("cursorScreen")); });
+    m_trayMenu->addAction(tr("Whiteboard"), this, &App::startWhiteboard);
     m_trayMenu->addAction(tr("Pin clipboard\tF3"), this, &App::pinFromClipboard);
     m_togglePinsAction = m_trayMenu->addAction(tr("Hide all pins\tShift+F3"), this, &App::togglePinsHidden);
     m_trayMenu->addAction(tr("Restore closed pin\tCtrl+3"), this, &App::restoreClosedPin);
@@ -239,8 +256,33 @@ void App::startCommandServer(const QString& channelName)
 void App::runCommand(const QStringList& command)
 {
     const QString name = command.value(0);
-    if (name == QLatin1String("snip"))
-        startCapture(monotonicNs());
+    if (name == QLatin1String("snip")) {
+        // snip [full|last|active-window|active-screen|cursor-screen|custom|whiteboard|x,y,w,h] [--delay ms]
+        const QString arg = command.value(1);
+        int delay = 0;
+        const int d = static_cast<int>(command.indexOf(QStringLiteral("--delay")));
+        if (d >= 0)
+            delay = command.value(d + 1).toInt();
+        if (arg.isEmpty() || arg.startsWith(QStringLiteral("--")))
+            startCapture(monotonicNs());
+        else if (arg == QLatin1String("full") || arg == QLatin1String("last"))
+            quickCapture(arg);
+        else if (arg == QLatin1String("active-window"))
+            quickCapture(QStringLiteral("activeWindow"));
+        else if (arg == QLatin1String("active-screen"))
+            quickCapture(QStringLiteral("activeScreen"));
+        else if (arg == QLatin1String("cursor-screen"))
+            quickCapture(QStringLiteral("cursorScreen"));
+        else if (arg == QLatin1String("custom"))
+            showCustomCaptureDialog();
+        else if (arg == QLatin1String("whiteboard"))
+            startWhiteboard();
+        else {
+            const QStringList parts = arg.split(QLatin1Char(','));
+            if (parts.size() == 4)
+                captureRegion(QRect(parts[0].toInt(), parts[1].toInt(), parts[2].toInt(), parts[3].toInt()), delay, false);
+        }
+    }
     else if (name == QLatin1String("pin"))
         pinFromClipboard();
     else if (name == QLatin1String("toggle-pins"))
@@ -258,6 +300,103 @@ void App::notifyCrashDumps(const QStringList& dumps)
     if (dumps.isEmpty() || !m_tray)
         return;
     m_tray->showMessage(tr("ScreenShot crashed last time"), tr("A crash dump was written to %1").arg(dumps.first()), QSystemTrayIcon::Warning);
+}
+
+void App::onSizeInputRequested()
+{
+    // CAP-17：输入宽高
+    bool ok = false;
+    const QRect sel = m_session->selection();
+    const QString text = QInputDialog::getText(nullptr, tr("Selection size"), tr("Width x Height (pixels)"), QLineEdit::Normal,
+                                               QStringLiteral("%1x%2").arg(sel.width()).arg(sel.height()), &ok);
+    if (!ok)
+        return;
+    const QStringList parts = text.split(QRegularExpression(QStringLiteral("[xX*,\\s]+")), Qt::SkipEmptyParts);
+    if (parts.size() == 2)
+        m_session->setSelectionSize(parts[0].toInt(), parts[1].toInt());
+}
+
+void App::onOcrCopyRequested(const QImage& image)
+{
+    if (!m_platform.ocr)
+        return;
+    const OcrResult r = m_platform.ocr->recognize(image);
+    if (r.ok && !r.lines.isEmpty())
+        QApplication::clipboard()->setText(r.text());
+}
+
+bool App::quickCapture(const QString& kind)
+{
+    if (m_session->isActive())
+        return false;
+    QRect region;
+    const QList<ScreenInfo> screens = m_session->screenCapture() ? m_session->screenCapture()->screens() : QList<ScreenInfo>{};
+    auto screenContaining = [&](QPoint p) {
+        for (const auto& s : screens)
+            if (s.physicalGeometry.contains(p))
+                return s.physicalGeometry;
+        return screens.isEmpty() ? QRect() : screens.first().physicalGeometry;
+    };
+    if (kind == QLatin1String("full")) {
+        for (const auto& s : screens)
+            region = region.united(s.physicalGeometry);
+    } else if (kind == QLatin1String("last")) {
+        const QStringList parts = m_settings.stringValue(QStringLiteral("capture.lastRegion")).split(QLatin1Char(','));
+        if (parts.size() == 4)
+            region = QRect(parts[0].toInt(), parts[1].toInt(), parts[2].toInt(), parts[3].toInt());
+    } else if (kind == QLatin1String("activeWindow")) {
+        if (m_platform.windowDetector)
+            if (auto w = m_platform.windowDetector->activeWindow())
+                region = w->frame;
+    } else if (kind == QLatin1String("activeScreen")) {
+        if (m_platform.windowDetector)
+            if (auto w = m_platform.windowDetector->activeWindow())
+                region = screenContaining(w->frame.center());
+    } else if (kind == QLatin1String("cursorScreen")) {
+        region = screenContaining(cursorPhysical());
+    }
+    if (region.isEmpty())
+        return false;
+    captureRegion(region, 0, false);
+    return true;
+}
+
+void App::captureRegion(const QRect& physical, int delayMs, bool interactive)
+{
+    auto run = [this, physical, interactive] {
+        if (!m_session->start(monotonicNs(), interactive))
+            return;
+        const QRect region = physical.intersected(m_session->desktop().bounds());
+        if (region.isEmpty()) {
+            m_session->cancel();
+            return;
+        }
+        m_session->setSelection(region);
+        if (!interactive)
+            m_session->accept(); // 直接按 Enter 动作输出（CAP-04 / CAP-06）
+    };
+    if (delayMs > 0)
+        QTimer::singleShot(delayMs, this, run);
+    else
+        run();
+}
+
+void App::showCustomCaptureDialog()
+{
+    CustomCaptureDialog dialog(m_settings);
+    const QStringList parts = m_settings.stringValue(QStringLiteral("capture.lastRegion")).split(QLatin1Char(','));
+    if (parts.size() == 4)
+        dialog.setRegion(QRect(parts[0].toInt(), parts[1].toInt(), parts[2].toInt(), parts[3].toInt()));
+    if (dialog.exec() != QDialog::Accepted)
+        return;
+    const auto r = dialog.request();
+    captureRegion(r.region, r.delayMs, true);
+}
+
+void App::startWhiteboard()
+{
+    m_session->startWhiteboard(QColor::fromString(m_settings.stringValue(QStringLiteral("capture.whiteboardColor"))),
+                               m_settings.boolValue(QStringLiteral("capture.whiteboardCurrentScreen")));
 }
 
 void App::startCapture(qint64 triggerNs)
