@@ -5,7 +5,9 @@ set(APPLIB_SOURCES
     OverlayWindow.h OverlayWindow.cpp
     CaptureToolbar.h CaptureToolbar.cpp
     AnnotationEditor.h AnnotationEditor.cpp
+    ToolbarTarget.h
     PinWindow.h PinWindow.cpp
+    PinManager.h PinManager.cpp
     OutputActions.h OutputActions.cpp
     PreferencesDialog.h PreferencesDialog.cpp
     CommandServer.h CommandServer.cpp

@@ -26,6 +26,7 @@
 #include "app/CaptureToolbar.h"
 #include "app/OutputActions.h"
 #include "app/OverlayWindow.h"
+#include "app/PinManager.h"
 #include "app/PinWindow.h"
 #include "core/config/Settings.h"
 #include "core/fx/Blur.h"
@@ -491,6 +492,92 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
         return cmdScalePin(app, req);
     if (cmd == QStringLiteral("closePins")) {
         app.closeAllPins();
+        return ok();
+    }
+    if (cmd == QStringLiteral("pins")) {
+        QJsonArray arr;
+        for (auto* p : app.pins()) {
+            QJsonObject o = rectToJson(p->physicalContentRect());
+            o[QStringLiteral("scale")] = p->scale();
+            o[QStringLiteral("opacity")] = p->opacity();
+            o[QStringLiteral("rotation")] = p->rotation();
+            o[QStringLiteral("flipH")] = p->flippedH();
+            o[QStringLiteral("flipV")] = p->flippedV();
+            o[QStringLiteral("passthrough")] = p->passthrough();
+            o[QStringLiteral("visible")] = p->isVisible();
+            o[QStringLiteral("annotating")] = p->annotating();
+            o[QStringLiteral("imageW")] = p->originalImage().width();
+            o[QStringLiteral("imageH")] = p->originalImage().height();
+#ifdef Q_OS_WIN
+            o[QStringLiteral("native")] = rectToJson(win::windowPhysicalRect(reinterpret_cast<void*>(p->winId())));
+#endif
+            arr.append(o);
+        }
+        return ok({{QStringLiteral("pins"), arr}, {QStringLiteral("closed"), static_cast<int>(app.pinManager().closedPins().size())}, {QStringLiteral("hidden"), app.pinsHidden()}});
+    }
+    if (cmd == QStringLiteral("pinAction")) {
+        const int index = req.value(QStringLiteral("index")).toInt(0);
+        const QString action = req.value(QStringLiteral("action")).toString();
+        if (action == QLatin1String("restore")) {
+            app.restoreClosedPin();
+            return ok({{QStringLiteral("pins"), static_cast<int>(app.pins().size())}});
+        }
+        if (action == QLatin1String("toggleHidden")) {
+            app.togglePinsHidden();
+            return ok();
+        }
+        if (action == QLatin1String("passthroughAt")) {
+            app.pinManager().togglePassthroughAt(QPoint(req.value(QStringLiteral("x")).toInt(), req.value(QStringLiteral("y")).toInt()));
+            return ok();
+        }
+        if (action == QLatin1String("clipboardImage")) {
+            // 把合成图像放进剪贴板后按贴图热键语义贴出
+            QApplication::clipboard()->setImage(noiseImage(req.value(QStringLiteral("width")).toInt(300), req.value(QStringLiteral("height")).toInt(200)));
+            app.pinManager().markClipboardDirty();
+            PinWindow* pin = app.pinManager().pinHotkey(QPoint(req.value(QStringLiteral("x")).toInt(100), req.value(QStringLiteral("y")).toInt(100)));
+            return pin ? ok() : fail(QStringLiteral("nothing pinned"));
+        }
+        if (action == QLatin1String("text")) {
+            PinWindow* pin = app.pinManager().pinText(req.value(QStringLiteral("text")).toString(), QPoint(req.value(QStringLiteral("x")).toInt(100), req.value(QStringLiteral("y")).toInt(100)));
+            return pin ? ok({{QStringLiteral("w"), pin->originalImage().width()}, {QStringLiteral("h"), pin->originalImage().height()}}) : fail(QStringLiteral("nothing pinned"));
+        }
+        if (index < 0 || index >= app.pins().size())
+            return fail(QStringLiteral("bad pin index"));
+        PinWindow* pin = app.pins().at(index);
+        if (action == QLatin1String("zoom"))
+            pin->zoomStep(req.value(QStringLiteral("steps")).toInt(1), QPointF(pin->width() / 2.0, pin->height() / 2.0));
+        else if (action == QLatin1String("opacity"))
+            pin->adjustOpacity(req.value(QStringLiteral("delta")).toInt(-10));
+        else if (action == QLatin1String("rotate"))
+            pin->rotateQuarter(req.value(QStringLiteral("turns")).toInt(1));
+        else if (action == QLatin1String("flipH"))
+            pin->flipHorizontal();
+        else if (action == QLatin1String("flipV"))
+            pin->flipVertical();
+        else if (action == QLatin1String("reset"))
+            pin->toggleReset();
+        else if (action == QLatin1String("passthrough"))
+            pin->setPassthrough(req.value(QStringLiteral("on")).toBool(true));
+        else if (action == QLatin1String("close"))
+            pin->closePin();
+        else if (action == QLatin1String("destroy"))
+            pin->destroyPin();
+        else if (action == QLatin1String("toolbar"))
+            pin->toggleToolbar();
+        else if (action == QLatin1String("move"))
+            pin->moveToPhysical(QPoint(req.value(QStringLiteral("x")).toInt(), req.value(QStringLiteral("y")).toInt()));
+        else if (action == QLatin1String("copy"))
+            pin->copyDisplayed();
+        else if (action == QLatin1String("key")) {
+            const QKeyCombination c = QKeySequence(req.value(QStringLiteral("key")).toString())[0];
+            QKeyEvent e(QEvent::KeyPress, c.key(), c.keyboardModifiers());
+            QApplication::sendEvent(pin, &e);
+        } else if (action == QLatin1String("savePng")) {
+            if (!pin->displayedImage().save(req.value(QStringLiteral("path")).toString(), "PNG"))
+                return fail(QStringLiteral("save failed"));
+        } else
+            return fail(QStringLiteral("unknown pin action"));
+        QApplication::processEvents();
         return ok();
     }
     if (cmd == QStringLiteral("memory")) {

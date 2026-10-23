@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/AnnotationEditor.h"
+#include "app/ToolbarTarget.h"
 #include "core/capture/CaptureHistory.h"
 #include "core/capture/SelectionGeometry.h"
 #include "core/capture/WindowFinder.h"
@@ -30,7 +31,7 @@ class OutputActions;
 // 截图会话：冻结画面 → 检测 / 框选 → 调整 → 输出。
 // 状态与选区全部用物理像素；覆盖窗口只负责把 Qt 的输入和绘制换算成物理坐标后转交到这里。
 // 数据单向流动：屏幕快照（只读）→ VirtualDesktop → 选区裁剪 → 结果位图 → 输出动作 → 历史；结束时整份快照释放。
-class CaptureSession : public QObject {
+class CaptureSession : public QObject, public ToolbarTarget {
     Q_OBJECT
 public:
     enum class State { Idle, Detecting, Selecting, Selected, History, Annotating };
@@ -61,7 +62,6 @@ public:
     bool start(qint64 triggerNs, bool showOverlays = true);
     bool isActive() const { return m_state != State::Idle; }
     State state() const { return m_state; }
-    void cancel();
 
     // ---- 选区（物理像素）----
     QRect selection() const { return m_selection; }
@@ -101,10 +101,12 @@ public:
     QString colorTextAtCursor() const;
     void copyColor();
 
-    // ---- 标注（M2）----
-    AnnotationEditor& editor() { return m_editor; }
+    // ---- 标注（M2）；ToolbarTarget ----
+    AnnotationEditor& editor() override { return m_editor; }
+    Settings& settings() override { return m_settings; }
+    bool annotating() const override { return m_state == State::Annotating; }
     // 选择标注工具：从已选定 / 历史状态进入标注；Tool::None 不退出标注
-    void setTool(AnnotationEditor::Tool tool);
+    void setTool(AnnotationEditor::Tool tool) override;
     // 结束标注回到已选定（右键）；标注保留在导出结果里
     void leaveAnnotating();
 
@@ -117,17 +119,17 @@ public:
     // ---- 输出 ----
     QImage currentImage() const; // 选区裁剪或历史图
     QImage accept();             // 复制并结束（OUT-01）
-    void copy() { accept(); }
-    void save();                 // OUT-03
-    void quickSave();            // OUT-08
-    void pin();                  // PIN-02
+    void copy() override { accept(); }
+    void save() override;        // OUT-03
+    void quickSave() override;   // OUT-08
+    void pin() override;         // PIN-02
+    void cancel() override;
 
     const VirtualDesktop& desktop() const { return m_desktop; }
     Timings timings() const { return m_timings; }
     QList<OverlayWindow*> overlays() const { return m_overlays.values(); }
     OverlayWindow* overlayAt(QPoint physical) const;
     CaptureToolbar* toolbar() const { return m_toolbar; }
-    Settings& settings() { return m_settings; }
 
     // 焦点丢失（CAP-03）：覆盖窗口在失去激活时调用
     void onFocusLost();

@@ -1,6 +1,5 @@
 #include "app/CaptureToolbar.h"
 
-#include "app/CaptureSession.h"
 #include "core/config/Settings.h"
 
 #include <QApplication>
@@ -58,9 +57,9 @@ AnnotationEditor::Tool CaptureToolbar::toolFromName(const QString& name)
     return AnnotationEditor::Tool::None;
 }
 
-CaptureToolbar::CaptureToolbar(CaptureSession* session)
+CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
     : QWidget(nullptr, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::WindowDoesNotAcceptFocus)
-    , m_session(session)
+    , m_target(target)
 {
     setAttribute(Qt::WA_ShowWithoutActivating);
     setStyleSheet(QStringLiteral("QWidget { background: #2b2b2b; color: white; } QToolButton { color: white; padding: 4px 7px; border: none; border-radius: 3px; }"
@@ -82,7 +81,7 @@ CaptureToolbar::CaptureToolbar(CaptureSession* session)
         connect(b, &QToolButton::clicked, this, [this, tool, b](bool checked) {
             if (m_syncing)
                 return;
-            m_session->setTool(checked ? tool : AnnotationEditor::Tool::None);
+            m_target->setTool(checked ? tool : AnnotationEditor::Tool::None);
             if (!checked)
                 b->setChecked(false);
         });
@@ -90,30 +89,31 @@ CaptureToolbar::CaptureToolbar(CaptureSession* session)
     auto* sep = new QFrame(m_tools);
     sep->setFrameShape(QFrame::VLine);
     row->addWidget(sep);
-    connect(addButton(m_tools, QStringLiteral("undo"), tr("Undo"), tr("Undo (Ctrl+Z)")), &QToolButton::clicked, this, [this] { m_session->editor().undo(); });
-    connect(addButton(m_tools, QStringLiteral("redo"), tr("Redo"), tr("Redo (Ctrl+Y)")), &QToolButton::clicked, this, [this] { m_session->editor().redo(); });
-    connect(addButton(m_tools, QStringLiteral("clear"), tr("Clear"), tr("Remove all annotations (undoable)")), &QToolButton::clicked, this, [this] { m_session->editor().clearAll(); });
+    connect(addButton(m_tools, QStringLiteral("undo"), tr("Undo"), tr("Undo (Ctrl+Z)")), &QToolButton::clicked, this, [this] { m_target->editor().undo(); });
+    connect(addButton(m_tools, QStringLiteral("redo"), tr("Redo"), tr("Redo (Ctrl+Y)")), &QToolButton::clicked, this, [this] { m_target->editor().redo(); });
+    connect(addButton(m_tools, QStringLiteral("clear"), tr("Clear"), tr("Remove all annotations (undoable)")), &QToolButton::clicked, this, [this] { m_target->editor().clearAll(); });
     auto* sep2 = new QFrame(m_tools);
     sep2->setFrameShape(QFrame::VLine);
     row->addWidget(sep2);
-    connect(addButton(m_tools, QStringLiteral("copy"), tr("Copy"), tr("Copy to clipboard (Enter)")), &QToolButton::clicked, session, &CaptureSession::copy);
+    connect(addButton(m_tools, QStringLiteral("copy"), tr("Copy"), tr("Copy to clipboard (Enter)")), &QToolButton::clicked, this, [this] { m_target->copy(); });
     connect(addButton(m_tools, QStringLiteral("save"), tr("Save"), tr("Save to file (Ctrl+S); Shift+click for quick save")), &QToolButton::clicked, this, [this] {
         if (QApplication::keyboardModifiers() & Qt::ShiftModifier)
-            m_session->quickSave();
+            m_target->quickSave();
         else
-            m_session->save();
+            m_target->save();
     });
-    connect(addButton(m_tools, QStringLiteral("quickSave"), tr("Quick save"), tr("Save to the quick save folder (Ctrl+Shift+S)")), &QToolButton::clicked, session, &CaptureSession::quickSave);
-    connect(addButton(m_tools, QStringLiteral("pin"), tr("Pin"), tr("Pin to screen (Ctrl+T)")), &QToolButton::clicked, session, &CaptureSession::pin);
-    connect(addButton(m_tools, QStringLiteral("cancel"), tr("Cancel"), tr("Cancel (Esc)")), &QToolButton::clicked, session, &CaptureSession::cancel);
+    connect(addButton(m_tools, QStringLiteral("quickSave"), tr("Quick save"), tr("Save to the quick save folder (Ctrl+Shift+S)")), &QToolButton::clicked, this, [this] { m_target->quickSave(); });
+    QToolButton* pinButton = addButton(m_tools, QStringLiteral("pin"), tr("Pin"), tr("Pin to screen (Ctrl+T)"));
+    connect(pinButton, &QToolButton::clicked, this, [this] { m_target->pin(); });
+    pinButton->setVisible(target->supportsPin());
+    connect(addButton(m_tools, QStringLiteral("cancel"), tr("Cancel"), tr("Cancel (Esc)")), &QToolButton::clicked, this, [this] { m_target->cancel(); });
 
     buildOptions();
     layout->addWidget(m_options);
     m_options->hide();
 
-    connect(&session->editor(), &AnnotationEditor::toolChanged, this, [this] { syncFromEditor(); });
-    connect(&session->editor(), &AnnotationEditor::selectionChanged, this, [this] { syncFromEditor(); });
-    connect(session, &CaptureSession::stateChanged, this, [this] { syncFromEditor(); });
+    connect(&target->editor(), &AnnotationEditor::toolChanged, this, [this] { syncFromEditor(); });
+    connect(&target->editor(), &AnnotationEditor::selectionChanged, this, [this] { syncFromEditor(); });
 }
 
 QToolButton* CaptureToolbar::addButton(QWidget* row, const QString& name, const QString& text, const QString& tooltip, bool checkable)
@@ -134,7 +134,7 @@ void CaptureToolbar::buildOptions()
     auto* row = new QHBoxLayout(m_options);
     row->setContentsMargins(0, 0, 0, 0);
     row->setSpacing(2);
-    AnnotationEditor& editor = m_session->editor();
+    AnnotationEditor& editor = m_target->editor();
 
     // 颜色（ANN-03）：预设色板 + 自定义（含透明度）
     for (const QColor& c : kPalette) {
@@ -145,7 +145,7 @@ void CaptureToolbar::buildOptions()
         b->setCheckable(true);
         b->setFocusPolicy(Qt::NoFocus);
         connect(b, &QToolButton::clicked, this, [this, c] {
-            m_session->editor().setColor(c);
+            m_target->editor().setColor(c);
             refreshColorButtons();
         });
         row->addWidget(b);
@@ -153,9 +153,9 @@ void CaptureToolbar::buildOptions()
     }
     m_customColor = addButton(m_options, QStringLiteral("customColor"), tr("Custom"), tr("Pick a color (with opacity)"));
     connect(m_customColor, &QToolButton::clicked, this, [this] {
-        const QColor c = QColorDialog::getColor(m_session->editor().style().stroke, nullptr, tr("Annotation color"), QColorDialog::ShowAlphaChannel);
+        const QColor c = QColorDialog::getColor(m_target->editor().style().stroke, nullptr, tr("Annotation color"), QColorDialog::ShowAlphaChannel);
         if (c.isValid()) {
-            m_session->editor().setColor(c);
+            m_target->editor().setColor(c);
             refreshColorButtons();
         }
     });
@@ -163,14 +163,14 @@ void CaptureToolbar::buildOptions()
     // 笔宽（ANN-06）：预设 + 微调
     auto* widthLabel = new QLabel(tr("Width"), m_options);
     row->addWidget(widthLabel);
-    const QStringList presets = m_session->settings().stringValue(QStringLiteral("annotation.widthPresets")).split(QLatin1Char(','), Qt::SkipEmptyParts);
+    const QStringList presets = m_target->settings().stringValue(QStringLiteral("annotation.widthPresets")).split(QLatin1Char(','), Qt::SkipEmptyParts);
     int shown = 0;
     for (const QString& p : presets) {
         const int w = p.trimmed().toInt();
         if (w <= 0 || shown >= 5)
             continue;
         QToolButton* b = addButton(m_options, QStringLiteral("width_%1").arg(w), QString::number(w), tr("Pen width %1").arg(w));
-        connect(b, &QToolButton::clicked, this, [this, w] { m_session->editor().setWidth(w); });
+        connect(b, &QToolButton::clicked, this, [this, w] { m_target->editor().setWidth(w); });
         ++shown;
     }
     m_width = new QSpinBox(m_options);
@@ -179,7 +179,7 @@ void CaptureToolbar::buildOptions()
     m_width->setFocusPolicy(Qt::NoFocus);
     connect(m_width, &QSpinBox::valueChanged, this, [this](int v) {
         if (!m_syncing)
-            m_session->editor().setWidth(v);
+            m_target->editor().setWidth(v);
     });
     row->addWidget(m_width);
 
@@ -188,7 +188,7 @@ void CaptureToolbar::buildOptions()
     auto* fillLayout = new QHBoxLayout(m_fillRow);
     fillLayout->setContentsMargins(0, 0, 0, 0);
     QToolButton* fill = addButton(m_fillRow, QStringLiteral("fill"), tr("Fill"), tr("Filled shape"), true);
-    connect(fill, &QToolButton::clicked, this, [this](bool checked) { m_session->editor().setFilled(checked); });
+    connect(fill, &QToolButton::clicked, this, [this](bool checked) { m_target->editor().setFilled(checked); });
     row->addWidget(m_fillRow);
 
     // 形状（荧光笔 / 效果 / 橡皮擦）
@@ -199,7 +199,7 @@ void CaptureToolbar::buildOptions()
         const QString name = QString::fromLatin1(n);
         QToolButton* b = addButton(m_shapeRow, name, name == QLatin1String("shape_brush") ? tr("Brush") : name == QLatin1String("shape_rect") ? tr("Rect") : tr("Ellipse"), tr("Shape"), true);
         connect(b, &QToolButton::clicked, this, [this, name] {
-            AnnotationEditor& e = m_session->editor();
+            AnnotationEditor& e = m_target->editor();
             const int idx = name == QLatin1String("shape_brush") ? 0 : name == QLatin1String("shape_rect") ? 1 : 2;
             if (e.tool() == AnnotationEditor::Tool::Highlighter)
                 e.setHighlighterShape(idx == 0 ? HighlighterAnnotation::Shape::Brush : HighlighterAnnotation::Shape::Rect);
@@ -224,7 +224,7 @@ void CaptureToolbar::buildOptions()
     m_strength->setFocusPolicy(Qt::NoFocus);
     connect(m_strength, &QSlider::valueChanged, this, [this](int v) {
         if (!m_syncing)
-            m_session->editor().setEffectStrength(v);
+            m_target->editor().setEffectStrength(v);
     });
     strengthLayout->addWidget(m_strength);
     row->addWidget(m_strengthRow);
@@ -252,19 +252,18 @@ void CaptureToolbar::buildOptions()
         f.setPixelSize(m_fontSize->value());
         f.setBold(bold->isChecked());
         f.setItalic(italic->isChecked());
-        m_session->editor().setTextFont(f);
+        m_target->editor().setTextFont(f);
     };
     connect(m_fontCombo, &QFontComboBox::currentFontChanged, this, applyFont);
     connect(m_fontSize, &QSpinBox::valueChanged, this, applyFont);
     connect(bold, &QToolButton::clicked, this, applyFont);
     connect(italic, &QToolButton::clicked, this, applyFont);
     row->addWidget(m_textRow);
-    Q_UNUSED(editor);
 }
 
 void CaptureToolbar::refreshColorButtons()
 {
-    const QColor current = m_session->editor().style().stroke;
+    const QColor current = m_target->editor().style().stroke;
     for (int i = 0; i < m_colorButtons.size(); ++i)
         m_colorButtons[i]->setChecked(kPalette[i].rgb() == current.rgb());
     m_customColor->setStyleSheet(QStringLiteral("QToolButton { border: 2px solid %1; }").arg(current.name()));
@@ -273,8 +272,8 @@ void CaptureToolbar::refreshColorButtons()
 void CaptureToolbar::syncFromEditor()
 {
     m_syncing = true;
-    AnnotationEditor& e = m_session->editor();
-    const bool annotating = m_session->state() == CaptureSession::State::Annotating;
+    AnnotationEditor& e = m_target->editor();
+    const bool annotating = m_target->annotating();
     const AnnotationEditor::Tool tool = e.tool();
     for (auto it = m_toolButtons.cbegin(); it != m_toolButtons.cend(); ++it)
         it.value()->setChecked(annotating && toolFromName(it.key()) == tool);

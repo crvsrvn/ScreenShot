@@ -3,6 +3,7 @@
 #include "app/CaptureSession.h"
 #include "app/CommandServer.h"
 #include "app/OutputActions.h"
+#include "app/PinManager.h"
 #include "app/PinWindow.h"
 #include "app/PreferencesDialog.h"
 #include "core/config/Settings.h"
@@ -10,6 +11,7 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QCursor>
 #include <QGuiApplication>
 #include <QMenu>
 #include <QMessageBox>
@@ -20,8 +22,10 @@
 
 #if defined(Q_OS_WIN)
 #include "platform/windows/WinSystem.h"
+#include "platform/windows/WinWindowTools.h"
 #elif defined(Q_OS_MACOS)
 #include "platform/macos/MacPermissions.h"
+#include "platform/macos/MacWindowTools.h"
 #include <QPushButton>
 #endif
 
@@ -31,7 +35,6 @@ namespace {
 
 QIcon makeTrayIcon()
 {
-    // 自行设计的简单图标：圆角方框 + 取景圆点
     QPixmap pm(64, 64);
     pm.fill(Qt::transparent);
     QPainter p(&pm);
@@ -53,14 +56,13 @@ App::App(Platform platform, Settings& settings, QObject* parent)
     , m_settings(settings)
     , m_output(std::make_unique<OutputActions>(settings))
     , m_session(std::make_unique<CaptureSession>(m_platform.screenCapture.get(), m_platform.windowDetector.get(), m_platform.elementDetector.get(), settings))
+    , m_pins(std::make_unique<PinManager>(settings, m_output.get()))
     , m_history(settings.intValue(QStringLiteral("capture.historyLimit")))
 {
     m_session->setHistory(&m_history);
     m_session->setOutput(m_output.get());
-    connect(m_session.get(), &CaptureSession::captured, this, &App::onCaptured);
     connect(m_session.get(), &CaptureSession::pinRequested, this, [this](const QImage& image, const QRect& region) { pinImage(image, region.topLeft()); });
     connect(&m_settings, &Settings::changed, this, [this](const QString& key, const QVariant&) { applySetting(key); });
-    // 覆盖窗口预先创建，触发时只换背景图（NFR-01）
     m_session->prepareOverlays();
     setupTray();
     setupHotkeys();
@@ -68,14 +70,33 @@ App::App(Platform platform, Settings& settings, QObject* parent)
 
 App::~App()
 {
-    closeAllPins();
     delete m_trayMenu;
+}
+
+QPoint App::cursorPhysical()
+{
+#if defined(Q_OS_WIN)
+    return win::cursorPhysicalPos();
+#elif defined(Q_OS_MACOS)
+    return mac::cursorPhysicalPos();
+#else
+    return QCursor::pos();
+#endif
+}
+
+QList<PinWindow*> App::pins() const
+{
+    return m_pins->pins();
+}
+
+bool App::pinsHidden() const
+{
+    return m_pins->allHidden();
 }
 
 void App::checkPermissions()
 {
 #ifdef Q_OS_MACOS
-    // 未经真机验证：缺少屏幕录制权限时截图不可用，引导用户授权并提供打开设置的入口
     if (!mac::hasScreenRecordingPermission()) {
         mac::requestScreenRecordingPermission();
         QMessageBox box(QMessageBox::Information, tr("Screen recording permission"),
@@ -87,7 +108,7 @@ void App::checkPermissions()
             mac::openScreenRecordingSettings();
     }
     if (!mac::hasAccessibilityPermission())
-        mac::requestAccessibilityPermission(true); // 元素检测与模拟输入降级，提示由系统弹出
+        mac::requestAccessibilityPermission(true);
 #endif
 }
 
@@ -97,6 +118,7 @@ void App::setupTray()
     m_trayMenu->addAction(tr("Capture\tF1"), this, [this] { startCapture(monotonicNs()); });
     m_trayMenu->addAction(tr("Pin clipboard\tF3"), this, &App::pinFromClipboard);
     m_togglePinsAction = m_trayMenu->addAction(tr("Hide all pins\tShift+F3"), this, &App::togglePinsHidden);
+    m_trayMenu->addAction(tr("Restore closed pin\tCtrl+3"), this, &App::restoreClosedPin);
     m_trayMenu->addAction(tr("Restore off-screen pins"), this, &App::restoreOffscreenPins);
     m_trayMenu->addSeparator();
     m_hotkeysAction = m_trayMenu->addAction(tr("Disable hotkeys"), this, [this](bool checked) { setHotkeysEnabled(!checked); });
@@ -137,12 +159,14 @@ void App::setupHotkeys()
     if (!m_platform.hotkey)
         return;
     connect(m_platform.hotkey.get(), &IGlobalHotkey::triggered, this, [this](int id, qint64 atNs) {
-        if (id == HotkeyCapture)
-            startCapture(atNs);
-        else if (id == HotkeyPin)
-            pinFromClipboard();
-        else if (id == HotkeyTogglePins)
-            togglePinsHidden();
+        switch (id) {
+        case HotkeyCapture: startCapture(atNs); break;
+        case HotkeyPin: pinFromClipboard(); break;
+        case HotkeyTogglePins: togglePinsHidden(); break;
+        case HotkeyRestorePin: restoreClosedPin(); break;
+        case HotkeyPassthrough: togglePassthroughAtCursor(); break;
+        default: break;
+        }
     });
     registerHotkeys();
 }
@@ -156,18 +180,20 @@ void App::registerHotkeys()
 {
     if (!m_platform.hotkey)
         return;
-    for (int id : {HotkeyCapture, HotkeyPin, HotkeyTogglePins})
+    for (int id : {HotkeyCapture, HotkeyPin, HotkeyTogglePins, HotkeyRestorePin, HotkeyPassthrough})
         m_platform.hotkey->unregisterHotkey(id);
     m_hotkeyStatus.clear();
     if (!hotkeysEnabled())
         return;
-    const QHash<int, QString> keys{{HotkeyCapture, QStringLiteral("hotkey.capture")}, {HotkeyPin, QStringLiteral("hotkey.pin")}, {HotkeyTogglePins, QStringLiteral("hotkey.togglePins")}};
-    for (auto it = keys.cbegin(); it != keys.cend(); ++it) {
-        const QKeySequence seq(m_settings.stringValue(it.value()));
-        const bool ok = !seq.isEmpty() && m_platform.hotkey->registerHotkey(it.key(), seq);
-        m_hotkeyStatus[it.key()] = ok;
+    const QList<QPair<int, QString>> keys{{HotkeyCapture, QStringLiteral("hotkey.capture")}, {HotkeyPin, QStringLiteral("hotkey.pin")},
+                                          {HotkeyTogglePins, QStringLiteral("hotkey.togglePins")}, {HotkeyRestorePin, QStringLiteral("hotkey.restorePin")},
+                                          {HotkeyPassthrough, QStringLiteral("hotkey.togglePassthrough")}};
+    for (const auto& [id, settingKey] : keys) {
+        const QKeySequence seq(m_settings.stringValue(settingKey));
+        const bool ok = !seq.isEmpty() && m_platform.hotkey->registerHotkey(id, seq);
+        m_hotkeyStatus[id] = ok;
         if (!ok && !seq.isEmpty()) {
-            qWarning("hotkey %s (%s) could not be registered", qPrintable(it.value()), qPrintable(seq.toString()));
+            qWarning("hotkey %s (%s) could not be registered", qPrintable(settingKey), qPrintable(seq.toString()));
             if (m_tray)
                 m_tray->showMessage(tr("Hotkey conflict"), tr("%1 is already used by another program.").arg(seq.toString(QKeySequence::NativeText)), QSystemTrayIcon::Warning);
         }
@@ -237,67 +263,41 @@ void App::startCapture(qint64 triggerNs)
     m_session->start(triggerNs);
 }
 
-void App::onCaptured(const QImage& image, const QRect& physicalRegion)
-{
-    Q_UNUSED(image);
-    Q_UNUSED(physicalRegion);
-}
-
 PinWindow* App::pinImage(const QImage& image, QPoint physicalPos)
 {
-    auto* pin = new PinWindow(image);
-    pin->moveToPhysical(physicalPos);
-    pin->fitToScreen();
-    if (!m_pinsHidden)
-        pin->show();
-    m_pins.append(pin);
-    connect(pin, &PinWindow::closed, this, [this, pin] {
-        m_pins.removeOne(pin);
-        pin->deleteLater();
-    });
-    return pin;
+    return m_pins->pinImage(image, physicalPos);
 }
 
 void App::pinFromClipboard()
 {
-    const QImage image = QApplication::clipboard()->image();
-    if (image.isNull())
-        return;
-    m_pinsHidden = false; // 新建贴图时自动重新显示（PIN-52）
-    for (auto* p : std::as_const(m_pins))
-        p->show();
-    pinImage(image, QCursor::pos());
+    m_pins->pinHotkey(cursorPhysical());
+}
+
+void App::restoreClosedPin()
+{
+    m_pins->restoreLastClosed();
 }
 
 void App::togglePinsHidden()
 {
-    m_pinsHidden = !m_pinsHidden;
-    for (auto* p : std::as_const(m_pins))
-        p->setVisible(!m_pinsHidden);
+    m_pins->toggleHidden();
     if (m_togglePinsAction)
-        m_togglePinsAction->setText(m_pinsHidden ? tr("Show all pins\tShift+F3") : tr("Hide all pins\tShift+F3"));
+        m_togglePinsAction->setText(m_pins->allHidden() ? tr("Show all pins\tShift+F3") : tr("Hide all pins\tShift+F3"));
+}
+
+void App::togglePassthroughAtCursor()
+{
+    m_pins->togglePassthroughAt(cursorPhysical());
 }
 
 void App::restoreOffscreenPins()
 {
-    // 不在任何屏幕上的贴图挪回主屏（PIN-55）
-    QRect desktop;
-    for (QScreen* s : QGuiApplication::screens())
-        desktop = desktop.united(s->geometry());
-    for (auto* p : std::as_const(m_pins)) {
-        if (!desktop.intersects(p->contentRect().toRect()))
-            p->moveContentTo(QGuiApplication::primaryScreen()->geometry().center() - QPointF(p->contentRect().width() / 2, p->contentRect().height() / 2));
-    }
+    m_pins->restoreOffscreen();
 }
 
 void App::closeAllPins()
 {
-    const auto pins = m_pins;
-    m_pins.clear();
-    for (auto* p : pins) {
-        p->hide();
-        delete p;
-    }
+    m_pins->destroyAll();
 }
 
 void App::showPreferences()

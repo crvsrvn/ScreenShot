@@ -230,6 +230,7 @@ void CaptureSession::setState(State state)
         return;
     m_state = state;
     emit stateChanged(state);
+    m_toolbar->syncFromEditor();
     layoutToolbar();
     updateOverlays();
 }
