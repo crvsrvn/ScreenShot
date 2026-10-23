@@ -92,6 +92,16 @@ public:
     void setEndThreshold(int frames) { m_endThreshold = frames; }
     // 最终输出：底部固定区补回长图末尾
     QImage finish() const;
+    // 滚动条排除（CAP-68）：自动识别右侧滚动条列，不参与匹配、不进入输出；0 表示没有
+    int excludedRightColumns() const { return m_scrollbarWidth; }
+    void setScrollbarDetection(bool on) { m_detectScrollbar = on; }
+    // 悬浮元素（CAP-67）：中间区域跟随屏幕不动的行段，追加时跳过，避免重复出现
+    struct FloatingRun {
+        int top = 0;
+        int rows = 0;
+    };
+    QList<FloatingRun> floatingRuns() const { return m_floating; }
+    void setFloatingDetection(bool on) { m_detectFloating = on; }
 
 private:
     ShiftOptions m_options;
@@ -105,7 +115,18 @@ private:
     int m_frames = 0;
     int m_zeroShiftRun = 0;
     int m_endThreshold = 3;
+    bool m_detectScrollbar = true;
+    int m_scrollbarWidth = 0;
+    bool m_detectFloating = true;
+    QList<FloatingRun> m_floating;
+    QList<FloatingRun> m_floatingCandidates;
+    void appendRowsSkippingFloating(const QImage& frame, int y0, int rows);
 };
+
+// 右侧滚动条宽度识别（CAP-68）：两帧内容按 shift 滚动时，右缘跟随屏幕不动（轨道）或独立移动（滑块）的列
+int detectScrollbarWidth(const QImage& previous, const QImage& current, int shift, int maxWidth = 24);
+// 悬浮元素识别（CAP-67）：两帧内容按 shift 滚动时，中间区域仍逐行相同的行段
+QList<Stitcher::FloatingRun> detectFloatingRuns(const QVector<quint64>& previous, const QVector<quint64>& current, int shift, int top, int bottom, int minRows = 6);
 
 // 转置（横向拼接用）：宽高互换，像素 (x, y) → (y, x)
 QImage transposed(const QImage& image);

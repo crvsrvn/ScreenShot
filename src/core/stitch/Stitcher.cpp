@@ -52,14 +52,22 @@ double verifyShift(const QImage& previous, const QImage& current, int shift, con
     if (overlap < o.minOverlapRows)
         return -1;
     qint64 mismatched = 0;
+    int counted = 0;
     for (int y = 0; y < overlap; ++y) {
         const int py = shift >= 0 ? y + shift : y;
         const int cy = shift >= 0 ? y : y - shift;
+        // 同一屏幕位置上两帧完全相同的行（悬浮元素、空白行）不参与校验，无论它在新帧还是旧帧的对应位置（CAP-67）
+        int sameM = 0;
+        if (rowsEqual(previous, cy, current, cy, o.pixelTolerance, sameM) || rowsEqual(previous, py, current, py, o.pixelTolerance, sameM))
+            continue;
         int m = 0;
         rowsEqual(previous, py, current, cy, o.pixelTolerance, m);
         mismatched += m;
+        ++counted;
     }
-    return static_cast<double>(mismatched) / (static_cast<double>(overlap) * previous.width());
+    if (counted < o.minOverlapRows / 2)
+        return 0.0; // 几乎全是静止行：没有可校验的内容，交给投票结果
+    return static_cast<double>(mismatched) / (static_cast<double>(counted) * previous.width());
 }
 
 } // namespace
@@ -358,6 +366,72 @@ qint64 LongImage::byteCount() const
     return total;
 }
 
+// ---- 滚动条与悬浮元素 ----
+
+int detectScrollbarWidth(const QImage& prevIn, const QImage& curIn, int shift, int maxWidth)
+{
+    const QImage prev = toRgb32(prevIn), cur = toRgb32(curIn);
+    if (shift == 0 || prev.size() != cur.size() || prev.width() < 8)
+        return 0;
+    const int h = prev.height();
+    const int absShift = std::abs(shift);
+    if (absShift >= h - 8)
+        return 0;
+    // 从右缘向左逐列分类：滑块列（不随内容滚动、同位置大体相同）、单色列（轨道边缘 / 空白）、内容列（随内容滚动）。
+    // 滚动条宽度 = 最左的滑块列到右缘，其间只能是滑块列或单色列
+    int leftmostThumb = -1, leftmostBar = -1;
+    for (int x = prev.width() - 1; x >= prev.width() - maxWidth && x >= 0; --x) {
+        int same = 0, shifted = 0, n = 0;
+        for (int y = 0; y + absShift < h; ++y) {
+            const QRgb p = prev.pixel(x, shift > 0 ? y + absShift : y);
+            const QRgb c = cur.pixel(x, shift > 0 ? y : y + absShift);
+            if (prev.pixel(x, y) == cur.pixel(x, y))
+                ++same;
+            if (p == c)
+                ++shifted;
+            ++n;
+        }
+        const double sameRatio = static_cast<double>(same) / n;
+        const double shiftedRatio = static_cast<double>(shifted) / n;
+        const bool thumbLike = shiftedRatio < 0.97 && sameRatio >= 0.5;
+        const bool uniform = sameRatio >= 0.97 && shiftedRatio >= 0.97;
+        if (thumbLike)
+            leftmostThumb = x;
+        else if (!uniform)
+            break; // 内容列：滚动条到此为止
+        leftmostBar = x; // 滑块列或紧邻的单色轨道边缘都算滚动条
+    }
+    if (leftmostThumb < 0)
+        return 0;
+    const int width = prev.width() - leftmostBar;
+    return width >= 4 ? width : 0;
+}
+
+QList<Stitcher::FloatingRun> detectFloatingRuns(const QVector<quint64>& prev, const QVector<quint64>& cur, int shift, int top, int bottom, int minRows)
+{
+    QList<Stitcher::FloatingRun> runs;
+    const int n = std::min(prev.size(), cur.size());
+    if (shift == 0)
+        return runs;
+    int runStart = -1;
+    for (int y = top; y <= n - bottom; ++y) {
+        // 同位置相同、但不是因为内容恰好滚到这里（与按位移对应的行不同）
+        bool floating = false;
+        if (y < n - bottom && prev[y] == cur[y]) {
+            const int src = y + shift;
+            floating = src < 0 || src >= n || prev[src] != cur[y];
+        }
+        if (floating && runStart < 0)
+            runStart = y;
+        if (!floating && runStart >= 0) {
+            if (y - runStart >= minRows)
+                runs.append({runStart, y - runStart});
+            runStart = -1;
+        }
+    }
+    return runs;
+}
+
 // ---- Stitcher ----
 
 Stitcher::Stitcher(ShiftOptions options)
@@ -376,6 +450,32 @@ void Stitcher::begin(const QImage& firstFrame)
     m_started = true;
     m_frames = 1;
     m_zeroShiftRun = 0;
+    m_scrollbarWidth = 0;
+    m_floating.clear();
+    m_floatingCandidates.clear();
+}
+
+void Stitcher::appendRowsSkippingFloating(const QImage& frame, int y0, int rows)
+{
+    // 按悬浮行段切开，只追加不在悬浮段里的行
+    int y = y0;
+    const int end = y0 + rows;
+    while (y < end) {
+        int next = end;
+        bool inside = false;
+        for (const FloatingRun& r : m_floating) {
+            if (y >= r.top && y < r.top + r.rows) {
+                inside = true;
+                next = std::min(end, r.top + r.rows);
+                break;
+            }
+            if (r.top > y)
+                next = std::min(next, r.top);
+        }
+        if (!inside)
+            m_image.appendRows(frame, y, next - y);
+        y = next;
+    }
 }
 
 Stitcher::FrameResult Stitcher::addFrame(const QImage& frameIn)
@@ -388,7 +488,7 @@ Stitcher::FrameResult Stitcher::addFrame(const QImage& frameIn)
         result.shift.reason = QStringLiteral("frame size changed");
         return result;
     }
-    const QVector<quint64> hashes = rowHashes(frame);
+    QVector<quint64> hashes = rowHashes(frame, 0, m_scrollbarWidth > 0 ? frame.width() - m_scrollbarWidth : -1);
     ++m_frames;
 
     // 固定区：前几帧按两帧相同行数识别，之后锁定（取稳定值）
@@ -419,8 +519,9 @@ Stitcher::FrameResult Stitcher::addFrame(const QImage& frameIn)
         result.shift.reason = QStringLiteral("scroll area too small");
         return result;
     }
-    const QImage prevScroll = m_previous.copy(0, top, frame.width(), scrollRows);
-    const QImage curScroll = frame.copy(0, top, frame.width(), scrollRows);
+    const int bodyWidth = frame.width() - m_scrollbarWidth; // 已识别的滚动条列不参与匹配（CAP-68）
+    const QImage prevScroll = m_previous.copy(0, top, bodyWidth, scrollRows);
+    const QImage curScroll = frame.copy(0, top, bodyWidth, scrollRows);
     const QVector<quint64> prevH = m_prevHashes.mid(top, scrollRows);
     const QVector<quint64> curH = hashes.mid(top, scrollRows);
     ShiftResult shift = estimateShift(prevScroll, curScroll, prevH, curH, m_options);
@@ -430,13 +531,39 @@ Stitcher::FrameResult Stitcher::addFrame(const QImage& frameIn)
     if (!shift.ok)
         return result;
 
+    // CAP-68：第一次得到可信位移时识别右侧滚动条，之后哈希与输出都排除这些列
+    if (m_detectScrollbar && m_scrollbarWidth == 0 && m_frames == 2) {
+        m_scrollbarWidth = detectScrollbarWidth(m_previous, frame, shift.shift);
+        if (m_scrollbarWidth > 0) {
+            hashes = rowHashes(frame, 0, frame.width() - m_scrollbarWidth); // 之后的匹配都按去掉滚动条的哈希
+            // 重建已输出的长图（去掉滚动条列）
+            LongImage rebuilt(m_previous.width() - m_scrollbarWidth);
+            const QImage first = m_image.toImage();
+            rebuilt.appendRows(first.copy(0, 0, first.width() - m_scrollbarWidth, first.height()), 0, first.height());
+            m_image = rebuilt;
+        }
+    }
+    // CAP-67：中间区域跟随屏幕不动的行段，连续两帧一致后确认
+    if (m_detectFloating) {
+        const QList<FloatingRun> runs = detectFloatingRuns(m_prevHashes, hashes, shift.shift, top, bottom);
+        QList<FloatingRun> confirmed;
+        for (const FloatingRun& r : runs)
+            for (const FloatingRun& c : m_floatingCandidates)
+                if (c.top == r.top && c.rows == r.rows)
+                    confirmed.append(r);
+        m_floatingCandidates = runs;
+        if (!confirmed.isEmpty())
+            m_floating = confirmed;
+    }
+
     if (shift.shift > 0) {
         // 内容上移 shift 行：新帧滚动区底部的 shift 行是新内容
         const int newRows = std::min(shift.shift, scrollRows);
         // 长图末尾当前包含上一帧的底部固定区：先去掉，再追加新内容
         m_image.truncate(m_image.height() - bottom);
-        m_image.appendRows(frame, top + scrollRows - newRows, newRows);
-        m_image.appendRows(frame, h - bottom, bottom);
+        const QImage body = m_scrollbarWidth > 0 ? frame.copy(0, 0, frame.width() - m_scrollbarWidth, frame.height()) : frame;
+        appendRowsSkippingFloating(body, top + scrollRows - newRows, newRows);
+        m_image.appendRows(body, h - bottom, bottom);
         result.appended = true;
         result.appendedRows = newRows;
     } else if (shift.shift < 0) {
@@ -444,7 +571,8 @@ Stitcher::FrameResult Stitcher::addFrame(const QImage& frameIn)
         const int back = std::min(-shift.shift, m_image.height() - h);
         if (back > 0) {
             m_image.truncate(m_image.height() - bottom - back);
-            m_image.appendRows(frame, h - bottom, bottom);
+            const QImage body = m_scrollbarWidth > 0 ? frame.copy(0, 0, frame.width() - m_scrollbarWidth, frame.height()) : frame;
+            m_image.appendRows(body, h - bottom, bottom);
             result.appended = true;
             result.appendedRows = -back;
         }

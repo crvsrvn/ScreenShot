@@ -32,15 +32,23 @@ void WinPipeServer::stop()
     if (!m_thread.joinable())
         return;
     m_stop = true;
-    // 用一次客户端连接唤醒阻塞在 ConnectNamedPipe 的线程
-    HANDLE h = CreateFileW(reinterpret_cast<const wchar_t*>(m_pipePath.utf16()), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
-    if (h != INVALID_HANDLE_VALUE)
-        CloseHandle(h);
+    // 用一次客户端连接唤醒阻塞在 ConnectNamedPipe 的线程；服务线程可能正在重建管道实例，连不上就稍后再试
+    for (int attempt = 0; attempt < 200 && !m_finished.load(); ++attempt) {
+        HANDLE h = CreateFileW(reinterpret_cast<const wchar_t*>(m_pipePath.utf16()), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+        for (int i = 0; i < 10 && !m_finished.load(); ++i)
+            Sleep(5);
+    }
     m_thread.join();
 }
 
 void WinPipeServer::serve()
 {
+    struct Done {
+        std::atomic<bool>& flag;
+        ~Done() { flag = true; }
+    } done{m_finished};
     while (!m_stop) {
         HANDLE pipe = CreateNamedPipeW(reinterpret_cast<const wchar_t*>(m_pipePath.utf16()), PIPE_ACCESS_DUPLEX,
                                        PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS,

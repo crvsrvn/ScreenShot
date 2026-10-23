@@ -44,9 +44,39 @@ QScreen* findQScreen(const ScreenInfo& info)
 }
 
 const QColor kAccent(40, 120, 220);
-const QColor kDim(0, 0, 0, 110);
+constexpr qint64 kAnimNs = 150'000'000; // 检测框过渡 150 ms
 
 } // namespace
+
+QRect OverlayWindow::animatedHighlight() const
+{
+    if (m_animTo.isNull())
+        return {};
+    if (m_animFrom.isNull() || !m_session->settings().boolValue(QStringLiteral("capture.detectAnimation")))
+        return m_animTo;
+    const qint64 elapsed = monotonicNs() - m_animStartNs;
+    if (elapsed >= kAnimNs)
+        return m_animTo;
+    const double t = static_cast<double>(elapsed) / kAnimNs;
+    auto lerp = [t](int a, int b) { return a + qRound((b - a) * t); };
+    return QRect(lerp(m_animFrom.left(), m_animTo.left()), lerp(m_animFrom.top(), m_animTo.top()), lerp(m_animFrom.width(), m_animTo.width()), lerp(m_animFrom.height(), m_animTo.height()));
+}
+
+void OverlayWindow::setTransparentMode(bool on)
+{
+    if (m_transparent == on)
+        return;
+    m_transparent = on;
+    // 透明属性要在原生窗口创建前设置：销毁后下次显示时重建
+    const bool visible = isVisible();
+    hide();
+    destroy();
+    setAttribute(Qt::WA_TranslucentBackground, on);
+    setAttribute(Qt::WA_OpaquePaintEvent, !on);
+    setAttribute(Qt::WA_NoSystemBackground, !on);
+    if (visible)
+        showOnScreen();
+}
 
 OverlayWindow::OverlayWindow(CaptureSession* session)
     : QWidget(nullptr, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint)
@@ -132,38 +162,48 @@ QRectF OverlayWindow::toLogicalGlobal(const QRect& physical) const
 
 void OverlayWindow::paintSelection(QPainter& p, const QRect& selection)
 {
+    const Settings& st = m_session->settings();
+    const QColor dim = m_transparent ? QColor(0, 0, 0, 0) : QColor::fromString(st.stringValue(QStringLiteral("capture.maskColor")));
     const QRect visible = selection.intersected(m_screen.physicalGeometry);
     if (visible.isEmpty()) {
-        p.fillRect(rect(), kDim);
+        p.fillRect(rect(), dim);
         return;
     }
     const QRectF sel = toLogical(visible);
     const QRectF full(0, 0, width(), height());
-    p.fillRect(QRectF(0, 0, full.width(), sel.top()), kDim);
-    p.fillRect(QRectF(0, sel.bottom(), full.width(), full.height() - sel.bottom()), kDim);
-    p.fillRect(QRectF(0, sel.top(), sel.left(), sel.height()), kDim);
-    p.fillRect(QRectF(sel.right(), sel.top(), full.width() - sel.right(), sel.height()), kDim);
+    p.fillRect(QRectF(0, 0, full.width(), sel.top()), dim);
+    p.fillRect(QRectF(0, sel.bottom(), full.width(), full.height() - sel.bottom()), dim);
+    p.fillRect(QRectF(0, sel.top(), sel.left(), sel.height()), dim);
+    p.fillRect(QRectF(sel.right(), sel.top(), full.width() - sel.right(), sel.height()), dim);
 
-    QPen pen(theme::accent(m_session->settings()));
+    const QColor borderColor = QColor::fromString(st.stringValue(QStringLiteral("capture.borderColor")));
+    QPen pen(borderColor.isValid() ? borderColor : theme::accent(st), st.intValue(QStringLiteral("capture.borderWidth")));
     pen.setCosmetic(true);
     p.setPen(pen);
     p.setBrush(Qt::NoBrush);
     p.drawRect(sel.adjusted(0, 0, -1.0 / m_screen.scale, -1.0 / m_screen.scale));
 
-    // 锚点（CAP-10）：只在已选定状态画
+    // 锚点（CAP-10、CAP-20）：只在已选定状态画；无 / 4 角 / 8 个；小选区自动隐藏
     const auto state = m_session->state();
-    if ((state == CaptureSession::State::Selected || state == CaptureSession::State::History) && !m_session->dragging()) {
+    const QString anchors = st.stringValue(QStringLiteral("capture.anchors"));
+    const int hideBelow = st.intValue(QStringLiteral("capture.anchorHideBelow"));
+    if ((state == CaptureSession::State::Selected || state == CaptureSession::State::History) && !m_session->dragging() && anchors != QLatin1String("none")
+        && selection.width() >= hideBelow && selection.height() >= hideBelow) {
         p.setBrush(Qt::white);
-        for (const QPoint& hp : selectionHandlePoints(selection)) {
+        const QList<QPoint> points = selectionHandlePoints(selection);
+        for (int i = 0; i < points.size(); ++i) {
+            if (anchors == QLatin1String("four") && i % 2 == 1)
+                continue; // 奇数位是边中点
+            const QPoint hp = points[i];
             if (!m_screen.physicalGeometry.adjusted(-8, -8, 8, 8).contains(hp))
                 continue;
             const QPointF c = toLogical(QRect(hp, QSize(1, 1))).topLeft() + QPointF(0.5, 0.5);
             p.drawRect(QRectF(c.x() - 3.5, c.y() - 3.5, 7, 7));
         }
     }
-    // 尺寸标签
+    // 尺寸标签（CAP-19 单位）
     if (selection.topLeft() == visible.topLeft()) {
-        const QString text = QStringLiteral("%1 × %2").arg(selection.width()).arg(selection.height());
+        const QString text = m_session->sizeText(selection);
         QRectF label(sel.left(), sel.top() - 22, 130, 20);
         if (label.top() < 0)
             label.moveTop(sel.top() + 2);
@@ -194,10 +234,19 @@ void OverlayWindow::paintMagnifierIfNeeded(QPainter& p)
     const QPoint cursor = m_session->cursor();
     if (!m_screen.physicalGeometry.contains(cursor))
         return;
+    const Settings& st = m_session->settings();
+    if (!st.boolValue(QStringLiteral("capture.magnifierEnabled")))
+        return;
     MagnifierOptions o;
-    o.zoom = m_session->settings().intValue(QStringLiteral("capture.magnifierZoom"));
+    o.zoom = st.intValue(QStringLiteral("capture.magnifierZoom"));
+    o.pixels = st.intValue(QStringLiteral("capture.magnifierPixels")) | 1; // 保持奇数
+    o.grid = st.boolValue(QStringLiteral("capture.magnifierGrid"));
+    o.gridColor = QColor::fromString(st.stringValue(QStringLiteral("capture.magnifierGridColor")));
+    o.showHint = st.boolValue(QStringLiteral("capture.magnifierHint"));
+    o.showCoords = st.boolValue(QStringLiteral("capture.magnifierCoords"));
+    o.showColor = st.boolValue(QStringLiteral("capture.magnifierColor"));
     o.colorFormat = m_session->colorFormat();
-    o.hexUppercase = m_session->settings().boolValue(QStringLiteral("capture.hexUppercase"));
+    o.hexUppercase = st.boolValue(QStringLiteral("capture.hexUppercase"));
     const QPointF cursorLogical = toLogical(QRect(cursor, QSize(1, 1))).topLeft();
     const QPointF pos = magnifierPlacement(cursorLogical, magnifierSize(o), QRectF(0, 0, width(), height()));
     paintMagnifier(p, pos, m_session->desktop(), cursor, m_session->selection(), o, m_session->colorTextAtCursor());
@@ -209,7 +258,8 @@ void OverlayWindow::paintContent(QPainter& p)
         p.fillRect(rect(), Qt::black);
         return;
     }
-    p.drawImage(QPointF(0, 0), m_image);
+    if (!m_transparent)
+        p.drawImage(QPointF(0, 0), m_image);
     const auto state = m_session->state();
 
     if (state == CaptureSession::State::History) {
@@ -235,9 +285,20 @@ void OverlayWindow::paintContent(QPainter& p)
             p.restore();
         }
     } else if (state == CaptureSession::State::Detecting) {
-        p.fillRect(rect(), kDim);
-        if (auto h = m_session->highlight()) {
-            const QRect visible = h->intersected(m_screen.physicalGeometry);
+        p.fillRect(rect(), m_transparent ? QColor(0, 0, 0, 0) : QColor::fromString(m_session->settings().stringValue(QStringLiteral("capture.maskColor"))));
+        const auto target = m_session->highlight();
+        if (target && *target != m_animTo) {
+            m_animFrom = animatedHighlight();
+            m_animTo = *target;
+            m_animStartNs = monotonicNs();
+        } else if (!target) {
+            m_animFrom = m_animTo = QRect();
+        }
+        const QRect h = animatedHighlight();
+        if (!h.isNull() && h != m_animTo)
+            QTimer::singleShot(16, this, [this] { update(); }); // 动画中：下一帧继续
+        if (!h.isNull()) {
+            const QRect visible = h.intersected(m_screen.physicalGeometry);
             if (!visible.isEmpty()) {
                 const QRectF r = toLogical(visible);
                 // 高亮区域不压暗（重画原图），画边框
@@ -252,12 +313,50 @@ void OverlayWindow::paintContent(QPainter& p)
     } else {
         paintSelection(p, m_session->selection());
     }
+    paintGuides(p);
     paintMagnifierIfNeeded(p);
+}
+
+void OverlayWindow::paintGuides(QPainter& p)
+{
+    // 辅助线（CAP-25）：十字线、选区中心线、边框指示线；显示策略：不显示 / Alt / 始终
+    const Settings& st = m_session->settings();
+    const QString policy = st.stringValue(QStringLiteral("capture.guides"));
+    if (policy == QLatin1String("off") || (policy == QLatin1String("alt") && !m_session->altHeld()) || m_session->state() == CaptureSession::State::Annotating)
+        return;
+    QPen pen(QColor(255, 255, 255, 140), 1, Qt::DashLine);
+    pen.setCosmetic(true);
+    p.setPen(pen);
+    const QRectF full(0, 0, width(), height());
+    if (st.boolValue(QStringLiteral("capture.guideCrosshair")) && m_screen.physicalGeometry.contains(m_session->cursor())) {
+        const QPointF c = toLogical(QRect(m_session->cursor(), QSize(1, 1))).topLeft() + QPointF(0.5, 0.5);
+        p.drawLine(QPointF(0, c.y()), QPointF(full.width(), c.y()));
+        p.drawLine(QPointF(c.x(), 0), QPointF(c.x(), full.height()));
+    }
+    const QRect sel = m_session->selection();
+    if (sel.isEmpty())
+        return;
+    const QRectF s = toLogical(sel);
+    if (st.boolValue(QStringLiteral("capture.guideCenterLines"))) {
+        p.drawLine(QPointF(s.left(), s.center().y()), QPointF(s.right(), s.center().y()));
+        p.drawLine(QPointF(s.center().x(), s.top()), QPointF(s.center().x(), s.bottom()));
+    }
+    if (st.boolValue(QStringLiteral("capture.guideEdgeLines"))) {
+        p.drawLine(QPointF(0, s.top()), QPointF(full.width(), s.top()));
+        p.drawLine(QPointF(0, s.bottom()), QPointF(full.width(), s.bottom()));
+        p.drawLine(QPointF(s.left(), 0), QPointF(s.left(), full.height()));
+        p.drawLine(QPointF(s.right(), 0), QPointF(s.right(), full.height()));
+    }
 }
 
 void OverlayWindow::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
+    if (m_transparent) {
+        painter.setCompositionMode(QPainter::CompositionMode_Source);
+        painter.fillRect(rect(), Qt::transparent);
+        painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    }
     paintContent(painter);
     painter.end();
     ++m_paintCount;

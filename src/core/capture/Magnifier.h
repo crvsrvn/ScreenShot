@@ -3,6 +3,7 @@
 #include "core/color/ColorFormat.h"
 #include "core/geometry/VirtualDesktop.h"
 
+#include <QColor>
 #include <QPainter>
 #include <QPoint>
 #include <QRect>
@@ -15,9 +16,12 @@ struct MagnifierOptions {
     int zoom = 8;              // 倍数
     int pixels = 23;           // 放大区域边长（像素数，奇数使光标居中）
     bool grid = true;
+    QColor gridColor = QColor(255, 255, 255, 40);
     ColorFormat colorFormat = ColorFormat::Hex;
     bool hexUppercase = true;
     bool showHint = true;      // 快捷键提示
+    bool showCoords = true;    // 坐标与选区尺寸行
+    bool showColor = true;     // 颜色值行
 };
 
 // 放大镜面板的建议尺寸（逻辑像素）

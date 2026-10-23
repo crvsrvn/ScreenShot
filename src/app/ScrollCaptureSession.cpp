@@ -24,13 +24,25 @@ class ScrollFrameWindow : public QWidget {
 public:
     explicit ScrollFrameWindow(const QRect& physical, qreal scale, QPoint logicalOrigin, QPoint physicalOrigin)
         : QWidget(nullptr, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::WindowTransparentForInput | Qt::WindowDoesNotAcceptFocus)
+        , m_scale(scale)
+        , m_logicalOrigin(logicalOrigin)
+        , m_physicalOrigin(physicalOrigin)
     {
         setAttribute(Qt::WA_TranslucentBackground);
         setAttribute(Qt::WA_ShowWithoutActivating);
+        setRegion(physical);
+    }
+    // 区域移动后跟随（CAP-71）
+    void setRegion(const QRect& physical)
+    {
         const int border = 3;
         m_physical = physical.adjusted(-border, -border, border, border);
-        const QPointF logical = QPointF(logicalOrigin) + QPointF(m_physical.topLeft() - physicalOrigin) / scale;
-        setGeometry(QRect(logical.toPoint(), QSize(static_cast<int>(std::ceil(m_physical.width() / scale)), static_cast<int>(std::ceil(m_physical.height() / scale)))));
+        const QPointF logical = QPointF(m_logicalOrigin) + QPointF(m_physical.topLeft() - m_physicalOrigin) / m_scale;
+        setGeometry(QRect(logical.toPoint(), QSize(static_cast<int>(std::ceil(m_physical.width() / m_scale)), static_cast<int>(std::ceil(m_physical.height() / m_scale)))));
+#if defined(Q_OS_WIN)
+        if (isVisible())
+            win::setWindowPhysicalRect(reinterpret_cast<void*>(winId()), m_physical);
+#endif
     }
     void setOk(bool ok)
     {
@@ -60,6 +72,9 @@ protected:
 private:
     QRect m_physical;
     bool m_ok = true;
+    qreal m_scale;
+    QPoint m_logicalOrigin;
+    QPoint m_physicalOrigin;
 };
 
 // ---- 预览面板（CAP-64）----
@@ -226,6 +241,28 @@ bool ScrollCaptureSession::begin(const QRect& physicalRegion, bool showUi)
         m_panel->showExcluded();
     }
     m_timer.start(m_settings.intValue(QStringLiteral("scroll.tickMs")));
+    emit statusChanged();
+    return true;
+}
+
+bool ScrollCaptureSession::adjustRegion(const QRect& r)
+{
+    if (r.isEmpty())
+        return false;
+    if (m_state == State::Running) {
+        const bool sameSize = r.size() == m_region.size();
+        const bool alongDirection = m_direction == Direction::Vertical ? r.x() == m_region.x() : r.y() == m_region.y();
+        if (!sameSize || !alongDirection)
+            return false;
+        m_region = r;
+        m_reachedEnd = false; // 拖动区域后可以继续截取
+        m_stableCount = 0;
+        if (m_frame)
+            m_frame->setRegion(r);
+        emit statusChanged();
+        return true;
+    }
+    m_region = r;
     emit statusChanged();
     return true;
 }

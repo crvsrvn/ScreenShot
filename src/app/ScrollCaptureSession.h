@@ -36,6 +36,9 @@ public:
 
     void setAutoScroll(bool on);
     bool autoScroll() const { return m_autoScroll; }
+    // 区域控制（CAP-71）：进行中只能沿拼接方向移动（尺寸不变），到底后也可沿方向拖动继续截取；
+    // 未开始 / 已结束时可任意调整。返回是否接受
+    bool adjustRegion(const QRect& physicalRegion);
     void setDirection(Direction d) { m_direction = d; }
     Direction direction() const { return m_direction; }
 

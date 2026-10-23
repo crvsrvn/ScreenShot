@@ -36,6 +36,7 @@ private:
     Handler m_handler;
     std::thread m_thread;
     std::atomic<bool> m_stop{false};
+    std::atomic<bool> m_finished{false};
 };
 
 } // namespace ss::win

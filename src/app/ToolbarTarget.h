@@ -33,6 +33,9 @@ public:
     virtual void print() {}
     // 二维码 / 条码（REC-06）：截图会话在手动模式提供按钮，自动模式检测到码后显示按钮
     virtual void detectCodes() {}
+    // 模式轮换（CAP-07）：截图会话提供
+    virtual QString modeName() const { return QString(); }
+    virtual void cycleMode() {}
     virtual bool hasCodes() const { return false; }
 };
 

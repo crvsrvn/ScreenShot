@@ -20,6 +20,9 @@ QStringList pendingCrashDumps(const QString& dumpDir);
 // 当前用户名（用于本机 IPC 名称）
 QString currentUserName();
 
+// 进程优先级（GEN-10）：normal | aboveNormal | high
+bool setProcessPriority(const QString& level);
+
 // 以管理员身份运行（GEN-05）
 bool isElevated();
 // 用 UAC 提权重新启动自己（带同样的参数）；用户拒绝或失败返回 false

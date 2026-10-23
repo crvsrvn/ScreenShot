@@ -11,6 +11,7 @@
 #include <QClipboard>
 #include <QKeyEvent>
 #include <QMessageBox>
+#include <QDir>
 #include <QtConcurrent>
 
 namespace ss {
@@ -218,6 +219,22 @@ bool CaptureSession::start(qint64 triggerNs, bool showOverlays)
     return startWithSnapshots(triggerNs, std::move(snapshots), showOverlays);
 }
 
+bool CaptureSession::startTransparentBoard(bool showOverlays)
+{
+    if (isActive() || !m_capture)
+        return false;
+    m_transparentBoard = true;
+    for (auto* w : std::as_const(m_overlays))
+        w->setTransparentMode(true);
+    if (!startWhiteboard(Qt::transparent, false, showOverlays)) {
+        m_transparentBoard = false;
+        for (auto* w : std::as_const(m_overlays))
+            w->setTransparentMode(false);
+        return false;
+    }
+    return true;
+}
+
 bool CaptureSession::startWhiteboard(const QColor& color, bool currentScreenOnly, bool showOverlays)
 {
     if (isActive() || !m_capture)
@@ -230,7 +247,7 @@ bool CaptureSession::startWhiteboard(const QColor& color, bool currentScreenOnly
     for (const auto& screen : screens) {
         if (currentScreenOnly && !screen.physicalGeometry.contains(cursor))
             continue;
-        QImage canvas(screen.physicalGeometry.size(), QImage::Format_RGB32);
+        QImage canvas(screen.physicalGeometry.size(), color.alpha() == 0 ? QImage::Format_ARGB32_Premultiplied : QImage::Format_RGB32);
         canvas.fill(color);
         canvas.setDevicePixelRatio(screen.scale);
         snapshots.append(ScreenSnapshot{screen, canvas, monotonicNs()});
@@ -483,6 +500,22 @@ QImage CaptureSession::finalImage() const
     QImage image = currentImage();
     if (image.isNull())
         return image;
+    if (m_transparentBoard && m_capture) {
+        // CAP-51：抓取实时桌面，把透明画布上的标注合成上去
+        auto* self = const_cast<CaptureSession*>(this);
+        self->hideOverlaysTemporarily(true);
+        QCoreApplication::processEvents();
+        const VirtualDesktop live(m_capture->captureAll());
+        QImage base = live.crop(m_selection).convertToFormat(QImage::Format_ARGB32_Premultiplied);
+        if (!base.isNull()) {
+            QPainter p(&base);
+            p.drawImage(0, 0, image);
+            p.end();
+            image = base;
+        }
+        if (isActive())
+            self->hideOverlaysTemporarily(false);
+    }
     if (m_includeCursor && m_cursorImage && m_state != State::History)
         image = composeCursor(image, m_cursorImage->image, m_cursorImage->physicalTopLeft - m_selection.topLeft());
     DecorateOptions o;
@@ -619,7 +652,23 @@ void CaptureSession::requestElementAt(QPoint physical)
     m_elementPending = true;
     m_elementRequested = physical;
     IElementDetector* detector = m_elements;
-    m_elementWatcher.setFuture(QtConcurrent::run([detector, physical]() -> std::optional<QRect> {
+    // CAP-14：按光标所在窗口的进程决定跳过 / 保守检测
+    QString process;
+    if (const auto w = m_windowFinder.windowAt(physical))
+        process = w->processName.toLower();
+    auto listed = [&](const QString& key) {
+        for (const QString& item : m_settings.stringValue(key).split(QLatin1Char(','), Qt::SkipEmptyParts))
+            if (!item.trimmed().isEmpty() && process.contains(item.trimmed().toLower()))
+                return true;
+        return false;
+    };
+    const bool excluded = !process.isEmpty() && listed(QStringLiteral("capture.detectExcludeProcesses"));
+    const bool conservative = !process.isEmpty() && listed(QStringLiteral("capture.detectConservativeProcesses"));
+    m_elementWatcher.setFuture(QtConcurrent::run([detector, physical, excluded, conservative]() -> std::optional<QRect> {
+        if (excluded)
+            return std::nullopt;
+        if (conservative)
+            return detector->elementAt(physical, std::chrono::milliseconds(100)); // 短超时、不取层级
         const QList<QRect> chain = detector->elementChainAt(physical, std::chrono::milliseconds(300));
         if (chain.isEmpty())
             return std::nullopt;
@@ -867,6 +916,15 @@ bool CaptureSession::handleKeyPress(QKeyEvent* e)
         if (confirmCancel())
             cancel();
         return true;
+    case Qt::Key_U:
+        if (ctrl) {
+            // CAP-19：切换尺寸单位
+            const bool logical = m_settings.stringValue(QStringLiteral("capture.sizeUnit")) == QLatin1String("logical");
+            m_settings.setValue(QStringLiteral("capture.sizeUnit"), logical ? QStringLiteral("physical") : QStringLiteral("logical"));
+            updateOverlays();
+            return true;
+        }
+        break;
     case Qt::Key_R:
         if (!ctrl) {
             // R：上次区域；Shift+R：更早的区域（CAP-41）
@@ -927,7 +985,10 @@ bool CaptureSession::handleKeyPress(QKeyEvent* e)
         }
         break;
     case Qt::Key_Tab:
-        toggleDetectMode();
+        if (ctrl)
+            cycleMode(); // CAP-07
+        else
+            toggleDetectMode();
         return true;
     case Qt::Key_Comma:
         historyOlder();
@@ -1115,9 +1176,27 @@ QImage CaptureSession::currentImage() const
 
 void CaptureSession::recordHistory(const QImage& image, const QRect& region)
 {
-    if (m_history && m_state != State::History)
+    if (m_history && m_state != State::History) {
         m_history->add({image, region, QDateTime::currentDateTime()});
+        saveHistoryFile(image);
+    }
     pushRegionHistory(region);
+}
+
+void CaptureSession::saveHistoryFile(const QImage& image)
+{
+    const QString dir = m_settings.stringValue(QStringLiteral("capture.historyDir"));
+    if (dir.isEmpty() || image.isNull())
+        return;
+    QDir().mkpath(dir);
+    const QString name = QStringLiteral("history_%1.png").arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_HHmmss_zzz")));
+    image.save(QDir(dir).filePath(name), "PNG");
+    // 超过上限的旧文件删掉
+    QDir d(dir);
+    QStringList files = d.entryList({QStringLiteral("history_*.png")}, QDir::Files, QDir::Name);
+    const int limit = m_history ? m_history->limit() : 10;
+    while (files.size() > limit)
+        d.remove(files.takeFirst());
 }
 
 QList<QRect> CaptureSession::regionHistory() const
@@ -1165,6 +1244,16 @@ QImage CaptureSession::accept()
 {
     if (!isActive())
         return {};
+    if (m_mode == Mode::Scroll && !m_selection.isEmpty()) {
+        startScroll();
+        return {};
+    }
+    if (m_mode == Mode::Record && !m_selection.isEmpty()) {
+        const QRect region = m_selection;
+        finish();
+        emit recordRequested(region);
+        return {};
+    }
     const QImage image = finalImage();
     if (image.isNull())
         return {};
@@ -1309,6 +1398,46 @@ void CaptureSession::startScroll()
     emit scrollRequested(region);
 }
 
+void CaptureSession::setMode(Mode mode)
+{
+    if (m_mode == mode)
+        return;
+    m_mode = mode;
+    if (m_toolbar)
+        m_toolbar->syncFromEditor();
+    updateOverlays();
+}
+
+QString CaptureSession::modeName() const
+{
+    switch (m_mode) {
+    case Mode::Scroll: return tr("Scroll");
+    case Mode::Record: return tr("Record");
+    case Mode::Static: break;
+    }
+    return tr("Capture");
+}
+
+void CaptureSession::cycleMode()
+{
+    if (!isActive() || m_state == State::Annotating)
+        return;
+    setMode(m_mode == Mode::Static ? Mode::Scroll : m_mode == Mode::Scroll ? Mode::Record : Mode::Static);
+}
+
+QString CaptureSession::sizeText(const QRect& physical) const
+{
+    if (m_settings.stringValue(QStringLiteral("capture.sizeUnit")) == QLatin1String("logical")) {
+        const QRect screen = screenRectAt(physical.center());
+        qreal scale = 1.0;
+        for (const auto& snap : m_desktop.snapshots())
+            if (snap.screen.physicalGeometry == screen)
+                scale = snap.screen.scale;
+        return QStringLiteral("%1 × %2").arg(qRound(physical.width() / scale)).arg(qRound(physical.height() / scale));
+    }
+    return QStringLiteral("%1 × %2").arg(physical.width()).arg(physical.height());
+}
+
 bool CaptureSession::confirmCancel()
 {
     if (!m_settings.boolValue(QStringLiteral("capture.confirmEscape")) || m_selection.isEmpty())
@@ -1320,6 +1449,11 @@ void CaptureSession::cancel()
 {
     if (!isActive())
         return;
+    if (!m_selection.isEmpty() && m_settings.boolValue(QStringLiteral("capture.historyIncludeCancelled")) && m_state != State::History) {
+        const QImage image = currentImage();
+        if (!image.isNull())
+            recordHistory(image, m_selection); // CAP-42
+    }
     emit cancelled();
     finish();
 }
@@ -1334,6 +1468,12 @@ void CaptureSession::onFocusLost()
 void CaptureSession::finish()
 {
     m_state = State::Idle;
+    m_mode = Mode::Static;
+    if (m_transparentBoard) {
+        m_transparentBoard = false;
+        for (auto* w : std::as_const(m_overlays))
+            w->setTransparentMode(false);
+    }
     m_actionsOverride.clear();
     m_codes.clear();
     ++m_codesVersion;

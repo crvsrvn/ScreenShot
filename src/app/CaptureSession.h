@@ -40,6 +40,9 @@ public:
     enum class DetectMode { Element, Window, Off };
     Q_ENUM(DetectMode)
     enum class Drag { None, Create, Move, Resize, ClickCandidate };
+    // 截图模式（CAP-07）：同一界面里轮换静态截图 / 滚动截图 / 屏幕录制
+    enum class Mode { Static, Scroll, Record };
+    Q_ENUM(Mode)
 
     struct Timings {
         qint64 triggerNs = 0;
@@ -65,6 +68,15 @@ public:
     bool startWhiteboard(const QColor& color, bool currentScreenOnly, bool showOverlays = true);
     // 刷新截图（CAP-31）：保留选区重新抓取
     bool refresh();
+    // 模式轮换（CAP-07）：Ctrl+Tab；确认时按模式进入滚动截图 / 录制
+    Mode mode() const { return m_mode; }
+    void setMode(Mode mode);
+    // 透明白板（CAP-51）：在实时桌面上标注，确认时抓取桌面并合成
+    bool startTransparentBoard(bool showOverlays = true);
+    bool transparentBoard() const { return m_transparentBoard; }
+    // 尺寸文字（CAP-19）：按设置用物理或逻辑像素
+    QString sizeText(const QRect& physical) const;
+    bool altHeld() const { return m_altHeld; }
     // 区域历史（CAP-41）：R 载入上次区域，Shift+R 依次载入更早的
     QList<QRect> regionHistory() const;
     bool loadRegionFromHistory(int index);
@@ -106,6 +118,8 @@ public:
     // 二维码 / 条码（REC-06）：当前选区里识别到的码；detectCodes 立即识别并发 codesRequested
     QList<CodeResult> detectedCodes() const { return m_codes; }
     void detectCodes() override;
+    QString modeName() const override;
+    void cycleMode() override;
     bool hasCodes() const override { return !m_codes.isEmpty(); }
 
     // ---- 检测（CAP-11、CAP-12）----
@@ -189,6 +203,7 @@ signals:
     void started();
     void pinRequested(const QImage& image, const QRect& physicalRegion);
     void scrollRequested(const QRect& physicalRegion); // CAP-60：选区后点“滚动截图”
+    void recordRequested(const QRect& physicalRegion); // CAP-07 / VID-01：录制模式下确认
     void ocrCopyRequested(const QImage& image);         // CAP-04 的 OCR 复制动作 / Shift+C
     void codesRequested(const QList<ss::CodeResult>& codes); // REC-06：显示识别到的码
     void sizeInputRequested();                          // CAP-17：点击尺寸文字
@@ -261,6 +276,10 @@ private:
     bool m_shadow = false;
     bool m_border = false;
     bool m_whiteboard = false;
+    bool m_transparentBoard = false;
+    Mode m_mode = Mode::Static;
+    QString m_cursorProcess; // 光标所在窗口的进程名（检测排除列表用）
+    void saveHistoryFile(const QImage& image);
     QStringList m_actionsOverride;
     int m_regionHistoryIndex = -1;
     void pushRegionHistory(const QRect& region);

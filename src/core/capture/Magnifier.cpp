@@ -14,7 +14,7 @@ constexpr int kPadding = 6;
 QSize magnifierSize(const MagnifierOptions& o)
 {
     const int side = o.zoom * o.pixels;
-    const int rows = o.showHint ? kTextRows : kTextRows - 1;
+    const int rows = (o.showCoords ? 1 : 0) + (o.showColor ? 1 : 0) + (o.showHint ? 1 : 0);
     return QSize(side + 2 * kPadding, side + 2 * kPadding + rows * kRowHeight);
 }
 
@@ -47,7 +47,7 @@ void paintMagnifier(QPainter& p, QPointF topLeft, const VirtualDesktop& desktop,
     p.setRenderHint(QPainter::SmoothPixmapTransform, false);
     p.drawImage(zoomRect, block);
     if (o.grid) {
-        QPen grid(QColor(255, 255, 255, 40));
+        QPen grid(o.gridColor);
         grid.setCosmetic(true);
         p.setPen(grid);
         for (int i = 1; i < o.pixels; ++i) {
@@ -82,8 +82,10 @@ void paintMagnifier(QPainter& p, QPointF topLeft, const VirtualDesktop& desktop,
     QString first = QStringLiteral("(%1, %2)").arg(cursor.x()).arg(cursor.y());
     if (!selection.isEmpty())
         first += QStringLiteral("  %1 × %2").arg(selection.width()).arg(selection.height());
-    row(first);
-    row(colorText);
+    if (o.showCoords)
+        row(first);
+    if (o.showColor)
+        row(colorText);
     if (o.showHint)
         row(QCoreApplication::translate("Magnifier", "C: copy color   Shift: format"));
     p.restore();

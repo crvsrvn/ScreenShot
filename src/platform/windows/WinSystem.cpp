@@ -100,6 +100,12 @@ QString currentUserName()
     return QStringLiteral("user");
 }
 
+bool setProcessPriority(const QString& level)
+{
+    const DWORD cls = level == QLatin1String("high") ? HIGH_PRIORITY_CLASS : level == QLatin1String("aboveNormal") ? ABOVE_NORMAL_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS;
+    return SetPriorityClass(GetCurrentProcess(), cls) != FALSE;
+}
+
 bool isElevated()
 {
     HANDLE token = nullptr;

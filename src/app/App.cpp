@@ -3,6 +3,7 @@
 #include "app/CaptureSession.h"
 #include "app/ActionsDialog.h"
 #include "app/CommandServer.h"
+#include "app/FloatingBar.h"
 #include "app/Notification.h"
 #include "app/ResultDialogs.h"
 #include "app/Theme.h"
@@ -25,6 +26,7 @@
 #include <QInputDialog>
 #include <QMenu>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QMimeData>
 #include <QPainter>
@@ -47,16 +49,16 @@ namespace ss {
 
 namespace {
 
-QIcon makeTrayIcon()
+QIcon makeTrayIcon(const QColor& color)
 {
     QPixmap pm(64, 64);
     pm.fill(Qt::transparent);
     QPainter p(&pm);
     p.setRenderHint(QPainter::Antialiasing);
-    p.setPen(QPen(QColor(40, 120, 220), 6));
+    p.setPen(QPen(color, 6));
     p.setBrush(Qt::NoBrush);
     p.drawRoundedRect(QRectF(8, 8, 48, 48), 8, 8);
-    p.setBrush(QColor(40, 120, 220));
+    p.setBrush(color);
     p.setPen(Qt::NoPen);
     p.drawEllipse(QPointF(32, 32), 9, 9);
     return QIcon(pm);
@@ -96,6 +98,11 @@ App::App(Platform platform, Settings& settings, QObject* parent)
             showCodeResult(codes);
     });
     theme::apply(m_settings);
+    applyFloatingBar();
+#ifdef Q_OS_WIN
+    win::setProcessPriority(m_settings.stringValue(QStringLiteral("general.processPriority")));
+#endif
+    loadHistoryDir();
     if (m_platform.screenCapture)
         m_platform.screenCapture->configure(QStringLiteral("hdrStrategy"), m_settings.stringValue(QStringLiteral("capture.hdrStrategy")));
     connect(m_session.get(), &CaptureSession::captured, this, [this](const QImage& image, const QRect& region) {
@@ -187,11 +194,56 @@ void App::setupTray()
     m_trayMenu->addAction(tr("Quit"), this, &App::quit);
     if (!QSystemTrayIcon::isSystemTrayAvailable())
         return;
-    m_tray = new QSystemTrayIcon(makeTrayIcon(), this);
+    m_tray = new QSystemTrayIcon(makeTrayIcon(trayIconColor()), this);
     m_tray->setToolTip(QStringLiteral("ScreenShot"));
     m_tray->setContextMenu(m_trayMenu);
     connect(m_tray, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) { trayActivated(reason); });
-    m_tray->show();
+    m_tray->setVisible(!m_settings.boolValue(QStringLiteral("general.trayIconHidden")));
+}
+
+QColor App::trayIconColor() const
+{
+    // GEN-06：跟随系统（深色托盘用浅色图标）/ 浅色 / 深色 / 自定义
+    const QString style = m_settings.stringValue(QStringLiteral("general.trayIconStyle"));
+    if (style == QLatin1String("custom"))
+        return QColor::fromString(m_settings.stringValue(QStringLiteral("general.trayIconColor")));
+    if (style == QLatin1String("light"))
+        return QColor(245, 245, 245);
+    if (style == QLatin1String("dark"))
+        return QColor(40, 40, 40);
+    return theme::resolve(m_settings) == QLatin1String("dark") ? QColor(245, 245, 245) : QColor(40, 120, 220);
+}
+
+void App::applyTrayAppearance()
+{
+    if (!m_tray)
+        return;
+    m_tray->setIcon(makeTrayIcon(trayIconColor()));
+    m_tray->setVisible(!m_settings.boolValue(QStringLiteral("general.trayIconHidden")));
+}
+
+void App::applyFloatingBar()
+{
+    const bool on = m_settings.boolValue(QStringLiteral("general.floatingBar"));
+    if (!on) {
+        m_floatingBar.reset();
+        return;
+    }
+    if (m_floatingBar)
+        return;
+    m_floatingBar = std::make_unique<FloatingBar>();
+    connect(m_floatingBar.get(), &FloatingBar::captureRequested, this, [this] { startCapture(monotonicNs()); });
+    connect(m_floatingBar.get(), &FloatingBar::pinRequested, this, &App::pinFromClipboard);
+    connect(m_floatingBar.get(), &FloatingBar::dropped, this, [this](const QMimeData* mime, QPoint at) { m_pins->pinMime(mime, at); });
+    connect(m_floatingBar.get(), &FloatingBar::moved, this, [this](QPoint pos) {
+        m_settings.setValue(QStringLiteral("general.floatingBarPos"), QStringLiteral("%1,%2").arg(pos.x()).arg(pos.y()));
+    });
+    const QStringList pos = m_settings.stringValue(QStringLiteral("general.floatingBarPos")).split(QLatin1Char(','));
+    if (pos.size() == 2)
+        m_floatingBar->move(pos[0].toInt(), pos[1].toInt());
+    else if (QScreen* s = QGuiApplication::primaryScreen())
+        m_floatingBar->move(s->availableGeometry().right() - m_floatingBar->width() - 20, s->availableGeometry().top() + 20);
+    m_floatingBar->show();
 }
 
 void App::rebuildGroupMenu()
@@ -327,6 +379,15 @@ void App::applySetting(const QString& key)
         rebuildActionsMenu();
     } else if (key.startsWith(QStringLiteral("ui."))) {
         theme::apply(m_settings);
+        applyTrayAppearance();
+    } else if (key.startsWith(QStringLiteral("general.trayIcon"))) {
+        applyTrayAppearance();
+    } else if (key == QStringLiteral("general.floatingBar")) {
+        applyFloatingBar();
+    } else if (key == QStringLiteral("general.processPriority")) {
+#ifdef Q_OS_WIN
+        win::setProcessPriority(m_settings.stringValue(key)); // GEN-10
+#endif
     } else if (key == QStringLiteral("capture.hdrStrategy")) {
         if (m_platform.screenCapture)
             m_platform.screenCapture->configure(QStringLiteral("hdrStrategy"), m_settings.stringValue(key));
@@ -798,6 +859,22 @@ void App::showAbout()
                           "WASD and arrow keys to adjust by one pixel, , and . to recall previous captures.")
                            .arg(m_settings.stringValue(QStringLiteral("hotkey.capture")), m_settings.stringValue(QStringLiteral("hotkey.pin")),
                                 m_settings.stringValue(QStringLiteral("hotkey.togglePins"))));
+}
+
+void App::loadHistoryDir()
+{
+    // CAP-43：从历史目录读回最近的截图
+    const QString dir = m_settings.stringValue(QStringLiteral("capture.historyDir"));
+    if (dir.isEmpty())
+        return;
+    QStringList files = QDir(dir).entryList({QStringLiteral("history_*.png")}, QDir::Files, QDir::Name);
+    while (files.size() > m_history.limit())
+        files.removeFirst();
+    for (const QString& f : files) {
+        const QImage image(QDir(dir).filePath(f));
+        if (!image.isNull())
+            m_history.add({image, QRect(QPoint(0, 0), image.size()), QFileInfo(QDir(dir).filePath(f)).lastModified()});
+    }
 }
 
 void App::quit()

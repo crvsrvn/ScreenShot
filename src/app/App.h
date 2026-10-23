@@ -23,6 +23,8 @@ class Settings;
 class OutputActions;
 class CommandServer;
 class ScrollCaptureSession;
+class FloatingBar;
+class NotificationWidget;
 
 // 托盘与命令路由：持有平台层、设置、截图会话、输出动作和贴图管理。
 class App : public QObject {
@@ -69,7 +71,7 @@ public:
     void setDataDir(const QString& dir) { m_dataDir = dir; }
     int restorePins();
     // 通知（GEN-07）；返回显示的窗口（关闭通知时为空）
-    class NotificationWidget* notify(const QString& title, const QString& message, const QString& filePath = QString());
+    NotificationWidget* notify(const QString& title, const QString& message, const QString& filePath = QString());
     // 当前光标的物理位置（贴图放置位置）
     static QPoint cursorPhysical();
 
@@ -102,6 +104,10 @@ private:
     void onCodesRequested(const QList<CodeResult>& codes);
     void registerHotkeys();
     void rebuildActionsMenu();
+    QColor trayIconColor() const;
+    void applyTrayAppearance();
+    void applyFloatingBar();
+    void loadHistoryDir();
     void finishCommand(int requestId, const QString& text);
     void applySetting(const QString& key);
 
@@ -114,6 +120,10 @@ private:
     std::unique_ptr<CommandServer> m_commands;
     std::unique_ptr<ScrollCaptureSession> m_scroll;
     QImage m_scrollResult;
+public:
+    FloatingBar* floatingBar() const { return m_floatingBar.get(); }
+    QSystemTrayIcon* trayIcon() const { return m_tray; }
+private:
     QRect m_scrollRegion;
     QString m_scrollError;
     CaptureHistory m_history;
@@ -127,6 +137,7 @@ private:
     int m_pendingReply = 0; // 等待截图完成后应答的命令
     int m_actionHotkeys = 0;
     QString m_dataDir;
+    std::unique_ptr<FloatingBar> m_floatingBar;
     QRect quickRegion(const QString& kind);
     void rebuildGroupMenu();
 };
