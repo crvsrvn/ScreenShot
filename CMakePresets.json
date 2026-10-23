@@ -1,0 +1,44 @@
+{
+  "version": 8,
+  "configurePresets": [
+    {
+      "name": "win-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "C:/Qt/6.12.0/msvc2022_64",
+        "CMAKE_CXX_COMPILER": "cl",
+        "CMAKE_C_COMPILER": "cl"
+      },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "win-debug",
+      "inherits": "win-base",
+      "displayName": "Windows Debug（含测试接口）",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "SCREENSHOT_TEST_BUILD": "ON" }
+    },
+    {
+      "name": "win-release-test",
+      "inherits": "win-base",
+      "displayName": "Windows Release（含测试接口，用于性能用例）",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo", "SCREENSHOT_TEST_BUILD": "ON" }
+    },
+    {
+      "name": "win-release",
+      "inherits": "win-base",
+      "displayName": "Windows Release（发布，无测试接口）",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "SCREENSHOT_TEST_BUILD": "OFF", "SCREENSHOT_BUILD_TESTS": "OFF" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "win-debug", "configurePreset": "win-debug" },
+    { "name": "win-release-test", "configurePreset": "win-release-test" },
+    { "name": "win-release", "configurePreset": "win-release" }
+  ],
+  "testPresets": [
+    { "name": "win-debug", "configurePreset": "win-debug", "output": { "outputOnFailure": true } },
+    { "name": "win-release-test", "configurePreset": "win-release-test", "output": { "outputOnFailure": true } }
+  ]
+}
