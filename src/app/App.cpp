@@ -1,7 +1,10 @@
 #include "app/App.h"
 
 #include "app/CaptureSession.h"
+#include "app/ActionsDialog.h"
 #include "app/CommandServer.h"
+#include "app/ResultDialogs.h"
+#include "app/Theme.h"
 #include "app/CustomCaptureDialog.h"
 #include "app/OutputActions.h"
 #include "app/PinManager.h"
@@ -19,8 +22,12 @@
 #include <QGuiApplication>
 #include <QInputDialog>
 #include <QMenu>
+#include <QFileDialog>
 #include <QMessageBox>
+#include <QMimeData>
 #include <QPainter>
+#include <QProcess>
+#include <QUrl>
 #include <QPixmap>
 #include <QScreen>
 #include <QSystemTrayIcon>
@@ -70,6 +77,18 @@ App::App(Platform platform, Settings& settings, QObject* parent)
     connect(m_session.get(), &CaptureSession::scrollRequested, this, [this](const QRect& region) { startScroll(region); });
     connect(m_session.get(), &CaptureSession::sizeInputRequested, this, &App::onSizeInputRequested);
     connect(m_session.get(), &CaptureSession::ocrCopyRequested, this, &App::onOcrCopyRequested);
+    connect(m_session.get(), &CaptureSession::codesRequested, this, &App::onCodesRequested);
+    connect(m_pins.get(), &PinManager::ocrRequested, this, &App::onOcrCopyRequested);
+    connect(m_pins.get(), &PinManager::codesRequested, this, [this](const QImage& image) {
+        const QList<CodeResult> codes = decodeCodes(image);
+        if (codes.isEmpty())
+            QMessageBox::information(nullptr, tr("Decode codes"), tr("No QR code or barcode found."));
+        else
+            showCodeResult(codes);
+    });
+    theme::apply(m_settings);
+    if (m_platform.screenCapture)
+        m_platform.screenCapture->configure(QStringLiteral("hdrStrategy"), m_settings.stringValue(QStringLiteral("capture.hdrStrategy")));
     connect(m_session.get(), &CaptureSession::captured, this, [this](const QImage& image, const QRect& region) {
         m_settings.setValue(QStringLiteral("capture.lastRegion"), QStringLiteral("%1,%2,%3,%4").arg(region.x()).arg(region.y()).arg(region.width()).arg(region.height()));
         m_output->autoSave(image); // OUT-09：截图成功时额外存一份
@@ -141,6 +160,11 @@ void App::setupTray()
     m_togglePinsAction = m_trayMenu->addAction(tr("Hide all pins\tShift+F3"), this, &App::togglePinsHidden);
     m_trayMenu->addAction(tr("Restore closed pin\tCtrl+3"), this, &App::restoreClosedPin);
     m_trayMenu->addAction(tr("Restore off-screen pins"), this, &App::restoreOffscreenPins);
+    m_actionsMenu = m_trayMenu->addMenu(tr("Actions"));
+    rebuildActionsMenu();
+    QMenu* recognize = m_trayMenu->addMenu(tr("Recognize"));
+    recognize->addAction(tr("Text in image file (OCR)..."), this, [this] { recognizeTextFromFile(); });
+    recognize->addAction(tr("QR code / barcode in image file..."), this, [this] { decodeCodesFromFile(); });
     m_groupMenu = m_trayMenu->addMenu(tr("Pin groups"));
     connect(m_pins.get(), &PinManager::groupChanged, this, [this] { rebuildGroupMenu(); });
     rebuildGroupMenu();
@@ -215,7 +239,13 @@ void App::setupHotkeys()
         case HotkeyPassthrough: togglePassthroughAtCursor(); break;
         case HotkeyNextGroup: m_pins->nextGroup(); break;
         case HotkeyPreviousGroup: m_pins->previousGroup(); break;
-        default: break;
+        default:
+            if (id >= HotkeyActionBase) {
+                const QList<Action> list = actions();
+                if (id - HotkeyActionBase < list.size())
+                    runAction(list[id - HotkeyActionBase].name);
+            }
+            break;
         }
     });
     registerHotkeys();
@@ -230,6 +260,9 @@ void App::registerHotkeys()
 {
     if (!m_platform.hotkey)
         return;
+    for (int id = HotkeyActionBase; id < HotkeyActionBase + m_actionHotkeys; ++id)
+        m_platform.hotkey->unregisterHotkey(id);
+    m_actionHotkeys = 0;
     for (int id : {HotkeyCapture, HotkeyPin, HotkeyTogglePins, HotkeyRestorePin, HotkeyPassthrough, HotkeyNextGroup, HotkeyPreviousGroup})
         m_platform.hotkey->unregisterHotkey(id);
     m_hotkeyStatus.clear();
@@ -249,6 +282,14 @@ void App::registerHotkeys()
                 m_tray->showMessage(tr("Hotkey conflict"), tr("%1 is already used by another program.").arg(seq.toString(QKeySequence::NativeText)), QSystemTrayIcon::Warning);
         }
     }
+    // 动作热键（ACT-03）
+    const QList<Action> list = actions();
+    for (int i = 0; i < list.size(); ++i) {
+        const QKeySequence seq(list[i].hotkey);
+        if (!seq.isEmpty())
+            m_platform.hotkey->registerHotkey(HotkeyActionBase + i, seq);
+    }
+    m_actionHotkeys = static_cast<int>(list.size());
 }
 
 void App::setHotkeysEnabled(bool enabled)
@@ -264,10 +305,22 @@ void App::applySetting(const QString& key)
             m_hotkeysAction->setChecked(!hotkeysEnabled());
     } else if (key == QStringLiteral("capture.historyLimit")) {
         m_history.setLimit(m_settings.intValue(key));
-    } else if (key == QStringLiteral("general.autostart")) {
+    } else if (key == QStringLiteral("general.autostart") || key == QStringLiteral("general.runAsAdmin")) {
 #ifdef Q_OS_WIN
-        win::setAutostart(m_settings.boolValue(key), QCoreApplication::applicationFilePath(), QStringLiteral("ScreenShot"));
+        // 管理员模式下自启用计划任务（GEN-05），否则用注册表
+        const bool admin = m_settings.boolValue(QStringLiteral("general.runAsAdmin"));
+        const bool on = m_settings.boolValue(QStringLiteral("general.autostart"));
+        win::setAutostart(on && !admin, QCoreApplication::applicationFilePath(), QStringLiteral("ScreenShot"));
+        win::setAutostartElevated(on && admin, QCoreApplication::applicationFilePath(), QStringLiteral("ScreenShot"));
 #endif
+    } else if (key == QStringLiteral("actions.list")) {
+        registerHotkeys();
+        rebuildActionsMenu();
+    } else if (key.startsWith(QStringLiteral("ui."))) {
+        theme::apply(m_settings);
+    } else if (key == QStringLiteral("capture.hdrStrategy")) {
+        if (m_platform.screenCapture)
+            m_platform.screenCapture->configure(QStringLiteral("hdrStrategy"), m_settings.stringValue(key));
     }
     m_settings.saveToFile();
 }
@@ -281,30 +334,92 @@ void App::useScreenCapture(std::unique_ptr<IScreenCapture> capture)
 void App::startCommandServer(const QString& channelName)
 {
     m_commands = std::make_unique<CommandServer>(channelName, this);
-    connect(m_commands.get(), &CommandServer::commandReceived, this, &App::runCommand);
+    connect(m_commands.get(), &CommandServer::commandReceived, this, [this](const QStringList& command, int id) { runCommand(command, id); });
     m_commands->start();
 }
 
-void App::runCommand(const QStringList& command)
+namespace {
+
+// 取选项的值：--name value；不存在返回空
+QString optionValue(const QStringList& command, const QString& name)
+{
+    const int i = static_cast<int>(command.indexOf(name));
+    return i >= 0 ? command.value(i + 1) : QString();
+}
+
+// 取选项后直到下一个 -- 选项为止的全部参数（文本可含多个词）
+QString optionText(const QStringList& command, const QString& name)
+{
+    const int i = static_cast<int>(command.indexOf(name));
+    if (i < 0)
+        return {};
+    QStringList words;
+    for (int j = i + 1; j < command.size() && !command[j].startsWith(QStringLiteral("--")); ++j)
+        words.append(command[j]);
+    return words.join(QLatin1Char(' '));
+}
+
+QPoint parsePoint(const QString& text, QPoint fallback)
+{
+    const QStringList parts = text.split(QLatin1Char(','));
+    return parts.size() == 2 ? QPoint(parts[0].toInt(), parts[1].toInt()) : fallback;
+}
+
+} // namespace
+
+void App::finishCommand(int requestId, const QString& text)
+{
+    if (requestId && m_commands)
+        m_commands->reply(requestId, text);
+}
+
+void App::runCommand(const QStringList& command, int requestId)
 {
     const QString name = command.value(0);
+    const bool wait = command.contains(QStringLiteral("--wait"));
+    QString result = QStringLiteral("ok");
     if (name == QLatin1String("snip")) {
-        // snip [full|last|active-window|active-screen|cursor-screen|custom|whiteboard|x,y,w,h] [--delay ms]
+        // snip [full|last|active-window|active-screen|cursor-screen|custom|whiteboard|x,y,w,h]
+        //      [--size WxH [--pos x,y]] [--delay ms] [--shadow] [--output copy,pin,save,quickSave,ocrCopy] [--edit] [--wait]
         const QString arg = command.value(1);
-        int delay = 0;
-        const int d = static_cast<int>(command.indexOf(QStringLiteral("--delay")));
-        if (d >= 0)
-            delay = command.value(d + 1).toInt();
-        if (arg.isEmpty() || arg.startsWith(QStringLiteral("--")))
+        const int delay = optionValue(command, QStringLiteral("--delay")).toInt();
+        const bool edit = command.contains(QStringLiteral("--edit"));
+        const QString output = optionValue(command, QStringLiteral("--output"));
+        if (!output.isEmpty())
+            m_session->setEnterActionsOverride(output.split(QLatin1Char(','), Qt::SkipEmptyParts));
+        if (command.contains(QStringLiteral("--shadow")))
+            m_session->setShadowEnabled(true);
+        if (wait) {
+            // 完成（输出或取消）后再应答调用方
+            m_pendingReply = requestId;
+            auto done = [this](const QString& text) {
+                if (m_pendingReply) {
+                    finishCommand(m_pendingReply, text);
+                    m_pendingReply = 0;
+                }
+            };
+            connect(m_session.get(), &CaptureSession::captured, this, [done] { done(QStringLiteral("ok")); }, Qt::SingleShotConnection);
+            connect(m_session.get(), &CaptureSession::cancelled, this, [done] { done(QStringLiteral("cancelled")); }, Qt::SingleShotConnection);
+        }
+        QRect region;
+        const QString size = optionValue(command, QStringLiteral("--size"));
+        if (!size.isEmpty()) {
+            const QStringList wh = size.split(QRegularExpression(QStringLiteral("[xX*]")));
+            if (wh.size() == 2)
+                region = QRect(parsePoint(optionValue(command, QStringLiteral("--pos")), cursorPhysical()), QSize(wh[0].toInt(), wh[1].toInt()));
+        }
+        if (!region.isEmpty())
+            captureRegion(region, delay, edit);
+        else if (arg.isEmpty() || arg.startsWith(QStringLiteral("--")))
             startCapture(monotonicNs());
         else if (arg == QLatin1String("full") || arg == QLatin1String("last"))
-            quickCapture(arg);
+            edit ? captureRegion(quickRegion(arg), delay, true) : (void)quickCapture(arg);
         else if (arg == QLatin1String("active-window"))
-            quickCapture(QStringLiteral("activeWindow"));
+            edit ? captureRegion(quickRegion(QStringLiteral("activeWindow")), delay, true) : (void)quickCapture(QStringLiteral("activeWindow"));
         else if (arg == QLatin1String("active-screen"))
-            quickCapture(QStringLiteral("activeScreen"));
+            edit ? captureRegion(quickRegion(QStringLiteral("activeScreen")), delay, true) : (void)quickCapture(QStringLiteral("activeScreen"));
         else if (arg == QLatin1String("cursor-screen"))
-            quickCapture(QStringLiteral("cursorScreen"));
+            edit ? captureRegion(quickRegion(QStringLiteral("cursorScreen")), delay, true) : (void)quickCapture(QStringLiteral("cursorScreen"));
         else if (arg == QLatin1String("custom"))
             showCustomCaptureDialog();
         else if (arg == QLatin1String("whiteboard"))
@@ -312,19 +427,160 @@ void App::runCommand(const QStringList& command)
         else {
             const QStringList parts = arg.split(QLatin1Char(','));
             if (parts.size() == 4)
-                captureRegion(QRect(parts[0].toInt(), parts[1].toInt(), parts[2].toInt(), parts[3].toInt()), delay, false);
+                captureRegion(QRect(parts[0].toInt(), parts[1].toInt(), parts[2].toInt(), parts[3].toInt()), delay, edit);
         }
-    }
-    else if (name == QLatin1String("pin"))
-        pinFromClipboard();
-    else if (name == QLatin1String("toggle-pins"))
+        if (wait)
+            return; // 稍后应答
+    } else if (name == QLatin1String("pin")) {
+        // pin [clipboard] [--text words...] [--html words...] [--file path...] [--pos x,y]
+        const QPoint at = parsePoint(optionValue(command, QStringLiteral("--pos")), cursorPhysical());
+        PinWindow* pin = nullptr;
+        if (command.contains(QStringLiteral("--text")))
+            pin = m_pins->pinText(optionText(command, QStringLiteral("--text")), at);
+        else if (command.contains(QStringLiteral("--html")))
+            pin = m_pins->pinHtml(optionText(command, QStringLiteral("--html")), at);
+        else if (command.contains(QStringLiteral("--file"))) {
+            QMimeData mime;
+            QList<QUrl> urls;
+            for (const QString& f : optionText(command, QStringLiteral("--file")).split(QLatin1Char(' '), Qt::SkipEmptyParts))
+                urls.append(QUrl::fromLocalFile(f));
+            mime.setUrls(urls);
+            pin = m_pins->pinMime(&mime, at);
+        } else {
+            pin = m_pins->pinHotkey(at);
+        }
+        result = pin ? QStringLiteral("ok") : QStringLiteral("nothing to pin");
+    } else if (name == QLatin1String("pins")) {
+        // pins hide|show|toggle|close-all|destroy-all|restore|restore-offscreen
+        const QString op = command.value(1);
+        if (op == QLatin1String("hide")) m_pins->hideAll();
+        else if (op == QLatin1String("show")) m_pins->showAll();
+        else if (op == QLatin1String("toggle")) togglePinsHidden();
+        else if (op == QLatin1String("close-all")) m_pins->closeAll();
+        else if (op == QLatin1String("destroy-all")) m_pins->destroyAll();
+        else if (op == QLatin1String("restore")) restoreClosedPin();
+        else if (op == QLatin1String("restore-offscreen")) restoreOffscreenPins();
+        else result = QStringLiteral("unknown pins command");
+    } else if (name == QLatin1String("group")) {
+        // group new NAME | switch NAME | next | prev | clear | list
+        const QString op = command.value(1);
+        if (op == QLatin1String("new")) m_pins->newGroup(optionText(command, op).isEmpty() ? command.mid(2).join(QLatin1Char(' ')) : command.mid(2).join(QLatin1Char(' ')));
+        else if (op == QLatin1String("switch")) result = m_pins->switchToGroupNamed(command.mid(2).join(QLatin1Char(' '))) ? QStringLiteral("ok") : QStringLiteral("no such group");
+        else if (op == QLatin1String("next")) m_pins->nextGroup();
+        else if (op == QLatin1String("prev")) m_pins->previousGroup();
+        else if (op == QLatin1String("clear")) m_pins->clearCurrentGroup();
+        else if (op == QLatin1String("list")) result = m_pins->groupNames().join(QLatin1Char('\n'));
+        else result = QStringLiteral("unknown group command");
+        rebuildGroupMenu();
+    } else if (name == QLatin1String("action")) {
+        result = runAction(command.mid(1).join(QLatin1Char(' '))) ? QStringLiteral("ok") : QStringLiteral("no such action");
+    } else if (name == QLatin1String("ocr-file")) {
+        recognizeTextFromFile(command.value(1));
+    } else if (name == QLatin1String("qr-file")) {
+        decodeCodesFromFile(command.value(1));
+    } else if (name == QLatin1String("toggle-pins")) {
         togglePinsHidden();
-    else if (name == QLatin1String("prefs"))
+    } else if (name == QLatin1String("prefs")) {
         showPreferences();
-    else if (name == QLatin1String("quit"))
+    } else if (name == QLatin1String("quit")) {
         quit();
-    else if (!name.isEmpty())
+    } else if (!name.isEmpty()) {
         qWarning("unknown command: %s", qPrintable(name));
+        result = QStringLiteral("unknown command");
+    }
+    finishCommand(requestId, result);
+}
+
+// ---- 动作（ACT-03）----
+
+QList<Action> App::actions() const
+{
+    return actionsFromJson(m_settings.stringValue(QStringLiteral("actions.list")));
+}
+
+bool App::runAction(const QString& name)
+{
+    for (const Action& a : actions()) {
+        if (a.name.compare(name, Qt::CaseInsensitive) != 0)
+            continue;
+        const QStringList words = splitCommandLine(a.command);
+        if (words.value(0) == QLatin1String("shell")) {
+            QProcess::startDetached(QStringLiteral("cmd.exe"), {QStringLiteral("/c"), a.command.mid(6).trimmed()});
+        } else if (words.value(0) == QLatin1String("run")) {
+            QProcess::startDetached(words.value(1), words.mid(2));
+        } else {
+            runCommand(words);
+        }
+        return true;
+    }
+    return false;
+}
+
+void App::showActionsDialog()
+{
+    ActionsDialog dialog(m_settings);
+    dialog.exec();
+}
+
+void App::rebuildActionsMenu()
+{
+    if (!m_actionsMenu)
+        return;
+    m_actionsMenu->clear();
+    m_actionsMenu->addAction(tr("Edit actions..."), this, &App::showActionsDialog);
+    m_actionsMenu->addSeparator();
+    for (const Action& a : actions()) {
+        if (!a.inTray)
+            continue;
+        const QString n = a.name;
+        QAction* act = m_actionsMenu->addAction(a.hotkey.isEmpty() ? a.name : a.name + QLatin1Char('\t') + a.hotkey, this, [this, n] { runAction(n); });
+        Q_UNUSED(act);
+    }
+}
+
+// ---- 识别（REC-01、REC-06）----
+
+void App::showOcrResult(const QString& text)
+{
+    QApplication::clipboard()->setText(text);
+    if (!m_settings.boolValue(QStringLiteral("ocr.showResult")))
+        return;
+    auto* dialog = new OcrResultDialog(text);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->show();
+}
+
+void App::showCodeResult(const QList<CodeResult>& codes)
+{
+    auto* dialog = new CodeResultDialog(codes);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->show();
+}
+
+void App::onCodesRequested(const QList<CodeResult>& codes)
+{
+    showCodeResult(codes);
+}
+
+void App::recognizeTextFromFile(const QString& pathIn)
+{
+    const QString path = pathIn.isEmpty() ? QFileDialog::getOpenFileName(nullptr, tr("Recognize text in image"), QString(), tr("Images (*.png *.jpg *.jpeg *.bmp *.webp)")) : pathIn;
+    if (path.isEmpty() || !m_platform.ocr)
+        return;
+    const OcrResult r = m_platform.ocr->recognize(QImage(path));
+    showOcrResult(r.ok ? r.text() : r.error);
+}
+
+void App::decodeCodesFromFile(const QString& pathIn)
+{
+    const QString path = pathIn.isEmpty() ? QFileDialog::getOpenFileName(nullptr, tr("Decode codes in image"), QString(), tr("Images (*.png *.jpg *.jpeg *.bmp *.webp)")) : pathIn;
+    if (path.isEmpty())
+        return;
+    const QList<CodeResult> codes = decodeCodes(QImage(path));
+    if (codes.isEmpty())
+        QMessageBox::information(nullptr, tr("Decode codes in image"), tr("No QR code or barcode found."));
+    else
+        showCodeResult(codes);
 }
 
 void App::notifyCrashDumps(const QStringList& dumps)
@@ -354,13 +610,22 @@ void App::onOcrCopyRequested(const QImage& image)
         return;
     const OcrResult r = m_platform.ocr->recognize(image);
     if (r.ok && !r.lines.isEmpty())
-        QApplication::clipboard()->setText(r.text());
+        showOcrResult(r.text());
 }
 
 bool App::quickCapture(const QString& kind)
 {
     if (m_session->isActive())
         return false;
+    const QRect region = quickRegion(kind);
+    if (region.isEmpty())
+        return false;
+    captureRegion(region, 0, false);
+    return true;
+}
+
+QRect App::quickRegion(const QString& kind)
+{
     QRect region;
     const QList<ScreenInfo> screens = m_session->screenCapture() ? m_session->screenCapture()->screens() : QList<ScreenInfo>{};
     auto screenContaining = [&](QPoint p) {
@@ -387,10 +652,7 @@ bool App::quickCapture(const QString& kind)
     } else if (kind == QLatin1String("cursorScreen")) {
         region = screenContaining(cursorPhysical());
     }
-    if (region.isEmpty())
-        return false;
-    captureRegion(region, 0, false);
-    return true;
+    return region;
 }
 
 void App::captureRegion(const QRect& physical, int delayMs, bool interactive)

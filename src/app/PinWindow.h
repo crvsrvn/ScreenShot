@@ -85,6 +85,9 @@ public:
     void setSnapTargets(std::function<QList<QRectF>()> targets) { m_snapTargets = std::move(targets); }
     QPointF snappedTopLeft(QPointF proposed) const;
 
+    // 鼠标动作（ACT-05）：close / destroy / copy / reset / thumbnail / menu / passthrough / topmost / none
+    void runMouseAction(const QString& action, QPoint globalPos);
+
     // 关闭 / 销毁前的确认（PIN-53）；测试可替换
     static std::function<bool(QWidget*, const QString&)> confirmHandler;
 
@@ -170,6 +173,8 @@ signals:
     // 多选时的联动（由管理器转发给其他选中贴图）
     void groupMoved(ss::PinWindow* pin, QPointF logicalDelta);
     void groupAction(ss::PinWindow* pin, const QString& action, double arg); // close / destroy / reset / opacity
+    void ocrRequested(const QImage& image);    // REC-01：贴图右键识别
+    void codesRequested(const QImage& image);  // REC-06：贴图右键识别二维码
 
 protected:
     void paintEvent(QPaintEvent* event) override;

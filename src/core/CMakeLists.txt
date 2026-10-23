@@ -29,6 +29,9 @@ qt_add_library(screenshot_core STATIC
     pin/TextPin.h pin/TextPin.cpp
     pin/ColorPin.h pin/ColorPin.cpp
     stitch/Stitcher.h stitch/Stitcher.cpp
+    code/CodeDecoder.h code/CodeDecoder.cpp
+    fx/HdrToneMap.h fx/HdrToneMap.cpp
+    config/Actions.h config/Actions.cpp
 )
 target_include_directories(screenshot_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(screenshot_core PUBLIC Qt6::Core Qt6::Gui Qt6::Concurrent)
+target_link_libraries(screenshot_core PUBLIC Qt6::Core Qt6::Gui Qt6::Concurrent PRIVATE ZXing::ZXing)

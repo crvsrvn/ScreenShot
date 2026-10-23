@@ -58,6 +58,8 @@ PinWindow* PinManager::attach(PinWindow* pin, QPoint physicalTopLeft, const QDat
                 other->moveContentTo(other->contentTopLeft() + delta);
     });
     connect(pin, &PinWindow::groupAction, this, &PinManager::onGroupAction);
+    connect(pin, &PinWindow::ocrRequested, this, &PinManager::ocrRequested);
+    connect(pin, &PinWindow::codesRequested, this, &PinManager::codesRequested);
     // 吸附目标：同组其他可见贴图的内容矩形（PIN-21）
     pin->setSnapTargets([this, pin] {
         QList<QRectF> rects;

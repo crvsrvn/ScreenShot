@@ -26,6 +26,21 @@ qt_standard_project_setup()
 
 include(cmake/ZeroNetwork.cmake)
 
+# ---- 第三方：ZXing-C++（二维码 / 条码，REC-06；纯本地库）----
+include(FetchContent)
+set(ZXING_READERS ON CACHE BOOL "" FORCE)
+set(ZXING_WRITERS ON CACHE BOOL "" FORCE)
+set(ZXING_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(ZXING_BLACKBOX_TESTS OFF CACHE BOOL "" FORCE)
+set(ZXING_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+set(ZXING_C_API OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(zxing
+    GIT_REPOSITORY https://github.com/zxing-cpp/zxing-cpp.git
+    GIT_TAG v2.3.0
+    GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(zxing)
+
 # ---- 目标 ------------------------------------------------------------------
 add_subdirectory(src/core)
 add_subdirectory(src/platform)

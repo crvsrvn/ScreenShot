@@ -29,6 +29,7 @@ CaptureSession::CaptureSession(IScreenCapture* capture, IWindowDetector* windows
     , m_editor(settings)
 {
     connect(&m_elementWatcher, &QFutureWatcher<std::optional<QRect>>::finished, this, &CaptureSession::onElementResult);
+    connect(&m_codesWatcher, &QFutureWatcher<QList<CodeResult>>::finished, this, &CaptureSession::onCodesResult);
     connect(&m_editor, &AnnotationEditor::changed, this, [this] { updateOverlays(); });
     m_toolbar = new CaptureToolbar(this);
 }
@@ -363,6 +364,10 @@ void CaptureSession::setState(State state)
     if (m_state == state)
         return;
     m_state = state;
+    if (state == State::Selected)
+        autoDetectCodes(); // REC-06：选区确定后自动检测
+    else if (state != State::Annotating && state != State::History)
+        m_codes.clear();
     emit stateChanged(state);
     m_toolbar->syncFromEditor();
     layoutToolbar();
@@ -382,10 +387,15 @@ void CaptureSession::setSelection(const QRect& physical)
     m_selection = physical.normalized();
     if (!isActive())
         return;
+    const State before = m_state;
     if (m_state == State::History)
         setState(m_selection.isEmpty() ? State::Detecting : State::Selected);
     else if (m_state != State::Selecting)
         setState(m_selection.isEmpty() ? State::Detecting : State::Selected);
+    if (before == State::Selected && m_state == State::Selected) {
+        m_codes.clear();
+        autoDetectCodes(); // 选区变了：重新检测（REC-06）
+    }
     emit selectionChanged(m_selection);
     layoutToolbar();
     updateOverlays();
@@ -870,6 +880,8 @@ bool CaptureSession::handleKeyPress(QKeyEvent* e)
     case Qt::Key_C:
         if (ctrl)
             accept();
+        else if (shift)
+            ocrCopy(); // REC-01
         else
             copyColor();
         return true;
@@ -1107,8 +1119,54 @@ QImage CaptureSession::accept()
     const QImage image = finalImage();
     if (image.isNull())
         return {};
-    runActions(m_settings.stringValue(QStringLiteral("capture.enterActions")).split(QLatin1Char(','), Qt::SkipEmptyParts));
+    runActions(m_actionsOverride.isEmpty() ? m_settings.stringValue(QStringLiteral("capture.enterActions")).split(QLatin1Char(','), Qt::SkipEmptyParts) : m_actionsOverride);
     return image;
+}
+
+void CaptureSession::ocrCopy()
+{
+    if (!isActive())
+        return;
+    const QImage image = finalImage();
+    if (image.isNull())
+        return;
+    recordHistory(image, m_selection);
+    emit ocrCopyRequested(image);
+    finish();
+}
+
+void CaptureSession::detectCodes()
+{
+    if (!isActive())
+        return;
+    m_codes = decodeCodes(currentImage());
+    m_toolbar->syncFromEditor();
+    if (!m_codes.isEmpty())
+        emit codesRequested(m_codes);
+}
+
+void CaptureSession::autoDetectCodes()
+{
+    const QString mode = m_settings.stringValue(QStringLiteral("capture.qrDetect"));
+    ++m_codesVersion;
+    if (mode != QLatin1String("auto") && mode != QLatin1String("show"))
+        return;
+    const QImage image = currentImage();
+    if (image.isNull())
+        return;
+    m_codesWatcher.setProperty("version", m_codesVersion);
+    m_codesWatcher.setFuture(QtConcurrent::run([image] { return decodeCodes(image); }));
+}
+
+void CaptureSession::onCodesResult()
+{
+    // 结果属于发起时的版本：选区或会话已变化就丢弃
+    if (m_codesWatcher.property("version").toInt() != m_codesVersion || m_state != State::Selected)
+        return;
+    m_codes = m_codesWatcher.result();
+    m_toolbar->syncFromEditor();
+    if (!m_codes.isEmpty() && m_settings.stringValue(QStringLiteral("capture.qrDetect")) == QLatin1String("show"))
+        emit codesRequested(m_codes);
 }
 
 void CaptureSession::hideOverlaysTemporarily(bool hide)
@@ -1227,6 +1285,9 @@ void CaptureSession::onFocusLost()
 void CaptureSession::finish()
 {
     m_state = State::Idle;
+    m_actionsOverride.clear();
+    m_codes.clear();
+    ++m_codesVersion;
     m_drag = Drag::None;
     m_editor.end();
     m_annotatedBase = QImage();

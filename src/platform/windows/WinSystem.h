@@ -20,4 +20,13 @@ QStringList pendingCrashDumps(const QString& dumpDir);
 // 当前用户名（用于本机 IPC 名称）
 QString currentUserName();
 
+// 以管理员身份运行（GEN-05）
+bool isElevated();
+// 用 UAC 提权重新启动自己（带同样的参数）；用户拒绝或失败返回 false
+bool relaunchElevated(const QStringList& args);
+// 管理员模式的开机自启：计划任务（最高权限、登录时触发）。注册表 Run 项无法提权启动
+bool setAutostartElevated(bool enabled, const QString& appPath, const QString& taskName);
+// 上面计划任务用的 schtasks 参数（便于测试）
+QStringList autostartTaskArguments(bool enabled, const QString& appPath, const QString& taskName);
+
 } // namespace ss::win

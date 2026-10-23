@@ -31,6 +31,9 @@ public:
     virtual bool borderEnabled() const { return false; }
     virtual void setBorderEnabled(bool) {}
     virtual void print() {}
+    // 二维码 / 条码（REC-06）：截图会话在手动模式提供按钮，自动模式检测到码后显示按钮
+    virtual void detectCodes() {}
+    virtual bool hasCodes() const { return false; }
 };
 
 } // namespace ss

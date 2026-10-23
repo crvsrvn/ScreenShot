@@ -1,12 +1,15 @@
 #include "platform/windows/DxgiScreenCapture.h"
 
+#include "core/fx/HdrToneMap.h"
 #include "core/util/Clock.h"
 #include "platform/windows/WinScreens.h"
 
 #include <d3d11.h>
 #include <dxgi1_2.h>
+#include <dxgi1_6.h>
 #include <wrl/client.h>
 #include <cstring>
+#include <vector>
 
 using Microsoft::WRL::ComPtr;
 
@@ -21,7 +24,42 @@ struct DxgiScreenCapture::Output {
     QSize size;
     qreal scale = 1.0;
     bool everAcquired = false;
+    bool hdr = false;              // 输出处于 HDR 模式：桌面复制交出 scRGB FP16 帧
+    float sdrWhiteNits = 80.0f;    // SDR 白电平
 };
+
+namespace {
+
+// SDR 白电平（尼特）：DISPLAYCONFIG_SDR_WHITE_LEVEL，默认 80
+float screenSdrWhiteNits(const QString& deviceName)
+{
+    UINT32 pathCount = 0, modeCount = 0;
+    if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &pathCount, &modeCount) != ERROR_SUCCESS)
+        return 80.0f;
+    std::vector<DISPLAYCONFIG_PATH_INFO> paths(pathCount);
+    std::vector<DISPLAYCONFIG_MODE_INFO> modes(modeCount);
+    if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &pathCount, paths.data(), &modeCount, modes.data(), nullptr) != ERROR_SUCCESS)
+        return 80.0f;
+    for (UINT32 i = 0; i < pathCount; ++i) {
+        DISPLAYCONFIG_SOURCE_DEVICE_NAME source{};
+        source.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+        source.header.size = sizeof source;
+        source.header.adapterId = paths[i].sourceInfo.adapterId;
+        source.header.id = paths[i].sourceInfo.id;
+        if (DisplayConfigGetDeviceInfo(&source.header) != ERROR_SUCCESS || QString::fromWCharArray(source.viewGdiDeviceName) != deviceName)
+            continue;
+        DISPLAYCONFIG_SDR_WHITE_LEVEL white{};
+        white.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL;
+        white.header.size = sizeof white;
+        white.header.adapterId = paths[i].targetInfo.adapterId;
+        white.header.id = paths[i].targetInfo.id;
+        if (DisplayConfigGetDeviceInfo(&white.header) == ERROR_SUCCESS)
+            return white.SDRWhiteLevel * 80.0f / 1000.0f;
+    }
+    return 80.0f;
+}
+
+} // namespace
 
 DxgiScreenCapture::DxgiScreenCapture() = default;
 DxgiScreenCapture::~DxgiScreenCapture() = default;
@@ -65,10 +103,29 @@ DxgiScreenCapture::Output* DxgiScreenCapture::outputFor(const ScreenInfo& screen
             if (FAILED(D3D11CreateDevice(adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr, 0, nullptr, 0,
                                          D3D11_SDK_VERSION, &out->device, &level, &out->context)))
                 return nullptr;
-            if (FAILED(output1->DuplicateOutput(out->device.Get(), &out->duplication)))
+            // HDR（CAP-34）：输出为 HDR 色彩空间时按 FP16 复制，取回后做色调映射
+            ComPtr<IDXGIOutput6> output6;
+            if (SUCCEEDED(output.As(&output6))) {
+                DXGI_OUTPUT_DESC1 desc1{};
+                if (SUCCEEDED(output6->GetDesc1(&desc1)) && desc1.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020) {
+                    out->hdr = true;
+                    out->sdrWhiteNits = screenSdrWhiteNits(screen.id);
+                }
+            }
+            bool duplicated = false;
+            if (out->hdr) {
+                ComPtr<IDXGIOutput5> output5;
+                const DXGI_FORMAT formats[] = {DXGI_FORMAT_R16G16B16A16_FLOAT};
+                duplicated = SUCCEEDED(output.As(&output5)) && SUCCEEDED(output5->DuplicateOutput1(out->device.Get(), 0, 1, formats, &out->duplication));
+                if (!duplicated)
+                    out->hdr = false;
+            }
+            if (!duplicated && FAILED(output1->DuplicateOutput(out->device.Get(), &out->duplication)))
                 return nullptr;
             DXGI_OUTDUPL_DESC dd{};
             out->duplication->GetDesc(&dd);
+            if (out->hdr && dd.ModeDesc.Format != DXGI_FORMAT_R16G16B16A16_FLOAT)
+                out->hdr = false;
             out->size = QSize(static_cast<int>(dd.ModeDesc.Width), static_cast<int>(dd.ModeDesc.Height));
             out->scale = screen.scale;
             D3D11_TEXTURE2D_DESC td{};
@@ -76,7 +133,7 @@ DxgiScreenCapture::Output* DxgiScreenCapture::outputFor(const ScreenInfo& screen
             td.Height = dd.ModeDesc.Height;
             td.MipLevels = 1;
             td.ArraySize = 1;
-            td.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+            td.Format = out->hdr ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_B8G8R8A8_UNORM;
             td.SampleDesc.Count = 1;
             td.Usage = D3D11_USAGE_STAGING;
             td.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
@@ -125,11 +182,16 @@ bool DxgiScreenCapture::acquire(Output& out, QImage& image)
     D3D11_MAPPED_SUBRESOURCE mapped{};
     if (FAILED(out.context->Map(out.staging.Get(), 0, D3D11_MAP_READ, 0, &mapped)))
         return false;
-    QImage frame(out.size, QImage::Format_RGB32);
+    QImage frame;
+    if (out.hdr) {
+        frame = fx::toneMapScRgb(static_cast<const uint16_t*>(mapped.pData), out.size.width(), out.size.height(), static_cast<int>(mapped.RowPitch), out.sdrWhiteNits, m_hdrStrategy);
+    } else {
+        frame = QImage(out.size, QImage::Format_RGB32);
+        const size_t rowBytes = static_cast<size_t>(out.size.width()) * 4;
+        for (int y = 0; y < out.size.height(); ++y)
+            std::memcpy(frame.scanLine(y), static_cast<const char*>(mapped.pData) + y * mapped.RowPitch, rowBytes);
+    }
     frame.setDevicePixelRatio(out.scale);
-    const size_t rowBytes = static_cast<size_t>(out.size.width()) * 4;
-    for (int y = 0; y < out.size.height(); ++y)
-        std::memcpy(frame.scanLine(y), static_cast<const char*>(mapped.pData) + y * mapped.RowPitch, rowBytes);
     out.context->Unmap(out.staging.Get(), 0);
     out.lastFrame = frame;
     out.everAcquired = true;

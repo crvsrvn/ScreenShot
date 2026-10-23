@@ -131,3 +131,12 @@ PIN-36
 PIN-53
 PIN-60
 GRP-01
+# ---- M5：识别 / 动作 / 命令行 / 主题 / 管理员 / HDR ----
+REC-01
+REC-06
+ACT-03
+ACT-05
+ACT-06
+CFG-05
+GEN-05
+CAP-34

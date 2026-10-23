@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/fx/HdrToneMap.h"
 #include "core/ports/IScreenCapture.h"
 
 #include <QHash>
@@ -20,6 +21,9 @@ public:
 
     // 释放全部复制会话（显示器布局变化后调用）
     void reset();
+    // HDR 色彩校正策略（CAP-34）
+    void setHdrStrategy(fx::HdrStrategy s) { m_hdrStrategy = s; }
+    fx::HdrStrategy hdrStrategy() const { return m_hdrStrategy; }
 
 private:
     struct Output;
@@ -27,6 +31,7 @@ private:
     bool acquire(Output& out, QImage& image);
 
     QHash<QString, std::shared_ptr<Output>> m_outputs;
+    fx::HdrStrategy m_hdrStrategy = fx::HdrStrategy::PreserveHighlights;
 };
 
 } // namespace ss::win

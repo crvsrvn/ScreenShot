@@ -1,4 +1,4 @@
-// REQ: GEN-01 GEN-04 GEN-09 NFR-10 ACT-01 ACT-02
+// REQ: GEN-01 GEN-04 GEN-05 GEN-09 NFR-10 ACT-01 ACT-02
 // Windows 系统工具：单实例互斥体、开机自启注册表项、崩溃转储目录、命名管道往返（拒绝远程）、热键映射（含 PrtSc 与字符键）
 #include "platform/windows/WinGlobalHotkey.h"
 #include "platform/windows/WinPipeServer.h"
@@ -22,7 +22,22 @@ private slots:
     void pendingCrashDumpsSorted();
     void pipeServerRoundTrip();
     void hotkeyMapping();
+    void elevationHelpers();
 };
+
+void TestWinSystem::elevationHelpers()
+{
+    // 是否提权只能读取，不能假定；计划任务参数可精确验证（GEN-05）
+    const bool elevated = isElevated();
+    Q_UNUSED(elevated);
+    const QStringList create = autostartTaskArguments(true, QStringLiteral("C:/x y/ScreenShot.exe"), QStringLiteral("ScreenShotTest"));
+    QVERIFY(create.contains(QStringLiteral("/Create")));
+    QCOMPARE(create.value(create.indexOf(QStringLiteral("/RL")) + 1), QStringLiteral("HIGHEST"));
+    QCOMPARE(create.value(create.indexOf(QStringLiteral("/SC")) + 1), QStringLiteral("ONLOGON"));
+    QCOMPARE(create.value(create.indexOf(QStringLiteral("/TR")) + 1), QStringLiteral("\"C:\\x y\\ScreenShot.exe\""));
+    const QStringList remove = autostartTaskArguments(false, QString(), QStringLiteral("ScreenShotTest"));
+    QVERIFY(remove.contains(QStringLiteral("/Delete")) && remove.contains(QStringLiteral("/F")));
+}
 
 void TestWinSystem::hotkeyMapping()
 {

@@ -34,6 +34,8 @@ public:
 
     // 当前鼠标指针图像及其左上角的物理位置（CAP-30）；不可用返回空
     virtual std::optional<CursorImage> captureCursor() { return std::nullopt; }
+    // 实现相关的选项（例如 "hdrStrategy" = highlights | brightness，CAP-34）；默认忽略
+    virtual void configure(const QString& key, const QString& value) { Q_UNUSED(key); Q_UNUSED(value); }
 };
 
 } // namespace ss

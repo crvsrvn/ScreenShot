@@ -55,8 +55,23 @@ int main(int argc, char* argv[])
     QCommandLineOption multiInstance(QStringLiteral("allow-multiple"), QStringLiteral("Do not enforce the single instance (tests)"));
     QCommandLineOption channelOpt(QStringLiteral("channel"), QStringLiteral("Single-instance channel name (tests)"), QStringLiteral("name"));
     parser.addOptions({configOpt, testPipe, multiInstance, channelOpt});
-    parser.process(qapp);
-    const QStringList command = parser.positionalArguments();
+    // 第一个非选项参数起是命令，其后的参数（含 --delay 等）原样转交，不交给解析器
+    QStringList ownArgs{QCoreApplication::applicationFilePath()};
+    QStringList command;
+    const QStringList all = QCoreApplication::arguments();
+    for (int i = 1; i < all.size(); ++i) {
+        if (!command.isEmpty()) {
+            command.append(all[i]);
+        } else if (all[i].startsWith(QStringLiteral("--"))) {
+            ownArgs.append(all[i]);
+            const QString name = all[i].mid(2).section(QLatin1Char('='), 0, 0);
+            if ((name == QLatin1String("config") || name == QLatin1String("test-pipe") || name == QLatin1String("channel")) && !all[i].contains(QLatin1Char('=')) && i + 1 < all.size())
+                ownArgs.append(all[++i]);
+        } else {
+            command.append(all[i]);
+        }
+    }
+    parser.process(ownArgs);
 
     // 单实例（GEN-01）：已有实例时把命令转交给它
     const QString channel = parser.isSet(channelOpt) ? parser.value(channelOpt) : ss::CommandServer::defaultChannelName();
@@ -74,6 +89,14 @@ int main(int argc, char* argv[])
                                                      QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation));
     settings.load(configPath);
     settings.setFilePath(configPath);
+#ifdef Q_OS_WIN
+    // 以管理员身份运行（GEN-05）：未提权时用 UAC 重新启动自己
+    if (settings.boolValue(QStringLiteral("general.runAsAdmin")) && !ss::win::isElevated() && !parser.isSet(testPipe) && !allowMultiple) {
+        QStringList args = all.mid(1);
+        if (ss::win::relaunchElevated(args))
+            return 0;
+    }
+#endif
     const QString dataDir = QFileInfo(configPath).absolutePath();
     ss::log::Options logOptions;
     logOptions.filePath = dataDir + QStringLiteral("/logs/screenshot.log");

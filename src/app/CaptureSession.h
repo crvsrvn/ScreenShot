@@ -5,6 +5,7 @@
 #include "core/capture/CaptureHistory.h"
 #include "core/capture/SelectionGeometry.h"
 #include "core/capture/WindowFinder.h"
+#include "core/code/CodeDecoder.h"
 #include "core/color/ColorFormat.h"
 #include "core/geometry/VirtualDesktop.h"
 #include "core/ports/IElementDetector.h"
@@ -95,6 +96,14 @@ public:
     QImage finalImage() const;
     // 截图后动作（CAP-04）：按固定顺序执行列表里的动作，然后结束
     void runActions(const QStringList& actions);
+    // 命令行指定的本次输出组合（ACT-06），结束后清除
+    void setEnterActionsOverride(const QStringList& actions) { m_actionsOverride = actions; }
+    // OCR（REC-01）：Shift+C 识别选区并复制，然后结束
+    void ocrCopy();
+    // 二维码 / 条码（REC-06）：当前选区里识别到的码；detectCodes 立即识别并发 codesRequested
+    QList<CodeResult> detectedCodes() const { return m_codes; }
+    void detectCodes() override;
+    bool hasCodes() const override { return !m_codes.isEmpty(); }
 
     // ---- 检测（CAP-11、CAP-12）----
     DetectMode detectMode() const { return m_detectMode; }
@@ -177,7 +186,8 @@ signals:
     void started();
     void pinRequested(const QImage& image, const QRect& physicalRegion);
     void scrollRequested(const QRect& physicalRegion); // CAP-60：选区后点“滚动截图”
-    void ocrCopyRequested(const QImage& image);         // CAP-04 的 OCR 复制动作
+    void ocrCopyRequested(const QImage& image);         // CAP-04 的 OCR 复制动作 / Shift+C
+    void codesRequested(const QList<ss::CodeResult>& codes); // REC-06：显示识别到的码
     void sizeInputRequested();                          // CAP-17：点击尺寸文字
     void colorCopied(const QString& text);
     void cursorMoveRequested(QPoint physical);
@@ -248,6 +258,12 @@ private:
     bool m_shadow = false;
     bool m_border = false;
     bool m_whiteboard = false;
+    QStringList m_actionsOverride;
+    QList<CodeResult> m_codes;
+    QFutureWatcher<QList<CodeResult>> m_codesWatcher; // 自动检测在工作线程做，不卡界面
+    int m_codesVersion = 0;
+    void autoDetectCodes();
+    void onCodesResult();
     ColorFormat m_colorFormat = ColorFormat::Hex;
     // 历史
     std::unique_ptr<HistoryCursor> m_historyCursor;

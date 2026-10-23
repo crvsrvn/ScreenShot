@@ -1,5 +1,7 @@
 #include "app/OverlayWindow.h"
 
+#include "app/Theme.h"
+
 #include "app/CaptureSession.h"
 #include "app/CaptureToolbar.h"
 #include "core/capture/Magnifier.h"
@@ -142,7 +144,7 @@ void OverlayWindow::paintSelection(QPainter& p, const QRect& selection)
     p.fillRect(QRectF(0, sel.top(), sel.left(), sel.height()), kDim);
     p.fillRect(QRectF(sel.right(), sel.top(), full.width() - sel.right(), sel.height()), kDim);
 
-    QPen pen(kAccent);
+    QPen pen(theme::accent(m_session->settings()));
     pen.setCosmetic(true);
     p.setPen(pen);
     p.setBrush(Qt::NoBrush);

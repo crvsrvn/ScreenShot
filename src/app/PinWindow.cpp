@@ -6,6 +6,7 @@
 #include "core/color/ColorFormat.h"
 #include "core/config/Settings.h"
 #include "core/fx/Blur.h"
+#include "app/Theme.h"
 #include "core/pin/ColorPin.h"
 #include "core/util/Clock.h"
 
@@ -563,7 +564,11 @@ QColor PinWindow::shadowColor() const
         return QColor(60, 190, 90, 180);
     if (m_groupIndex > 0)
         return QColor::fromHsv((m_groupIndex * 67) % 360, 200, 220, 170); // 每个分组一种色相
-    return isActiveWindow() ? QColor(40, 120, 220, 170) : QColor(0, 0, 0, 150);
+    if (!isActiveWindow())
+        return QColor(0, 0, 0, 150);
+    QColor accent = theme::accent(m_settings);
+    accent.setAlpha(170);
+    return accent;
 }
 
 void PinWindow::setSelected(bool on)
@@ -660,6 +665,9 @@ QMenu* PinWindow::buildMenu()
         menu->addAction(tr("Edit color..."), this, &PinWindow::editColorValue);
         menu->addSeparator();
     }
+    menu->addAction(tr("Recognize text (OCR)"), this, [this] { emit ocrRequested(displayedImage()); });
+    menu->addAction(tr("Decode QR code / barcode"), this, [this] { emit codesRequested(displayedImage()); });
+    menu->addSeparator();
     menu->addAction(tr("Copy image"), this, &PinWindow::copyDisplayed);
     menu->addAction(tr("Copy original image"), this, &PinWindow::copyOriginal);
     menu->addAction(tr("Save as..."), this, &PinWindow::saveDisplayed);
@@ -937,11 +945,13 @@ void PinWindow::mousePressEvent(QMouseEvent* event)
         m_dragging = true;
         m_dragOffset = event->globalPosition() - m_contentTopLeft;
     } else if (event->button() == Qt::MiddleButton) {
-        if (m_selected)
-            emit groupAction(this, QStringLiteral("reset"), 0);
-        else
-            toggleReset();
+        runMouseAction(m_settings.stringValue(QStringLiteral("pin.mouseMiddle")), event->globalPosition().toPoint());
     } else if (event->button() == Qt::RightButton && !m_annotating) {
+        if (event->modifiers() & Qt::ShiftModifier) {
+            m_suppressMenu = true;
+            runMouseAction(m_settings.stringValue(QStringLiteral("pin.mouseShiftRight")), event->globalPosition().toPoint());
+            return;
+        }
         m_rubberActive = true; // 可能是拖选（PIN-30 / PIN-31）
         m_rubberStart = event->position();
         m_rubberRect = QRectF();
@@ -1029,10 +1039,31 @@ void PinWindow::mouseDoubleClickEvent(QMouseEvent* event)
     }
     if (event->button() != Qt::LeftButton)
         return;
-    if (event->modifiers() & Qt::ShiftModifier)
-        toggleThumbnail(); // PIN-29
-    else
+    const bool shift = event->modifiers() & Qt::ShiftModifier;
+    runMouseAction(m_settings.stringValue(shift ? QStringLiteral("pin.mouseShiftDoubleClick") : QStringLiteral("pin.mouseDoubleClick")), event->globalPosition().toPoint());
+}
+
+void PinWindow::runMouseAction(const QString& action, QPoint globalPos)
+{
+    if (action == QLatin1String("close"))
         closePin(true);
+    else if (action == QLatin1String("destroy"))
+        destroyPin(true);
+    else if (action == QLatin1String("copy"))
+        copyDisplayed();
+    else if (action == QLatin1String("reset"))
+        m_selected ? emit groupAction(this, QStringLiteral("reset"), 0) : toggleReset();
+    else if (action == QLatin1String("thumbnail"))
+        toggleThumbnail();
+    else if (action == QLatin1String("passthrough"))
+        setPassthrough(!m_passthrough);
+    else if (action == QLatin1String("topmost"))
+        setTopmost(!m_topmost);
+    else if (action == QLatin1String("menu")) {
+        QMenu* menu = buildMenu();
+        menu->setAttribute(Qt::WA_DeleteOnClose);
+        menu->popup(globalPos);
+    }
 }
 
 void PinWindow::wheelEvent(QWheelEvent* event)

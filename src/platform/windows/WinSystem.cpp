@@ -5,8 +5,11 @@
 #include <QFileInfo>
 #include <QSettings>
 
+#include <QProcess>
+
 #include <windows.h>
 #include <dbghelp.h>
+#include <shellapi.h>
 #include <string>
 
 namespace ss::win {
@@ -95,6 +98,49 @@ QString currentUserName()
     if (GetUserNameW(name, &len))
         return QString::fromWCharArray(name, static_cast<int>(len) - 1);
     return QStringLiteral("user");
+}
+
+bool isElevated()
+{
+    HANDLE token = nullptr;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token))
+        return false;
+    TOKEN_ELEVATION elevation{};
+    DWORD size = sizeof elevation;
+    const bool ok = GetTokenInformation(token, TokenElevation, &elevation, sizeof elevation, &size) && elevation.TokenIsElevated;
+    CloseHandle(token);
+    return ok;
+}
+
+bool relaunchElevated(const QStringList& args)
+{
+    wchar_t path[MAX_PATH];
+    if (!GetModuleFileNameW(nullptr, path, MAX_PATH))
+        return false;
+    QStringList quoted;
+    for (const QString& a : args)
+        quoted.append(a.contains(QLatin1Char(' ')) ? QLatin1Char('"') + a + QLatin1Char('"') : a);
+    const std::wstring params = quoted.join(QLatin1Char(' ')).toStdWString();
+    SHELLEXECUTEINFOW info{};
+    info.cbSize = sizeof info;
+    info.lpVerb = L"runas";
+    info.lpFile = path;
+    info.lpParameters = params.c_str();
+    info.nShow = SW_SHOWNORMAL;
+    return ShellExecuteExW(&info) != FALSE;
+}
+
+QStringList autostartTaskArguments(bool enabled, const QString& appPath, const QString& taskName)
+{
+    if (!enabled)
+        return {QStringLiteral("/Delete"), QStringLiteral("/TN"), taskName, QStringLiteral("/F")};
+    return {QStringLiteral("/Create"), QStringLiteral("/TN"), taskName, QStringLiteral("/SC"), QStringLiteral("ONLOGON"), QStringLiteral("/RL"), QStringLiteral("HIGHEST"),
+            QStringLiteral("/TR"), QStringLiteral("\"%1\"").arg(QDir::toNativeSeparators(appPath)), QStringLiteral("/F")};
+}
+
+bool setAutostartElevated(bool enabled, const QString& appPath, const QString& taskName)
+{
+    return QProcess::execute(QStringLiteral("schtasks.exe"), autostartTaskArguments(enabled, appPath, taskName)) == 0;
 }
 
 } // namespace ss::win

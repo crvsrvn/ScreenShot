@@ -92,6 +92,8 @@ public:
 signals:
     void pinsChanged();
     void groupChanged(int index);
+    void ocrRequested(const QImage& image);
+    void codesRequested(const QImage& image);
 
 private:
     PinGroup& current() { return m_groups[m_current]; }

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "core/capture/CaptureHistory.h"
+#include "core/code/CodeDecoder.h"
+#include "core/config/Actions.h"
 #include "core/ports/Platform.h"
 
 #include <QHash>
@@ -29,7 +31,7 @@ public:
     App(Platform platform, Settings& settings, QObject* parent = nullptr);
     ~App() override;
 
-    enum HotkeyId { HotkeyCapture = 1, HotkeyPin = 2, HotkeyTogglePins = 3, HotkeyRestorePin = 4, HotkeyPassthrough = 5, HotkeyNextGroup = 6, HotkeyPreviousGroup = 7 };
+    enum HotkeyId { HotkeyCapture = 1, HotkeyPin = 2, HotkeyTogglePins = 3, HotkeyRestorePin = 4, HotkeyPassthrough = 5, HotkeyNextGroup = 6, HotkeyPreviousGroup = 7, HotkeyActionBase = 1000 };
 
     Platform& platform() { return m_platform; }
     Settings& settings() { return m_settings; }
@@ -48,7 +50,17 @@ public:
 
     void useScreenCapture(std::unique_ptr<IScreenCapture> capture);
     void startCommandServer(const QString& channelName);
-    void runCommand(const QStringList& command);
+    // 命令行接口（ACT-06）；requestId 非 0 时完成后经 CommandServer::reply 应答
+    void runCommand(const QStringList& command, int requestId = 0);
+    // 动作（ACT-03）
+    QList<Action> actions() const;
+    bool runAction(const QString& name);
+    void showActionsDialog();
+    // 识别（REC-01、REC-06）
+    void showOcrResult(const QString& text);
+    void showCodeResult(const QList<CodeResult>& codes);
+    void recognizeTextFromFile(const QString& path = QString());
+    void decodeCodesFromFile(const QString& path = QString());
     void notifyCrashDumps(const QStringList& dumps);
     QMenu* trayMenu() const { return m_trayMenu; }
     void trayActivated(int reason);
@@ -82,7 +94,10 @@ private:
     void setupHotkeys();
     void onSizeInputRequested();
     void onOcrCopyRequested(const QImage& image);
+    void onCodesRequested(const QList<CodeResult>& codes);
     void registerHotkeys();
+    void rebuildActionsMenu();
+    void finishCommand(int requestId, const QString& text);
     void applySetting(const QString& key);
 
     Platform m_platform;
@@ -103,6 +118,10 @@ private:
     QAction* m_hotkeysAction = nullptr;
     QAction* m_togglePinsAction = nullptr;
     QMenu* m_groupMenu = nullptr;
+    QMenu* m_actionsMenu = nullptr;
+    int m_pendingReply = 0; // 等待截图完成后应答的命令
+    int m_actionHotkeys = 0;
+    QRect quickRegion(const QString& kind);
     void rebuildGroupMenu();
 };
 

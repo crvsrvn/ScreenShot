@@ -29,6 +29,7 @@
 #include "app/PinManager.h"
 #include "app/PinWindow.h"
 #include "app/ScrollCaptureSession.h"
+#include "core/code/CodeDecoder.h"
 #include "core/config/Settings.h"
 #include "core/fx/Blur.h"
 #include "core/fx/Mosaic.h"
@@ -644,6 +645,16 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
     if (cmd == QStringLiteral("benchMosaic")) {
         const int block = req.value(QStringLiteral("block")).toInt(12);
         return benchImage(req, [block](const QImage& i) { return fx::mosaic(i, block); }, QStringLiteral("block"), block);
+    }
+    if (cmd == QStringLiteral("decodeCodes")) {
+        // {path} → 识别图片文件里的码
+        QJsonArray arr;
+        for (const CodeResult& c : decodeCodes(QImage(req.value(QStringLiteral("path")).toString())))
+            arr.append(QJsonObject{{QStringLiteral("text"), c.text}, {QStringLiteral("format"), c.format}});
+        return ok({{QStringLiteral("codes"), arr}});
+    }
+    if (cmd == QStringLiteral("runAction")) {
+        return app.runAction(req.value(QStringLiteral("name")).toString()) ? ok() : fail(QStringLiteral("no such action"));
     }
     if (cmd == QStringLiteral("ocrSelfTest"))
         return cmdOcrSelfTest(app);

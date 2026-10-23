@@ -30,6 +30,11 @@ public:
 
     QString backendName() const override { return m_lastBackend; }
     std::optional<CursorImage> captureCursor() override { return captureCursorImage(); }
+    void configure(const QString& key, const QString& value) override
+    {
+        if (key == QLatin1String("hdrStrategy"))
+            m_dxgi.setHdrStrategy(value == QLatin1String("brightness") ? fx::HdrStrategy::PreserveBrightness : fx::HdrStrategy::PreserveHighlights);
+    }
 
 private:
     DxgiScreenCapture m_dxgi;

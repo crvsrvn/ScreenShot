@@ -116,6 +116,9 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
     QToolButton* printButton = addButton(m_tools, QStringLiteral("print"), tr("Print"), tr("Print (Ctrl+P)"));
     connect(printButton, &QToolButton::clicked, this, [this] { m_target->print(); });
     printButton->setVisible(target->supportsCaptureOptions());
+    QToolButton* codesButton = addButton(m_tools, QStringLiteral("codes"), tr("QR"), tr("Decode QR codes / barcodes in the selection"));
+    connect(codesButton, &QToolButton::clicked, this, [this] { m_target->detectCodes(); });
+    codesButton->setVisible(false);
     QToolButton* scrollButton = addButton(m_tools, QStringLiteral("scroll"), tr("Scroll"), tr("Scrolling capture (Ctrl+L)"));
     connect(scrollButton, &QToolButton::clicked, this, [this] { m_target->startScroll(); });
     scrollButton->setVisible(target->supportsScroll());
@@ -424,6 +427,11 @@ void CaptureToolbar::syncFromEditor()
         b->setChecked(m_target->shadowEnabled());
     if (auto* b = button(QStringLiteral("border")))
         b->setChecked(m_target->borderEnabled());
+    if (auto* b = button(QStringLiteral("codes"))) {
+        const QString mode = m_target->settings().stringValue(QStringLiteral("capture.qrDetect"));
+        b->setVisible(m_target->supportsCaptureOptions() && (mode == QLatin1String("manual") || m_target->hasCodes()));
+        b->setText(m_target->hasCodes() ? tr("QR (%1)").arg(m_target->hasCodes() ? 1 : 0) : tr("QR"));
+    }
     const bool showOptions = annotating && (tool != AnnotationEditor::Tool::None || e.selectedId() >= 0);
     m_options->setVisible(showOptions);
     if (showOptions) {
