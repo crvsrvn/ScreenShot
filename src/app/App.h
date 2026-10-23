@@ -65,6 +65,11 @@ public:
     QMenu* trayMenu() const { return m_trayMenu; }
     void trayActivated(int reason);
     void checkPermissions();
+    // 数据目录（配置文件所在目录）：贴图恢复（PIN-54）
+    void setDataDir(const QString& dir) { m_dataDir = dir; }
+    int restorePins();
+    // 通知（GEN-07）；返回显示的窗口（关闭通知时为空）
+    class NotificationWidget* notify(const QString& title, const QString& message, const QString& filePath = QString());
     // 当前光标的物理位置（贴图放置位置）
     static QPoint cursorPhysical();
 
@@ -121,6 +126,7 @@ private:
     QMenu* m_actionsMenu = nullptr;
     int m_pendingReply = 0; // 等待截图完成后应答的命令
     int m_actionHotkeys = 0;
+    QString m_dataDir;
     QRect quickRegion(const QString& kind);
     void rebuildGroupMenu();
 };

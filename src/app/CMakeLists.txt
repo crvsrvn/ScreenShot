@@ -8,6 +8,7 @@ set(APPLIB_SOURCES
     ToolbarTarget.h
     PinWindow.h PinWindow.cpp PinWindowContent.cpp
     Theme.h Theme.cpp
+    Notification.h Notification.cpp
     ResultDialogs.h ResultDialogs.cpp
     ActionsDialog.h ActionsDialog.cpp
     PinManager.h PinManager.cpp

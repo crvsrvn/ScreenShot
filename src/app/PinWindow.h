@@ -31,7 +31,7 @@ class CaptureToolbar;
 class PinWindow : public QWidget, public ToolbarTarget {
     Q_OBJECT
 public:
-    enum class ContentKind { Image, Text, Color };
+    enum class ContentKind { Image, Text, Color, File };
 
     PinWindow(const QImage& image, Settings& settings, OutputActions* output = nullptr);
     ~PinWindow() override;
@@ -53,6 +53,13 @@ public:
     QColor color() const { return m_color; }
     void copyColorAs(const QString& format); // hex / rgb / hsv / hsl / float
     void editColorValue();
+    // 文件卡片（PIN-08）
+    void setFileContent(const QString& path, qreal scale);
+    QString filePath() const { return m_filePath; }
+    void openFile();
+    void copyFile();
+    void copyFilePath();
+    void revealFile();
 
     // ---- 灰度 / 反色（PIN-27）----
     bool grayscale() const { return m_gray; }
@@ -229,6 +236,7 @@ private:
     bool m_textSelecting = false;
     std::pair<int, int> m_textSelection{0, 0};
     QColor m_color;
+    QString m_filePath;
     bool m_gray = false;
     bool m_invert = false;
     bool m_thumbnail = false;

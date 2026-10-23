@@ -65,6 +65,9 @@ public:
     bool startWhiteboard(const QColor& color, bool currentScreenOnly, bool showOverlays = true);
     // 刷新截图（CAP-31）：保留选区重新抓取
     bool refresh();
+    // 区域历史（CAP-41）：R 载入上次区域，Shift+R 依次载入更早的
+    QList<QRect> regionHistory() const;
+    bool loadRegionFromHistory(int index);
     bool isActive() const { return m_state != State::Idle; }
     State state() const { return m_state; }
 
@@ -259,6 +262,8 @@ private:
     bool m_border = false;
     bool m_whiteboard = false;
     QStringList m_actionsOverride;
+    int m_regionHistoryIndex = -1;
+    void pushRegionHistory(const QRect& region);
     QList<CodeResult> m_codes;
     QFutureWatcher<QList<CodeResult>> m_codesWatcher; // 自动检测在工作线程做，不卡界面
     int m_codesVersion = 0;

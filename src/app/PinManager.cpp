@@ -7,7 +7,14 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QCursor>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QGuiApplication>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QImageReader>
 #include <QMimeData>
 #include <QScreen>
@@ -36,6 +43,36 @@ qreal PinManager::scaleAt(QPoint physical) const
 {
     QScreen* screen = QGuiApplication::screenAt(physical);
     return screen ? screen->devicePixelRatio() : 1.0; // 按屏幕缩放比例自适应（PIN-04）
+}
+
+QPoint PinManager::resolvePosition(QPoint preferred, QSize physicalSize, bool fromCapture) const
+{
+    const QString policy = m_settings.stringValue(QStringLiteral("pin.newPosition"));
+    auto physicalRect = [](QScreen* s) {
+        const QRect g = s->geometry();
+        return QRect(g.topLeft(), QSize(qRound(g.width() * s->devicePixelRatio()), qRound(g.height() * s->devicePixelRatio())));
+    };
+    auto centered = [&](QScreen* s) {
+        if (!s)
+            return preferred;
+        const QRect r = physicalRect(s);
+        return r.center() - QPoint(physicalSize.width() / 2, physicalSize.height() / 2);
+    };
+    if (policy == QLatin1String("primaryCenter"))
+        return centered(QGuiApplication::primaryScreen());
+    if (policy == QLatin1String("cursorScreenCenter")) {
+        const QPoint cursor = QCursor::pos();
+        QScreen* s = QGuiApplication::screenAt(cursor);
+        return centered(s ? s : QGuiApplication::primaryScreen());
+    }
+    if (policy == QLatin1String("cursor") && fromCapture) {
+        const QPoint cursor = QCursor::pos();
+        QScreen* s = QGuiApplication::screenAt(cursor);
+        if (!s)
+            return preferred;
+        return s->geometry().topLeft() + (cursor - s->geometry().topLeft()) * s->devicePixelRatio();
+    }
+    return preferred; // capture：截图位置；剪贴板贴图本来就用鼠标位置
 }
 
 PinWindow* PinManager::attach(PinWindow* pin, QPoint physicalTopLeft, const QDateTime& created)
@@ -124,6 +161,20 @@ PinWindow* PinManager::pinColor(const QColor& color, QPoint physicalTopLeft)
     return attach(pin, physicalTopLeft, QDateTime::currentDateTime());
 }
 
+PinWindow* PinManager::pinFile(const QString& path, QPoint physicalTopLeft)
+{
+    QImageReader reader(path);
+    reader.setAutoTransform(true);
+    const QImage image = reader.read(); // GIF 取首帧（PIN-03）
+    if (!image.isNull())
+        return pinImage(image, physicalTopLeft);
+    if (!QFileInfo::exists(path) || m_settings.boolValue(QStringLiteral("pin.neverPinFilePaths")))
+        return nullptr;
+    auto* pin = new PinWindow(QImage(1, 1, QImage::Format_ARGB32_Premultiplied), m_settings, m_output);
+    pin->setFileContent(path, scaleAt(physicalTopLeft));
+    return attach(pin, physicalTopLeft, QDateTime::currentDateTime());
+}
+
 PinWindow* PinManager::pinMime(const QMimeData* mime, QPoint physicalTopLeft)
 {
     if (!mime)
@@ -136,19 +187,18 @@ PinWindow* PinManager::pinMime(const QMimeData* mime, QPoint physicalTopLeft)
     if (mime->hasUrls()) {
         PinWindow* last = nullptr;
         int offset = 0;
+        bool anyLocal = false;
         for (const QUrl& url : mime->urls()) {
             if (!url.isLocalFile())
                 continue;
-            QImageReader reader(url.toLocalFile());
-            reader.setAutoTransform(true);
-            const QImage image = reader.read(); // GIF 取首帧（PIN-03）
-            if (!image.isNull()) {
-                last = pinImage(image, physicalTopLeft + QPoint(offset, offset));
+            anyLocal = true;
+            if (PinWindow* pin = pinFile(url.toLocalFile(), physicalTopLeft + QPoint(offset, offset))) {
+                last = pin;
                 offset += 30;
             }
         }
-        if (last)
-            return last;
+        if (anyLocal)
+            return last; // 本地文件列表不再退化成文本贴图
     }
     if (mime->hasText()) {
         if (const auto color = parseColorText(mime->text()))
@@ -451,6 +501,103 @@ void PinManager::clearCurrentGroup()
     destroyAll();
     current().closed.clear();
     emit pinsChanged();
+}
+
+// ---- 重启恢复（PIN-54）----
+
+bool PinManager::saveState(const QString& dir) const
+{
+    QDir d(dir);
+    d.mkpath(QStringLiteral("."));
+    // 先清掉旧文件
+    for (const QString& f : d.entryList({QStringLiteral("pin-*.png")}, QDir::Files))
+        d.remove(f);
+    QJsonArray groups;
+    int fileIndex = 0;
+    for (int gi = 0; gi < m_groups.size(); ++gi) {
+        QJsonArray pins;
+        for (PinWindow* pin : m_groups[gi].pins) {
+            QJsonObject o = pin->stateJson();
+            if (pin->contentKind() == PinWindow::ContentKind::Image) {
+                // 显示图已含旋转 / 翻转 / 灰度 / 裁剪与标注：直接作为恢复底图，对应的变换状态不再重复应用
+                const QString name = QStringLiteral("pin-%1.png").arg(fileIndex++);
+                if (!pin->displayedImage().save(d.filePath(name), "PNG"))
+                    continue;
+                o[QStringLiteral("image")] = name;
+                for (const char* k : {"rotation", "flipH", "flipV", "gray", "invert", "crop", "view"})
+                    o.remove(QLatin1String(k));
+            }
+            o[QStringLiteral("visible")] = pin->isVisible() || m_hidden;
+            pins.append(o);
+        }
+        groups.append(QJsonObject{{QStringLiteral("name"), m_groups[gi].name}, {QStringLiteral("pins"), pins}});
+    }
+    QJsonObject rootObj{{QStringLiteral("groups"), groups}, {QStringLiteral("current"), m_current}};
+    QFile f(d.filePath(QStringLiteral("pins.json")));
+    if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        return false;
+    f.write(QJsonDocument(rootObj).toJson(QJsonDocument::Compact));
+    return true;
+}
+
+int PinManager::restoreState(const QString& dir)
+{
+    QFile f(QDir(dir).filePath(QStringLiteral("pins.json")));
+    if (!f.open(QIODevice::ReadOnly))
+        return 0;
+    const QJsonObject rootObj = QJsonDocument::fromJson(f.readAll()).object();
+    const QJsonArray groups = rootObj.value(QStringLiteral("groups")).toArray();
+    int restored = 0;
+    const int savedCurrent = rootObj.value(QStringLiteral("current")).toInt();
+    for (int gi = 0; gi < groups.size(); ++gi) {
+        const QJsonObject g = groups[gi].toObject();
+        if (gi >= m_groups.size())
+            m_groups.append(PinGroup{g.value(QStringLiteral("name")).toString(), {}, {}, {}});
+        else if (gi > 0)
+            m_groups[gi].name = g.value(QStringLiteral("name")).toString();
+        m_current = gi;
+        for (const QJsonValue& v : g.value(QStringLiteral("pins")).toArray()) {
+            const QJsonObject o = v.toObject();
+            const QPoint at(o.value(QStringLiteral("x")).toInt(), o.value(QStringLiteral("y")).toInt());
+            PinWindow* pin = nullptr;
+            if (o.contains(QStringLiteral("image"))) {
+                const QImage image(QDir(dir).filePath(o.value(QStringLiteral("image")).toString()));
+                if (image.isNull())
+                    continue;
+                pin = new PinWindow(image, m_settings, m_output);
+            } else if (o.contains(QStringLiteral("color"))) {
+                pin = new PinWindow(QImage(1, 1, QImage::Format_ARGB32_Premultiplied), m_settings, m_output);
+                pin->setColorContent(QColor::fromString(o.value(QStringLiteral("color")).toString()), scaleAt(at));
+            } else if (o.contains(QStringLiteral("file"))) {
+                pin = new PinWindow(QImage(1, 1, QImage::Format_ARGB32_Premultiplied), m_settings, m_output);
+                pin->setFileContent(o.value(QStringLiteral("file")).toString(), scaleAt(at));
+            } else if (o.contains(QStringLiteral("text"))) {
+                TextPinOptions t;
+                t.font = QFont(m_settings.stringValue(QStringLiteral("pin.textFont")), m_settings.intValue(QStringLiteral("pin.textSize")));
+                t.color = QColor::fromString(m_settings.stringValue(QStringLiteral("pin.textColor")));
+                t.background = QColor::fromString(m_settings.stringValue(QStringLiteral("pin.textBackground")));
+                t.maxWidth = m_settings.intValue(QStringLiteral("pin.textMaxWidth"));
+                t.padding = m_settings.intValue(QStringLiteral("pin.textPadding"));
+                t.scale = scaleAt(at);
+                t.html = o.value(QStringLiteral("html")).toBool();
+                pin = new PinWindow(QImage(1, 1, QImage::Format_ARGB32_Premultiplied), m_settings, m_output);
+                pin->setTextContent(o.value(QStringLiteral("text")).toString(), t);
+            } else {
+                continue;
+            }
+            pin->applyStateJson(o);
+            attach(pin, at, QDateTime::currentDateTime());
+            ++restored;
+        }
+        // 非当前组的贴图先藏起来
+        if (gi != savedCurrent)
+            for (PinWindow* pin : m_groups[gi].pins)
+                pin->hide();
+    }
+    m_current = std::clamp(savedCurrent, 0, static_cast<int>(m_groups.size()) - 1);
+    emit groupChanged(m_current);
+    emit pinsChanged();
+    return restored;
 }
 
 } // namespace ss

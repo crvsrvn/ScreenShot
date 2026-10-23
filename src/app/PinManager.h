@@ -49,6 +49,12 @@ public:
     PinWindow* pinText(const QString& text, QPoint physicalTopLeft);
     PinWindow* pinHtml(const QString& html, QPoint physicalTopLeft);       // PIN-05
     PinWindow* pinColor(const QColor& color, QPoint physicalTopLeft);      // PIN-07
+    PinWindow* pinFile(const QString& path, QPoint physicalTopLeft);       // PIN-08：图片贴图片，否则文件卡片
+    // 新贴图位置策略（PIN-13）：preferred 为截图位置 / 鼠标位置；fromCapture 表示来自截图
+    QPoint resolvePosition(QPoint preferred, QSize physicalSize, bool fromCapture) const;
+    // 重启恢复（PIN-54）：把未关闭的贴图（含分组）存到 dir，启动时读回
+    bool saveState(const QString& dir) const;
+    int restoreState(const QString& dir);
     // 任意 MIME 内容：图像 → 图像贴图；图片文件 → 每个文件一个贴图；颜色文本 → 色卡；HTML → 富文本；文本 → 文本贴图
     PinWindow* pinMime(const QMimeData* mime, QPoint physicalTopLeft);
     PinWindow* pinClipboard(QPoint physicalTopLeft);

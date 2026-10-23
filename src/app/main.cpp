@@ -118,7 +118,9 @@ int main(int argc, char* argv[])
     platform = ss::mac::makeMacPlatform();
 #endif
     ss::App app(std::move(platform), settings);
+    app.setDataDir(dataDir);
     app.checkPermissions();
+    app.restorePins(); // PIN-54
 #ifdef Q_OS_WIN
     if (!allowMultiple)
         app.startCommandServer(channel);

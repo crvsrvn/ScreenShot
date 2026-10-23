@@ -3,6 +3,7 @@
 #include "app/CaptureSession.h"
 #include "app/ActionsDialog.h"
 #include "app/CommandServer.h"
+#include "app/Notification.h"
 #include "app/ResultDialogs.h"
 #include "app/Theme.h"
 #include "app/CustomCaptureDialog.h"
@@ -17,6 +18,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QCursor>
+#include <QDir>
 #include <QRegularExpression>
 #include <QTimer>
 #include <QGuiApplication>
@@ -73,7 +75,14 @@ App::App(Platform platform, Settings& settings, QObject* parent)
 {
     m_session->setHistory(&m_history);
     m_session->setOutput(m_output.get());
-    connect(m_session.get(), &CaptureSession::pinRequested, this, [this](const QImage& image, const QRect& region) { pinImage(image, region.topLeft()); });
+    connect(m_session.get(), &CaptureSession::pinRequested, this, [this](const QImage& image, const QRect& region) {
+        pinImage(image, m_pins->resolvePosition(region.topLeft(), image.size(), true)); // PIN-13
+    });
+    connect(m_output.get(), &OutputActions::done, this, [this](OutputActions::Kind kind, const QString& path) {
+        if (path.isEmpty() || (kind != OutputActions::Kind::Save && kind != OutputActions::Kind::QuickSave && kind != OutputActions::Kind::AutoSave))
+            return;
+        notify(kind == OutputActions::Kind::AutoSave ? tr("Auto-saved") : tr("Saved"), QDir::toNativeSeparators(path), path); // GEN-07
+    });
     connect(m_session.get(), &CaptureSession::scrollRequested, this, [this](const QRect& region) { startScroll(region); });
     connect(m_session.get(), &CaptureSession::sizeInputRequested, this, &App::onSizeInputRequested);
     connect(m_session.get(), &CaptureSession::ocrCopyRequested, this, &App::onOcrCopyRequested);
@@ -793,8 +802,28 @@ void App::showAbout()
 
 void App::quit()
 {
+    if (!m_dataDir.isEmpty() && m_settings.boolValue(QStringLiteral("pin.restoreOnStart")))
+        m_pins->saveState(m_dataDir + QStringLiteral("/pins")); // PIN-54
     m_settings.saveToFile();
     QApplication::quit();
+}
+
+int App::restorePins()
+{
+    if (m_dataDir.isEmpty() || !m_settings.boolValue(QStringLiteral("pin.restoreOnStart")))
+        return 0;
+    const int n = m_pins->restoreState(m_dataDir + QStringLiteral("/pins"));
+    rebuildGroupMenu();
+    return n;
+}
+
+NotificationWidget* App::notify(const QString& title, const QString& message, const QString& filePath)
+{
+    if (!m_settings.boolValue(QStringLiteral("general.notifications")))
+        return nullptr;
+    auto* w = new NotificationWidget(title, message, filePath);
+    w->show();
+    return w;
 }
 
 } // namespace ss

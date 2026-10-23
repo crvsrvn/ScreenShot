@@ -4,13 +4,20 @@
 
 #include "core/color/ColorFormat.h"
 #include "core/config/Settings.h"
+#include "app/Notification.h"
 #include "core/pin/ColorPin.h"
+#include "core/pin/FilePin.h"
 #include "core/pin/TextPin.h"
 
 #include <QApplication>
 #include <QClipboard>
+#include <QDesktopServices>
+#include <QDir>
+#include <QFileIconProvider>
+#include <QFileInfo>
 #include <QInputDialog>
 #include <QMimeData>
+#include <QUrl>
 
 namespace ss {
 
@@ -140,6 +147,43 @@ void PinWindow::editColorValue()
         return;
     if (const auto c = parseColorText(text))
         setColorContent(*c, m_textOptions.scale > 0 ? m_textOptions.scale : 1.0);
+}
+
+// ---- 文件卡片（PIN-08）----
+
+void PinWindow::setFileContent(const QString& path, qreal scale)
+{
+    m_kind = ContentKind::File;
+    m_filePath = path;
+    FilePinOptions o;
+    o.scale = scale;
+    o.font = QFont(m_settings.stringValue(QStringLiteral("pin.textFont")), 11);
+    QFileIconProvider icons;
+    replaceSource(renderFileCard(path, icons.icon(QFileInfo(path)), o));
+}
+
+void PinWindow::openFile()
+{
+    if (!m_filePath.isEmpty())
+        QDesktopServices::openUrl(QUrl::fromLocalFile(m_filePath));
+}
+
+void PinWindow::copyFile()
+{
+    auto* mime = new QMimeData;
+    mime->setUrls({QUrl::fromLocalFile(m_filePath)});
+    mime->setText(QDir::toNativeSeparators(m_filePath));
+    QApplication::clipboard()->setMimeData(mime);
+}
+
+void PinWindow::copyFilePath()
+{
+    QApplication::clipboard()->setText(QDir::toNativeSeparators(m_filePath));
+}
+
+void PinWindow::revealFile()
+{
+    NotificationWidget::revealHandler(m_filePath);
 }
 
 // ---- 换底图（内容替换、裁剪确认共用）----

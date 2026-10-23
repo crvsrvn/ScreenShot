@@ -867,6 +867,13 @@ bool CaptureSession::handleKeyPress(QKeyEvent* e)
         if (confirmCancel())
             cancel();
         return true;
+    case Qt::Key_R:
+        if (!ctrl) {
+            // R：上次区域；Shift+R：更早的区域（CAP-41）
+            loadRegionFromHistory(shift ? m_regionHistoryIndex + 1 : 0);
+            return true;
+        }
+        break;
     case Qt::Key_Return:
     case Qt::Key_Enter:
         accept();
@@ -1110,6 +1117,48 @@ void CaptureSession::recordHistory(const QImage& image, const QRect& region)
 {
     if (m_history && m_state != State::History)
         m_history->add({image, region, QDateTime::currentDateTime()});
+    pushRegionHistory(region);
+}
+
+QList<QRect> CaptureSession::regionHistory() const
+{
+    QList<QRect> out;
+    for (const QString& item : m_settings.stringValue(QStringLiteral("capture.regionHistory")).split(QLatin1Char(';'), Qt::SkipEmptyParts)) {
+        const QStringList p = item.split(QLatin1Char(','));
+        if (p.size() == 4)
+            out.append(QRect(p[0].toInt(), p[1].toInt(), p[2].toInt(), p[3].toInt()));
+    }
+    return out;
+}
+
+void CaptureSession::pushRegionHistory(const QRect& region)
+{
+    if (region.isEmpty())
+        return;
+    QList<QRect> list = regionHistory();
+    list.removeAll(region);
+    list.prepend(region);
+    const int limit = std::max(1, m_settings.intValue(QStringLiteral("capture.regionHistoryLimit")));
+    while (list.size() > limit)
+        list.removeLast();
+    QStringList items;
+    for (const QRect& r : list)
+        items.append(QStringLiteral("%1,%2,%3,%4").arg(r.x()).arg(r.y()).arg(r.width()).arg(r.height()));
+    m_settings.setValue(QStringLiteral("capture.regionHistory"), items.join(QLatin1Char(';')));
+}
+
+bool CaptureSession::loadRegionFromHistory(int index)
+{
+    const QList<QRect> list = regionHistory();
+    if (!isActive() || list.isEmpty() || m_state == State::Annotating)
+        return false;
+    index = ((index % list.size()) + static_cast<int>(list.size())) % static_cast<int>(list.size());
+    const QRect r = list[index].intersected(m_desktop.bounds());
+    if (r.isEmpty())
+        return false;
+    m_regionHistoryIndex = index;
+    setSelection(r);
+    return true;
 }
 
 QImage CaptureSession::accept()
@@ -1288,6 +1337,7 @@ void CaptureSession::finish()
     m_actionsOverride.clear();
     m_codes.clear();
     ++m_codesVersion;
+    m_regionHistoryIndex = -1;
     m_drag = Drag::None;
     m_editor.end();
     m_annotatedBase = QImage();

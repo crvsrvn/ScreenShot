@@ -497,6 +497,8 @@ QJsonObject PinWindow::stateJson() const
         o[QStringLiteral("html")] = m_textOptions.html;
     } else if (m_kind == ContentKind::Color) {
         o[QStringLiteral("color")] = m_color.name(QColor::HexArgb);
+    } else if (m_kind == ContentKind::File) {
+        o[QStringLiteral("file")] = m_filePath;
     }
     return o;
 }
@@ -655,6 +657,12 @@ QMenu* PinWindow::buildMenu()
         plain->setCheckable(true);
         plain->setChecked(ignoringFormatting());
         plain->setEnabled(m_textOptions.html || !m_textHtmlSource.isEmpty());
+        menu->addSeparator();
+    } else if (m_kind == ContentKind::File) {
+        menu->addAction(tr("Open file"), this, &PinWindow::openFile);
+        menu->addAction(tr("Copy file"), this, &PinWindow::copyFile);
+        menu->addAction(tr("Copy path"), this, &PinWindow::copyFilePath);
+        menu->addAction(tr("Show in folder"), this, &PinWindow::revealFile);
         menu->addSeparator();
     } else if (m_kind == ContentKind::Color) {
         QMenu* copyAs = menu->addMenu(tr("Copy color as"));
