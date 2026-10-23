@@ -2,6 +2,7 @@
 
 #include "testing/FakeElementDetector.h"
 #include "testing/FakeHotkey.h"
+#include "testing/FakeInputSimulator.h"
 #include "testing/FakeOcr.h"
 #include "testing/FakeScreenCapture.h"
 #include "testing/FakeWindowDetector.h"
@@ -24,18 +25,21 @@ Platform makeFakePlatform(FakePlatformHandles* handles, QList<ScreenInfo> screen
     auto elements = std::make_unique<FakeElementDetector>();
     auto hotkey = std::make_unique<FakeHotkey>();
     auto ocr = std::make_unique<FakeOcr>();
+    auto input = std::make_unique<FakeInputSimulator>();
     if (handles) {
         handles->screenCapture = capture.get();
         handles->windowDetector = windows.get();
         handles->elementDetector = elements.get();
         handles->hotkey = hotkey.get();
         handles->ocr = ocr.get();
+        handles->input = input.get();
     }
     p.screenCapture = std::move(capture);
     p.windowDetector = std::move(windows);
     p.elementDetector = std::move(elements);
     p.hotkey = std::move(hotkey);
     p.ocr = std::move(ocr);
+    p.input = std::move(input);
     return p;
 }
 

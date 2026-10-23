@@ -20,6 +20,7 @@ class PinManager;
 class Settings;
 class OutputActions;
 class CommandServer;
+class ScrollCaptureSession;
 
 // 托盘与命令路由：持有平台层、设置、截图会话、输出动作和贴图管理。
 class App : public QObject {
@@ -36,6 +37,10 @@ public:
     OutputActions& output() { return *m_output; }
     CaptureHistory& history() { return m_history; }
     PinManager& pinManager() { return *m_pins; }
+    ScrollCaptureSession* scrollSession() const { return m_scroll.get(); }
+    // 开始滚动截图（CAP-60）；失败返回 false，原因在 scrollError()
+    bool startScroll(const QRect& physicalRegion, bool showUi = true);
+    QString scrollError() const { return m_scrollError; }
     QList<PinWindow*> pins() const;
     QHash<int, bool> hotkeyStatus() const { return m_hotkeyStatus; }
     bool hotkeysEnabled() const;
@@ -78,6 +83,10 @@ private:
     std::unique_ptr<CaptureSession> m_session;
     std::unique_ptr<PinManager> m_pins;
     std::unique_ptr<CommandServer> m_commands;
+    std::unique_ptr<ScrollCaptureSession> m_scroll;
+    QImage m_scrollResult;
+    QRect m_scrollRegion;
+    QString m_scrollError;
     CaptureHistory m_history;
     QHash<int, bool> m_hotkeyStatus;
     QSystemTrayIcon* m_tray = nullptr;

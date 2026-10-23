@@ -5,6 +5,7 @@ qt_add_library(screenshot_testing STATIC
     FakeElementDetector.h
     FakeHotkey.h
     FakeOcr.h
+    FakeInputSimulator.h
     FakePlatform.h FakePlatform.cpp
     ImageCompare.h ImageCompare.cpp
 )

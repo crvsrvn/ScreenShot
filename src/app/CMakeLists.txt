@@ -8,6 +8,7 @@ set(APPLIB_SOURCES
     ToolbarTarget.h
     PinWindow.h PinWindow.cpp
     PinManager.h PinManager.cpp
+    ScrollCaptureSession.h ScrollCaptureSession.cpp
     OutputActions.h OutputActions.cpp
     PreferencesDialog.h PreferencesDialog.cpp
     CommandServer.h CommandServer.cpp

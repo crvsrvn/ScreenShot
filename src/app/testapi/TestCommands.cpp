@@ -28,6 +28,7 @@
 #include "app/OverlayWindow.h"
 #include "app/PinManager.h"
 #include "app/PinWindow.h"
+#include "app/ScrollCaptureSession.h"
 #include "core/config/Settings.h"
 #include "core/fx/Blur.h"
 #include "core/fx/Mosaic.h"
@@ -663,6 +664,44 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
         e.commitText();
         QApplication::processEvents();
         return ok({{QStringLiteral("count"), e.document().count()}});
+    }
+    if (cmd == QStringLiteral("scrollStart")) {
+        const bool ok = app.startScroll(jsonToRect(req), req.value(QStringLiteral("show")).toBool(true));
+        if (ok && req.contains(QStringLiteral("auto")))
+            app.scrollSession()->setAutoScroll(req.value(QStringLiteral("auto")).toBool());
+        return ok ? ::ss::ok() : fail(app.scrollError());
+    }
+    if (cmd == QStringLiteral("scrollTick")) {
+        if (!app.scrollSession())
+            return fail(QStringLiteral("no scroll session"));
+        const int n = req.value(QStringLiteral("count")).toInt(1);
+        for (int i = 0; i < n; ++i)
+            app.scrollSession()->tick();
+        QApplication::processEvents();
+        return ::ss::ok();
+    }
+    if (cmd == QStringLiteral("scrollState")) {
+        ScrollCaptureSession* sc = app.scrollSession();
+        if (!sc)
+            return ::ss::ok({{QStringLiteral("active"), false}});
+        return ::ss::ok({{QStringLiteral("active"), true}, {QStringLiteral("state"), static_cast<int>(sc->state())}, {QStringLiteral("height"), sc->stitchedHeight()},
+                         {QStringLiteral("frames"), sc->frameCount()}, {QStringLiteral("lastOk"), sc->lastMatchOk()}, {QStringLiteral("reason"), sc->lastReason()},
+                         {QStringLiteral("reachedEnd"), sc->reachedEnd()}, {QStringLiteral("rejected"), sc->rejectedFrames()}, {QStringLiteral("autoScroll"), sc->autoScroll()}});
+    }
+    if (cmd == QStringLiteral("scrollFinish")) {
+        if (!app.scrollSession())
+            return fail(QStringLiteral("no scroll session"));
+        const QImage img = app.scrollSession()->finish();
+        const QString path = req.value(QStringLiteral("path")).toString();
+        if (!path.isEmpty() && !img.save(path, "PNG"))
+            return fail(QStringLiteral("save failed"));
+        return ::ss::ok({{QStringLiteral("w"), img.width()}, {QStringLiteral("h"), img.height()}});
+    }
+    if (cmd == QStringLiteral("scrollCancel")) {
+        if (app.scrollSession())
+            app.scrollSession()->cancel();
+        QApplication::processEvents();
+        return ::ss::ok();
     }
     if (cmd == QStringLiteral("runCommand")) {
         QStringList args;

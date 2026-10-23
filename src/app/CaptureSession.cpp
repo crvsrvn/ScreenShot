@@ -595,6 +595,12 @@ bool CaptureSession::handleKeyPress(QKeyEvent* e)
             return true;
         }
         break;
+    case Qt::Key_L:
+        if (ctrl && (m_state == State::Selected || m_state == State::History)) {
+            startScroll();
+            return true;
+        }
+        break;
     case Qt::Key_Tab:
         toggleDetectMode();
         return true;
@@ -855,6 +861,15 @@ void CaptureSession::pin()
     emit captured(image, region);
     finish();
     emit pinRequested(image, region);
+}
+
+void CaptureSession::startScroll()
+{
+    if (!isActive() || m_selection.isEmpty())
+        return;
+    const QRect region = m_selection;
+    finish();
+    emit scrollRequested(region);
 }
 
 bool CaptureSession::confirmCancel()

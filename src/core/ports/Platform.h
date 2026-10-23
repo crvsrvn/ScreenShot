@@ -2,6 +2,7 @@
 
 #include "core/ports/IElementDetector.h"
 #include "core/ports/IGlobalHotkey.h"
+#include "core/ports/IInputSimulator.h"
 #include "core/ports/IOcrEngine.h"
 #include "core/ports/IScreenCapture.h"
 #include "core/ports/IWindowDetector.h"
@@ -17,6 +18,7 @@ struct Platform {
     std::unique_ptr<IElementDetector> elementDetector;
     std::unique_ptr<IGlobalHotkey> hotkey;
     std::unique_ptr<IOcrEngine> ocr;
+    std::unique_ptr<IInputSimulator> input;
 };
 
 } // namespace ss

@@ -6,6 +6,7 @@
 #include "app/PinManager.h"
 #include "app/PinWindow.h"
 #include "app/PreferencesDialog.h"
+#include "app/ScrollCaptureSession.h"
 #include "core/config/Settings.h"
 #include "core/util/Clock.h"
 
@@ -62,6 +63,7 @@ App::App(Platform platform, Settings& settings, QObject* parent)
     m_session->setHistory(&m_history);
     m_session->setOutput(m_output.get());
     connect(m_session.get(), &CaptureSession::pinRequested, this, [this](const QImage& image, const QRect& region) { pinImage(image, region.topLeft()); });
+    connect(m_session.get(), &CaptureSession::scrollRequested, this, [this](const QRect& region) { startScroll(region); });
     connect(&m_settings, &Settings::changed, this, [this](const QString& key, const QVariant&) { applySetting(key); });
     m_session->prepareOverlays();
     setupTray();
@@ -260,7 +262,45 @@ void App::notifyCrashDumps(const QStringList& dumps)
 
 void App::startCapture(qint64 triggerNs)
 {
+    if (m_scroll && m_scroll->state() == ScrollCaptureSession::State::Running)
+        return; // 滚动截图进行中不叠加截图
     m_session->start(triggerNs);
+}
+
+bool App::startScroll(const QRect& physicalRegion, bool showUi)
+{
+    if (m_scroll)
+        m_scroll->cancel();
+    m_scroll = std::make_unique<ScrollCaptureSession>(m_session->screenCapture(), m_platform.input.get(), m_settings);
+    connect(m_scroll.get(), &ScrollCaptureSession::finished, this, [this](const QImage& image, const QRect& region) {
+        m_scrollResult = image;
+        m_scrollRegion = region;
+    });
+    connect(m_scroll.get(), &ScrollCaptureSession::outputRequested, this, [this](const QString& kind) {
+        // CAP-73：完成后复制 / 保存 / 快速保存 / 贴图（贴图上可继续标注）
+        if (m_scrollResult.isNull())
+            return;
+        if (kind == QLatin1String("copy"))
+            m_output->copy(m_scrollResult);
+        else if (kind == QLatin1String("save"))
+            m_output->saveWithDialog(m_scrollResult, nullptr);
+        else if (kind == QLatin1String("quickSave"))
+            m_output->quickSave(m_scrollResult);
+        else if (kind == QLatin1String("pin"))
+            pinImage(m_scrollResult, m_scrollRegion.topLeft());
+        m_history.add({m_scrollResult, m_scrollRegion, QDateTime::currentDateTime()});
+        m_scroll->cancel(); // 关闭面板
+    });
+    connect(m_scroll.get(), &ScrollCaptureSession::cancelled, this, [this] { QMetaObject::invokeMethod(this, [this] { m_scroll.reset(); }, Qt::QueuedConnection); });
+    if (!m_scroll->begin(physicalRegion, showUi)) {
+        m_scrollError = m_scroll->lastError();
+        if (m_tray)
+            m_tray->showMessage(tr("Scrolling capture"), m_scrollError, QSystemTrayIcon::Warning);
+        m_scroll.reset();
+        return false;
+    }
+    m_scrollError.clear();
+    return true;
 }
 
 PinWindow* App::pinImage(const QImage& image, QPoint physicalPos)

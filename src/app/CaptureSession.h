@@ -124,6 +124,8 @@ public:
     void quickSave() override;   // OUT-08
     void pin() override;         // PIN-02
     void cancel() override;
+    void startScroll() override; // CAP-60：结束本会话并以当前选区开始滚动截图
+    bool supportsScroll() const override { return true; }
 
     const VirtualDesktop& desktop() const { return m_desktop; }
     Timings timings() const { return m_timings; }
@@ -143,6 +145,7 @@ signals:
     void cursorChanged(QPoint physical);
     void started();
     void pinRequested(const QImage& image, const QRect& physicalRegion);
+    void scrollRequested(const QRect& physicalRegion); // CAP-60：选区后点“滚动截图”
     void colorCopied(const QString& text);
     void cursorMoveRequested(QPoint physical);
 

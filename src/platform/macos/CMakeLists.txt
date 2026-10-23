@@ -10,6 +10,7 @@ qt_add_library(platform_macos STATIC
     MacOcr.h MacOcr.mm
     MacPermissions.h MacPermissions.mm
     MacWindowTools.h MacWindowTools.mm
+    MacInputSimulator.h MacInputSimulator.mm
     MacPlatform.h MacPlatform.mm
 )
 target_link_libraries(platform_macos

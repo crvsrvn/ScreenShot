@@ -20,6 +20,8 @@ public:
     virtual void pin() = 0;                   // 贴图宿主上为“复制为新贴图”
     virtual void cancel() = 0;                // 截图：取消；贴图：关闭工具栏
     virtual bool supportsPin() const { return true; }
+    virtual bool supportsScroll() const { return false; } // 截图会话支持“滚动截图”
+    virtual void startScroll() {}
 };
 
 } // namespace ss

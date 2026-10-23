@@ -6,6 +6,7 @@ qt_add_library(screenshot_core STATIC
     ports/IElementDetector.h
     ports/IGlobalHotkey.h
     ports/IOcrEngine.h
+    ports/IInputSimulator.h
     ports/Platform.h
     geometry/VirtualDesktop.h geometry/VirtualDesktop.cpp
     fx/Blur.h fx/Blur.cpp

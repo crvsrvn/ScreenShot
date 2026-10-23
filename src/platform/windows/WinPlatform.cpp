@@ -4,6 +4,7 @@
 #include "platform/windows/GdiScreenCapture.h"
 #include "platform/windows/WinElementDetector.h"
 #include "platform/windows/WinGlobalHotkey.h"
+#include "platform/windows/WinInputSimulator.h"
 #include "platform/windows/WinOcr.h"
 #include "platform/windows/WinWindowDetector.h"
 
@@ -44,6 +45,7 @@ Platform makeWindowsPlatform()
     p.elementDetector = std::make_unique<WinElementDetector>();
     p.hotkey = std::make_unique<WinGlobalHotkey>();
     p.ocr = std::make_unique<WinOcr>();
+    p.input = std::make_unique<WinInputSimulator>();
     return p;
 }
 
