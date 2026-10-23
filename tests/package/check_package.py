@@ -44,10 +44,15 @@ def main():
     staging.mkdir(parents=True)
     exe = pathlib.Path(a.exe)
     shutil.copy2(exe, staging / exe.name)
-    cmd = [a.windeployqt, "--release", "--compiler-runtime", "--no-translations", "--no-opengl-sw", "--no-system-d3d-compiler",
-           "--no-network", "--dir", str(staging), str(staging / exe.name)]
+    # MSVC 运行库：优先把 CRT 的 DLL 放在程序目录（真正的“解压即用”）；没有 VC 工具链环境时退回 windeployqt 的 vc_redist 安装器
+    redist = pathlib.Path(os.environ.get("VCToolsRedistDir", "")) / "x64"
+    crt_dirs = sorted(redist.glob("Microsoft.VC14*.CRT")) if redist.exists() else []
+    cmd = [a.windeployqt, "--release", "--no-translations", "--no-opengl-sw", "--no-system-d3d-compiler", "--no-system-dxc-compiler",
+           "--no-network", "--no-compiler-runtime" if crt_dirs else "--compiler-runtime", "--dir", str(staging), str(staging / exe.name)]
     print(" ".join(cmd))
     subprocess.run(cmd, check=True)
+    for dll in (crt_dirs[-1].glob("*.dll") if crt_dirs else []):
+        shutil.copy2(dll, staging / dll.name)
     tr = pathlib.Path(a.translations)
     if tr.exists():
         shutil.copytree(tr, staging / "translations", dirs_exist_ok=True)

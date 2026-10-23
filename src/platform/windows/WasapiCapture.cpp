@@ -105,13 +105,13 @@ bool WasapiCapture::start(Source source)
     stop();
     m_running = true;
     m_ok = false;
-    std::atomic<bool> started{false};
-    m_thread = std::thread([this, source, &started] {
+    m_done = false;
+    m_thread = std::thread([this, source] {
         run(source);
-        started = true;
+        m_done = true;
     });
     // 等待线程完成初始化（最多 2 秒），判断设备是否可用
-    for (int i = 0; i < 200 && !m_ok && !started; ++i)
+    for (int i = 0; i < 200 && !m_ok && !m_done; ++i)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     if (!m_ok)
         stop();

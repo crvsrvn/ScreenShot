@@ -66,12 +66,12 @@ bool MfCamera::start()
     stop();
     m_running = true;
     m_ok = false;
-    std::atomic<bool> done{false};
-    m_thread = std::thread([this, &done] {
+    m_done = false;
+    m_thread = std::thread([this] {
         run();
-        done = true;
+        m_done = true;
     });
-    for (int i = 0; i < 300 && !m_ok && !done; ++i)
+    for (int i = 0; i < 300 && !m_ok && !m_done; ++i)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     if (!m_ok)
         stop();

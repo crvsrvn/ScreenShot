@@ -22,6 +22,7 @@ private:
     std::thread m_thread;
     std::atomic<bool> m_running{false};
     std::atomic<bool> m_ok{false};
+    std::atomic<bool> m_done{false};
     QMutex m_mutex;
     QImage m_frame;
 };

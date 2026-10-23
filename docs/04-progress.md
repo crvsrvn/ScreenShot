@@ -46,7 +46,7 @@ Table: 自动测试
 | 端到端 `e2e_m0` | 测试驱动启动真实程序；需要真实输入的场景在锁屏时跳过 | {{E2E_RESULT}} |
 | 零网络 | 构建产物导入表无 ws2_32 / winhttp / wininet / Qt Network；端到端运行期间无网络端点 | :ok[通过] :m[实测] |
 
-需求覆盖矩阵（`build/<preset>/test-results/coverage.md`）由 `tools/coverage/gen_matrix.py` 在每次测试运行时生成：扫描所有用例文件开头的 `// REQ:` 标签，对 `tests/delivered_scope.txt` 里的每一条需求检查至少有一个用例，否则测试失败（`TST-01`）。
+需求覆盖矩阵（`build/<preset>/test-results/coverage.md`）由 `tools/coverage/gen_matrix.py` 在每次测试运行时生成：扫描所有用例文件开头的 `// REQ:` 标签，对 `tests/delivered_scope.txt` 里的每一条需求检查至少有一个用例，否则测试失败（`TST-01`）。矩阵统计到 253 个编号，其中 7 个只出现在需求文档的修订记录里（v0.2 删除或改名的 `LNG-*`、`REC-05`、`PIN-10`、`GEN-11`、`GEN-12`、`OUT-15`），不是现行需求；现行需求 246 条，244 条在范围内且全部有用例。
 
 > [!info] 覆盖的含义
 > “有用例”指该需求的核心行为有自动用例在无显示器（offscreen）或真实桌面上验证；需要真实输入的验收场景（`AC-01` ~ `AC-12`）由端到端驱动在解锁桌面后执行，当前只验证了不依赖输入的部分，见 [](#pending)。

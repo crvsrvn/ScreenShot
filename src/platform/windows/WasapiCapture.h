@@ -24,6 +24,7 @@ private:
     std::thread m_thread;
     std::atomic<bool> m_running{false};
     std::atomic<bool> m_ok{false};
+    std::atomic<bool> m_done{false}; // 线程初始化结束（成功或失败）
     QMutex m_mutex;
     QVector<qint16> m_buffer;
 };

@@ -1279,11 +1279,13 @@ bool App::startRecord(const QRect& physicalRegion, bool showUi)
     if (m_record)
         m_record->cancel();
     m_record = std::make_unique<RecordSession>(m_session->screenCapture(), m_platform, m_settings, m_dataDir.isEmpty() ? QDir::tempPath() : m_dataDir);
-    connect(m_record.get(), &RecordSession::finished, this, &App::finishRecording);
-    connect(m_record.get(), &RecordSession::cancelled, this, [this] {
+    RecordSession* created = m_record.get();
+    connect(created, &RecordSession::finished, this, &App::finishRecording);
+    connect(created, &RecordSession::cancelled, this, [this, created] {
         m_recordHooks = false;
         applyInputHooks();
-        QMetaObject::invokeMethod(this, [this] { m_record.reset(); }, Qt::QueuedConnection);
+        // 排队释放只针对这个会话：startRecord 可能已经换成了新会话
+        QMetaObject::invokeMethod(this, [this, created] { if (m_record.get() == created) m_record.reset(); }, Qt::QueuedConnection);
     });
     if (!m_record->begin(physicalRegion, showUi)) {
         m_recordError = m_record->lastError();
@@ -1319,7 +1321,8 @@ void App::finishRecording()
         connect(m_playback, &RecordPlaybackDialog::exported, this, [this](const QString& path) { m_recordLastFile = path; });
         m_playback->show();
     }
-    QMetaObject::invokeMethod(this, [this] { m_record.reset(); }, Qt::QueuedConnection);
+    RecordSession* done = m_record.get();
+    QMetaObject::invokeMethod(this, [this, done] { if (m_record.get() == done) m_record.reset(); }, Qt::QueuedConnection);
 }
 
 QStringList App::unfinishedRecordings() const
