@@ -118,14 +118,14 @@ void TestCaptureSession::dragCreatesSelectionAndCopies()
     f.session->dragTo(QPoint(300, 450));
     QVERIFY(f.session->dragging());
     QCOMPARE(f.session->state(), CaptureSession::State::Selecting);
-    f.session->releaseAt(QPoint(300, 450), Qt::LeftButton);
-    QCOMPARE(f.session->selection(), QRect(QPoint(300, 400), QPoint(500, 450)));
+    f.session->releaseAt(QPoint(280, 470), Qt::LeftButton); // 松开点也计入
+    QCOMPARE(f.session->selection(), QRect(QPoint(280, 400), QPoint(500, 470)));
     QCOMPARE(f.session->state(), CaptureSession::State::Selected);
     QVERIFY(changed.count() >= 2);
     QSignalSpy captured(f.session.get(), &CaptureSession::captured);
     f.key(QStringLiteral("Return"));
     QCOMPARE(captured.count(), 1);
-    QCOMPARE(QApplication::clipboard()->image().size(), QSize(201, 51));
+    QCOMPARE(QApplication::clipboard()->image().size(), QSize(221, 71));
     QVERIFY(!f.session->isActive());
     QCOMPARE(f.history.size(), 1);
 }

@@ -616,8 +616,8 @@ ScenarioResult Runner::m1CaptureFlow()
     m_client.call(QStringLiteral("cancelCapture"));
     r.data = QJsonObject{{QStringLiteral("selectionOk"), selOk}, {QStringLiteral("resizeOk"), resizeOk}, {QStringLiteral("pixels"), cmp.summary()}, {QStringLiteral("savedOk"), savedOk}, {QStringLiteral("historyOk"), histOk}};
     r.passed = selOk && resizeOk && cmp.passed && savedOk && histOk;
-    r.summary = QStringLiteral("框选%1，锚点%2，像素%3，快速保存%4，历史%5").arg(selOk ? QStringLiteral("✓") : QStringLiteral("✗"), resizeOk ? QStringLiteral("✓") : QStringLiteral("✗"),
-                                                                 cmp.passed ? QStringLiteral("✓") : cmp.summary(), savedOk ? QStringLiteral("✓") : QStringLiteral("✗"), histOk ? QStringLiteral("✓") : QStringLiteral("✗"));
+    r.summary = QStringLiteral("框选%1，锚点%2，像素%3，快速保存%4，历史%5").arg(selOk ? QStringLiteral("ok") : QStringLiteral("FAIL"), resizeOk ? QStringLiteral("ok") : QStringLiteral("FAIL"),
+                                                                 cmp.passed ? QStringLiteral("ok") : cmp.summary(), savedOk ? QStringLiteral("ok") : QStringLiteral("FAIL"), histOk ? QStringLiteral("ok") : QStringLiteral("FAIL"));
     return r;
 }
 

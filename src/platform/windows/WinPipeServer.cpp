@@ -83,7 +83,9 @@ QByteArray WinPipeServer::sendLine(const QString& name, const QByteArray& line, 
         h = CreateFileW(reinterpret_cast<const wchar_t*>(path.utf16()), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
         if (h != INVALID_HANDLE_VALUE)
             break;
-        if (GetLastError() != ERROR_PIPE_BUSY || GetTickCount64() > deadline)
+        // 忙：实例被占用；找不到：服务线程正在重建下一个实例。都在超时内重试
+        const DWORD err = GetLastError();
+        if ((err != ERROR_PIPE_BUSY && err != ERROR_FILE_NOT_FOUND) || GetTickCount64() > deadline)
             return {};
         Sleep(20);
     }

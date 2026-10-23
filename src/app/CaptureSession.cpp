@@ -351,6 +351,8 @@ void CaptureSession::releaseAt(QPoint physical, Qt::MouseButton button)
     if (!isActive() || button != Qt::LeftButton)
         return;
     const Drag drag = m_drag;
+    if (drag == Drag::Create || drag == Drag::Move || drag == Drag::Resize)
+        dragTo(physical); // 松开点也计入（必须在清除拖拽状态之前）
     m_drag = Drag::None;
     switch (drag) {
     case Drag::ClickCandidate:
@@ -359,13 +361,11 @@ void CaptureSession::releaseAt(QPoint physical, Qt::MouseButton button)
             setSelection(*m_highlight);
         break;
     case Drag::Create:
-        dragTo(physical);
         setState(m_selection.isEmpty() ? State::Detecting : State::Selected);
         emit selectionChanged(m_selection);
         break;
     case Drag::Move:
     case Drag::Resize:
-        dragTo(physical);
         layoutToolbar();
         break;
     case Drag::None:
