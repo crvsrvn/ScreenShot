@@ -15,5 +15,7 @@ bool excludeFromCapture(void* hwnd, bool exclude);
 
 // 当前光标的物理像素位置
 QPoint cursorPhysicalPos();
+// 把光标移到物理像素位置（CAP-24 键盘移动光标）
+void setCursorPhysicalPos(QPoint physical);
 
 } // namespace ss::win

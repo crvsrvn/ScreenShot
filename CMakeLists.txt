@@ -21,7 +21,7 @@ endif()
 
 # ---- Qt --------------------------------------------------------------------
 # 零网络原则：这里只允许列出的模块，Qt Network / Qml / Quick 永远不出现。
-find_package(Qt6 6.12 REQUIRED COMPONENTS Core Gui Widgets Svg PrintSupport Concurrent Test)
+find_package(Qt6 6.12 REQUIRED COMPONENTS Core Gui Widgets Svg PrintSupport Concurrent Test LinguistTools)
 qt_standard_project_setup()
 
 include(cmake/ZeroNetwork.cmake)

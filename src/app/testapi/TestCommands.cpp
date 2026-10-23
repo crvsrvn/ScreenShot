@@ -7,24 +7,27 @@
 //   setSelection {x,y,w,h}     → 设置物理像素选区
 //   acceptCapture {path?}      → 裁剪、写 PNG、复制到剪贴板；返回宽高
 //   cancelCapture
-//   state                      → capturing / selection / pins / overlays
+//   state                      → capturing / state / detectMode / selection / highlight / cursor / history / pins / overlays / hotkeys
+//   mouse {action:press|move|release|dblclick, x, y, button?}   → 物理坐标鼠标事件直达会话
+//   key {key:"Ctrl+S"|"Escape"|…, release?}                      → 键盘事件直达会话
+//   hover {x,y}                → 悬停检测
+//   currentImage {path}        → 把当前选区 / 历史图写成 PNG
 //   overlayRender {screenId,path} → 把覆盖窗口内容渲染成 PNG
-//   createPins {count,width,height} → 创建贴图
-//   dragPin {index,dx,dy,steps} → 逐步移动并计时
-//   scalePin {index,steps,factor} → 逐步缩放并记录每帧耗时
-//   closePins
-//   memory                     → privateBytes
-//   benchBlur {width,height,radius} / benchMosaic {width,height,block}
-//   ocrSelfTest                → 用渲染出的文字图测 OCR
-//   elementAt {x,y,timeoutMs}  → UI 元素检测
-//   windows                    → 顶层窗口列表
+//   setting {key, value?}      → 读 / 写设置
+//   setDialogOverride {path}   → 保存对话框直接用该路径
+//   createPins {count,width,height} / dragPin {index,dx,dy,steps} / scalePin {index,steps,factor} / closePins
+//   memory / benchBlur / benchMosaic / ocrSelfTest / elementAt {x,y,timeoutMs} / windows / screenshotDesktop {path}
+//   runCommand {args:[...]}    → 等同命令行命令
 //   quit
 #include "app/testapi/TestCommands.h"
 
 #include "app/App.h"
 #include "app/CaptureSession.h"
+#include "app/CaptureToolbar.h"
+#include "app/OutputActions.h"
 #include "app/OverlayWindow.h"
 #include "app/PinWindow.h"
+#include "core/config/Settings.h"
 #include "core/fx/Blur.h"
 #include "core/fx/Mosaic.h"
 #include "core/util/Clock.h"
@@ -33,6 +36,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QJsonArray>
+#include <QKeyEvent>
 #include <QPainter>
 
 #ifdef Q_OS_WIN
@@ -64,8 +68,7 @@ QJsonObject rectToJson(const QRect& r)
 
 QRect jsonToRect(const QJsonObject& o)
 {
-    return QRect(o.value(QStringLiteral("x")).toInt(), o.value(QStringLiteral("y")).toInt(), o.value(QStringLiteral("w")).toInt(),
-                 o.value(QStringLiteral("h")).toInt());
+    return QRect(o.value(QStringLiteral("x")).toInt(), o.value(QStringLiteral("y")).toInt(), o.value(QStringLiteral("w")).toInt(), o.value(QStringLiteral("h")).toInt());
 }
 
 QJsonObject screenToJson(const ScreenInfo& s)
@@ -91,11 +94,33 @@ QImage noiseImage(int w, int h)
     return img;
 }
 
+QString stateName(CaptureSession::State s)
+{
+    switch (s) {
+    case CaptureSession::State::Idle: return QStringLiteral("idle");
+    case CaptureSession::State::Detecting: return QStringLiteral("detecting");
+    case CaptureSession::State::Selecting: return QStringLiteral("selecting");
+    case CaptureSession::State::Selected: return QStringLiteral("selected");
+    case CaptureSession::State::History: return QStringLiteral("history");
+    }
+    return {};
+}
+
+QString detectModeName(CaptureSession::DetectMode m)
+{
+    switch (m) {
+    case CaptureSession::DetectMode::Element: return QStringLiteral("element");
+    case CaptureSession::DetectMode::Window: return QStringLiteral("window");
+    case CaptureSession::DetectMode::Off: return QStringLiteral("off");
+    }
+    return {};
+}
+
 QJsonObject cmdCapture(App& app, const QJsonObject& req)
 {
     const bool show = req.value(QStringLiteral("show")).toBool(true);
     if (!app.session().start(monotonicNs(), show))
-        return fail(QStringLiteral("无法开始截图（已在截图中或捕获失败）"));
+        return fail(QStringLiteral("cannot start capture (already active or capture failed)"));
     return ok();
 }
 
@@ -117,14 +142,14 @@ QJsonObject cmdCaptureTimings(App& app)
 QJsonObject cmdAcceptCapture(App& app, const QJsonObject& req)
 {
     if (!app.session().isActive())
-        return fail(QStringLiteral("没有进行中的截图"));
+        return fail(QStringLiteral("no active capture"));
     const QRect region = app.session().selection();
     const QImage image = app.session().accept();
     if (image.isNull())
-        return fail(QStringLiteral("没有选区"));
+        return fail(QStringLiteral("no selection"));
     const QString path = req.value(QStringLiteral("path")).toString();
     if (!path.isEmpty() && !image.save(path, "PNG"))
-        return fail(QStringLiteral("保存失败：") + path);
+        return fail(QStringLiteral("save failed: ") + path);
     QJsonObject o = rectToJson(region);
     o[QStringLiteral("imageW")] = image.width();
     o[QStringLiteral("imageH")] = image.height();
@@ -133,16 +158,30 @@ QJsonObject cmdAcceptCapture(App& app, const QJsonObject& req)
 
 QJsonObject cmdState(App& app)
 {
+    CaptureSession& s = app.session();
     QJsonObject o;
-    o[QStringLiteral("capturing")] = app.session().isActive();
-    o[QStringLiteral("selection")] = rectToJson(app.session().selection());
+    o[QStringLiteral("capturing")] = s.isActive();
+    o[QStringLiteral("state")] = stateName(s.state());
+    o[QStringLiteral("detectMode")] = detectModeName(s.detectMode());
+    o[QStringLiteral("selection")] = rectToJson(s.selection());
+    o[QStringLiteral("highlight")] = s.highlight() ? rectToJson(*s.highlight()) : QJsonObject();
+    o[QStringLiteral("cursor")] = QJsonObject{{QStringLiteral("x"), s.cursor().x()}, {QStringLiteral("y"), s.cursor().y()}};
+    o[QStringLiteral("colorFormat")] = colorFormatName(s.colorFormat());
+    o[QStringLiteral("colorText")] = s.colorTextAtCursor();
+    o[QStringLiteral("magnifier")] = s.magnifierVisible();
+    o[QStringLiteral("historySize")] = app.history().size();
+    o[QStringLiteral("historyIndex")] = s.historyIndex();
+    o[QStringLiteral("toolbarVisible")] = s.toolbar() && s.toolbar()->isVisible();
     o[QStringLiteral("pins")] = static_cast<int>(app.pins().size());
+    o[QStringLiteral("pinsHidden")] = app.pinsHidden();
+    o[QStringLiteral("clipboardHasImage")] = !QApplication::clipboard()->image().isNull();
+    o[QStringLiteral("clipboardText")] = QApplication::clipboard()->text();
     QJsonObject hotkeys;
     for (auto it = app.hotkeyStatus().cbegin(); it != app.hotkeyStatus().cend(); ++it)
         hotkeys[QString::number(it.key())] = it.value();
     o[QStringLiteral("hotkeys")] = hotkeys;
     QJsonArray overlays;
-    for (auto* w : app.session().overlays()) {
+    for (auto* w : s.overlays()) {
         QJsonObject ov = screenToJson(w->screenInfo());
         ov[QStringLiteral("visible")] = w->isVisible();
         ov[QStringLiteral("paintCount")] = w->paintCount();
@@ -156,17 +195,53 @@ QJsonObject cmdState(App& app)
     return ok(o);
 }
 
+QJsonObject cmdMouse(App& app, const QJsonObject& req)
+{
+    const QString action = req.value(QStringLiteral("action")).toString();
+    const QPoint p(req.value(QStringLiteral("x")).toInt(), req.value(QStringLiteral("y")).toInt());
+    const QString b = req.value(QStringLiteral("button")).toString(QStringLiteral("left"));
+    const Qt::MouseButton button = b == QLatin1String("right") ? Qt::RightButton : b == QLatin1String("middle") ? Qt::MiddleButton : Qt::LeftButton;
+    CaptureSession& s = app.session();
+    if (action == QLatin1String("press"))
+        s.pressAt(p, button);
+    else if (action == QLatin1String("move"))
+        s.dragKind() == CaptureSession::Drag::None ? s.hoverAt(p) : s.dragTo(p);
+    else if (action == QLatin1String("release"))
+        s.releaseAt(p, button);
+    else if (action == QLatin1String("dblclick"))
+        s.doubleClickAt(p);
+    else
+        return fail(QStringLiteral("unknown mouse action"));
+    QApplication::processEvents();
+    return ok();
+}
+
+QJsonObject cmdKey(App& app, const QJsonObject& req)
+{
+    const QKeySequence seq(req.value(QStringLiteral("key")).toString());
+    if (seq.isEmpty())
+        return fail(QStringLiteral("bad key"));
+    const QKeyCombination combo = seq[0];
+    const bool release = req.value(QStringLiteral("release")).toBool(false);
+    QKeyEvent press(QEvent::KeyPress, combo.key(), combo.keyboardModifiers());
+    QKeyEvent rel(QEvent::KeyRelease, combo.key(), combo.keyboardModifiers());
+    bool handled = false;
+    if (release)
+        handled = app.session().handleKeyRelease(&rel);
+    else
+        handled = app.session().handleKeyPress(&press);
+    QApplication::processEvents();
+    return ok({{QStringLiteral("handled"), handled}});
+}
+
 QJsonObject cmdCreatePins(App& app, const QJsonObject& req)
 {
     const int count = req.value(QStringLiteral("count")).toInt(1);
     const int w = req.value(QStringLiteral("width")).toInt(1920);
     const int h = req.value(QStringLiteral("height")).toInt(1080);
     const QImage base = noiseImage(w, h);
-    QJsonArray ids;
-    for (int i = 0; i < count; ++i) {
-        PinWindow* pin = app.pinImage(base, QPoint(40 + (i % 10) * 30, 40 + (i / 10) * 30));
-        ids.append(static_cast<int>(app.pins().indexOf(pin)));
-    }
+    for (int i = 0; i < count; ++i)
+        app.pinImage(base, QPoint(40 + (i % 10) * 30, 40 + (i / 10) * 30));
     QApplication::processEvents();
     return ok({{QStringLiteral("count"), static_cast<int>(app.pins().size())}});
 }
@@ -175,7 +250,7 @@ QJsonObject cmdDragPin(App& app, const QJsonObject& req)
 {
     const int index = req.value(QStringLiteral("index")).toInt(0);
     if (index < 0 || index >= app.pins().size())
-        return fail(QStringLiteral("贴图序号无效"));
+        return fail(QStringLiteral("bad pin index"));
     PinWindow* pin = app.pins().at(index);
     const int dx = req.value(QStringLiteral("dx")).toInt(2);
     const int dy = req.value(QStringLiteral("dy")).toInt(1);
@@ -188,15 +263,14 @@ QJsonObject cmdDragPin(App& app, const QJsonObject& req)
     }
     const double elapsed = nsToMs(monotonicNs() - t0);
     return ok({{QStringLiteral("elapsedMs"), elapsed}, {QStringLiteral("steps"), steps},
-               {QStringLiteral("movesPerSecond"), steps * 1000.0 / std::max(elapsed, 0.001)},
-               {QStringLiteral("paints"), pin->paintCount() - paintsBefore}});
+               {QStringLiteral("movesPerSecond"), steps * 1000.0 / std::max(elapsed, 0.001)}, {QStringLiteral("paints"), pin->paintCount() - paintsBefore}});
 }
 
 QJsonObject cmdScalePin(App& app, const QJsonObject& req)
 {
     const int index = req.value(QStringLiteral("index")).toInt(0);
     if (index < 0 || index >= app.pins().size())
-        return fail(QStringLiteral("贴图序号无效"));
+        return fail(QStringLiteral("bad pin index"));
     PinWindow* pin = app.pins().at(index);
     const int steps = req.value(QStringLiteral("steps")).toInt(40);
     const double factor = req.value(QStringLiteral("factor")).toDouble(0.97);
@@ -205,7 +279,7 @@ QJsonObject cmdScalePin(App& app, const QJsonObject& req)
     const qint64 t0 = monotonicNs();
     for (int i = 0; i < steps; ++i) {
         pin->zoomAt(QPointF(pin->width() / 2.0, pin->height() / 2.0), factor, true);
-        pin->repaint(); // 同步绘制，使每步都产生一帧
+        pin->repaint();
         QApplication::processEvents(QEventLoop::AllEvents);
     }
     const double elapsed = nsToMs(monotonicNs() - t0);
@@ -215,57 +289,35 @@ QJsonObject cmdScalePin(App& app, const QJsonObject& req)
         frames.append(d);
         maxFrame = std::max(maxFrame, d);
     }
-    return ok({{QStringLiteral("elapsedMs"), elapsed}, {QStringLiteral("steps"), steps},
-               {QStringLiteral("fps"), steps * 1000.0 / std::max(elapsed, 0.001)},
-               {QStringLiteral("paints"), pin->paintCount() - paintsBefore}, {QStringLiteral("maxFrameMs"), maxFrame},
-               {QStringLiteral("frameMs"), frames}, {QStringLiteral("scale"), pin->scale()},
-               {QStringLiteral("windowW"), pin->width()}, {QStringLiteral("windowH"), pin->height()}, {QStringLiteral("clipped"), pin->isClipped()}});
+    return ok({{QStringLiteral("elapsedMs"), elapsed}, {QStringLiteral("steps"), steps}, {QStringLiteral("fps"), steps * 1000.0 / std::max(elapsed, 0.001)},
+               {QStringLiteral("paints"), pin->paintCount() - paintsBefore}, {QStringLiteral("maxFrameMs"), maxFrame}, {QStringLiteral("frameMs"), frames},
+               {QStringLiteral("scale"), pin->scale()}, {QStringLiteral("windowW"), pin->width()}, {QStringLiteral("windowH"), pin->height()},
+               {QStringLiteral("clipped"), pin->isClipped()}});
 }
 
-QJsonObject cmdBenchBlur(const QJsonObject& req)
+QJsonObject benchImage(const QJsonObject& req, const std::function<QImage(const QImage&)>& fn, const QString& paramName, int param)
 {
     const int w = req.value(QStringLiteral("width")).toInt(3840);
     const int h = req.value(QStringLiteral("height")).toInt(2160);
-    const int radius = req.value(QStringLiteral("radius")).toInt(10);
     const QImage src = noiseImage(w, h);
-    fx::gaussianBlur(src, radius); // 预热线程池
+    fn(src);
     const int runs = 5;
     double best = 1e9, total = 0;
     for (int i = 0; i < runs; ++i) {
         const qint64 t0 = monotonicNs();
-        const QImage out = fx::gaussianBlur(src, radius);
+        const QImage out = fn(src);
         const double ms = nsToMs(monotonicNs() - t0);
         Q_UNUSED(out);
         best = std::min(best, ms);
         total += ms;
     }
-    return ok({{QStringLiteral("bestMs"), best}, {QStringLiteral("avgMs"), total / runs}, {QStringLiteral("radius"), radius}});
-}
-
-QJsonObject cmdBenchMosaic(const QJsonObject& req)
-{
-    const int w = req.value(QStringLiteral("width")).toInt(3840);
-    const int h = req.value(QStringLiteral("height")).toInt(2160);
-    const int block = req.value(QStringLiteral("block")).toInt(12);
-    const QImage src = noiseImage(w, h);
-    fx::mosaic(src, block);
-    const int runs = 5;
-    double best = 1e9, total = 0;
-    for (int i = 0; i < runs; ++i) {
-        const qint64 t0 = monotonicNs();
-        const QImage out = fx::mosaic(src, block);
-        const double ms = nsToMs(monotonicNs() - t0);
-        Q_UNUSED(out);
-        best = std::min(best, ms);
-        total += ms;
-    }
-    return ok({{QStringLiteral("bestMs"), best}, {QStringLiteral("avgMs"), total / runs}, {QStringLiteral("block"), block}});
+    return ok({{QStringLiteral("bestMs"), best}, {QStringLiteral("avgMs"), total / runs}, {paramName, param}});
 }
 
 QJsonObject cmdOcrSelfTest(App& app)
 {
     if (!app.platform().ocr)
-        return fail(QStringLiteral("没有 OCR 实现"));
+        return fail(QStringLiteral("no OCR implementation"));
     QImage img(800, 240, QImage::Format_ARGB32_Premultiplied);
     img.fill(Qt::white);
     {
@@ -279,12 +331,11 @@ QJsonObject cmdOcrSelfTest(App& app)
     }
     const qint64 t0 = monotonicNs();
     const OcrResult r = app.platform().ocr->recognize(img);
-    const double ms = nsToMs(monotonicNs() - t0);
     QJsonObject o;
     o[QStringLiteral("available")] = app.platform().ocr->available();
     o[QStringLiteral("text")] = r.text();
     o[QStringLiteral("error")] = r.error;
-    o[QStringLiteral("elapsedMs")] = ms;
+    o[QStringLiteral("elapsedMs")] = nsToMs(monotonicNs() - t0);
     o[QStringLiteral("lines")] = static_cast<int>(r.lines.size());
     o[QStringLiteral("ok")] = r.ok;
     return o;
@@ -293,7 +344,7 @@ QJsonObject cmdOcrSelfTest(App& app)
 QJsonObject cmdElementAt(App& app, const QJsonObject& req)
 {
     if (!app.platform().elementDetector)
-        return fail(QStringLiteral("没有元素检测实现"));
+        return fail(QStringLiteral("no element detector"));
     const QPoint pt(req.value(QStringLiteral("x")).toInt(), req.value(QStringLiteral("y")).toInt());
     const int timeoutMs = req.value(QStringLiteral("timeoutMs")).toInt(300);
     const qint64 t0 = monotonicNs();
@@ -309,7 +360,7 @@ QJsonObject cmdElementAt(App& app, const QJsonObject& req)
 QJsonObject cmdWindows(App& app)
 {
     if (!app.platform().windowDetector)
-        return fail(QStringLiteral("没有窗口检测实现"));
+        return fail(QStringLiteral("no window detector"));
     QJsonArray arr;
     for (const auto& w : app.platform().windowDetector->topLevelWindows()) {
         QJsonObject o = rectToJson(w.frame);
@@ -334,7 +385,7 @@ QJsonObject cmdUseFakeScreens(App& app, const QJsonObject& req)
         screens.append(s);
     }
     if (screens.isEmpty())
-        return fail(QStringLiteral("没有显示器"));
+        return fail(QStringLiteral("no screens"));
     app.useScreenCapture(std::make_unique<testing::FakeScreenCapture>(screens));
     app.session().prepareOverlays();
     return ok();
@@ -348,11 +399,21 @@ QJsonObject cmdOverlayRender(App& app, const QJsonObject& req)
         if (w->screenInfo().id == id) {
             const QImage img = w->renderToImage();
             if (!img.save(path, "PNG"))
-                return fail(QStringLiteral("保存失败"));
+                return fail(QStringLiteral("save failed"));
             return ok({{QStringLiteral("w"), img.width()}, {QStringLiteral("h"), img.height()}});
         }
     }
-    return fail(QStringLiteral("没有该显示器的覆盖窗口"));
+    return fail(QStringLiteral("no overlay for screen"));
+}
+
+QJsonObject cmdSetting(App& app, const QJsonObject& req)
+{
+    const QString key = req.value(QStringLiteral("key")).toString();
+    if (!settingSpec(key) && !req.contains(QStringLiteral("value")))
+        return fail(QStringLiteral("unknown setting"));
+    if (req.contains(QStringLiteral("value")))
+        app.settings().setValue(key, req.value(QStringLiteral("value")).toVariant());
+    return ok({{QStringLiteral("value"), QJsonValue::fromVariant(app.settings().value(key))}});
 }
 
 } // namespace
@@ -360,21 +421,21 @@ QJsonObject cmdOverlayRender(App& app, const QJsonObject& req)
 QJsonObject handleTestCommand(App& app, const QJsonObject& req)
 {
     const QString cmd = req.value(QStringLiteral("cmd")).toString();
+    CaptureSession& session = app.session();
     if (cmd == QStringLiteral("ping"))
         return ok({{QStringLiteral("pid"), static_cast<double>(QCoreApplication::applicationPid())}});
     if (cmd == QStringLiteral("screens")) {
         QJsonArray arr;
-        if (app.session().screenCapture()) {
-            for (const auto& s : app.session().screenCapture()->screens())
+        if (session.screenCapture())
+            for (const auto& s : session.screenCapture()->screens())
                 arr.append(screenToJson(s));
-        }
         return ok({{QStringLiteral("screens"), arr}});
     }
     if (cmd == QStringLiteral("useFakeScreens"))
         return cmdUseFakeScreens(app, req);
     if (cmd == QStringLiteral("useRealScreens")) {
         app.useScreenCapture(nullptr);
-        app.session().prepareOverlays();
+        session.prepareOverlays();
         return ok();
     }
     if (cmd == QStringLiteral("capture"))
@@ -382,21 +443,44 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
     if (cmd == QStringLiteral("captureTimings"))
         return cmdCaptureTimings(app);
     if (cmd == QStringLiteral("setSelection")) {
-        if (!app.session().isActive())
-            return fail(QStringLiteral("没有进行中的截图"));
-        app.session().setSelection(jsonToRect(req));
+        if (!session.isActive())
+            return fail(QStringLiteral("no active capture"));
+        session.setSelection(jsonToRect(req));
         return ok();
     }
     if (cmd == QStringLiteral("acceptCapture"))
         return cmdAcceptCapture(app, req);
     if (cmd == QStringLiteral("cancelCapture")) {
-        app.session().cancel();
+        session.cancel();
         return ok();
     }
     if (cmd == QStringLiteral("state"))
         return cmdState(app);
+    if (cmd == QStringLiteral("mouse"))
+        return cmdMouse(app, req);
+    if (cmd == QStringLiteral("key"))
+        return cmdKey(app, req);
+    if (cmd == QStringLiteral("hover")) {
+        session.hoverAt(QPoint(req.value(QStringLiteral("x")).toInt(), req.value(QStringLiteral("y")).toInt()));
+        QApplication::processEvents();
+        return ok();
+    }
+    if (cmd == QStringLiteral("currentImage")) {
+        const QImage img = session.currentImage();
+        if (img.isNull())
+            return fail(QStringLiteral("no image"));
+        if (!img.save(req.value(QStringLiteral("path")).toString(), "PNG"))
+            return fail(QStringLiteral("save failed"));
+        return ok({{QStringLiteral("w"), img.width()}, {QStringLiteral("h"), img.height()}});
+    }
     if (cmd == QStringLiteral("overlayRender"))
         return cmdOverlayRender(app, req);
+    if (cmd == QStringLiteral("setting"))
+        return cmdSetting(app, req);
+    if (cmd == QStringLiteral("setDialogOverride")) {
+        app.output().setDialogOverride(req.value(QStringLiteral("path")).toString());
+        return ok();
+    }
     if (cmd == QStringLiteral("createPins"))
         return cmdCreatePins(app, req);
     if (cmd == QStringLiteral("dragPin"))
@@ -411,13 +495,17 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
 #ifdef Q_OS_WIN
         return ok({{QStringLiteral("privateBytes"), static_cast<double>(win::privateBytes())}});
 #else
-        return fail(QStringLiteral("未实现"));
+        return fail(QStringLiteral("not implemented"));
 #endif
     }
-    if (cmd == QStringLiteral("benchBlur"))
-        return cmdBenchBlur(req);
-    if (cmd == QStringLiteral("benchMosaic"))
-        return cmdBenchMosaic(req);
+    if (cmd == QStringLiteral("benchBlur")) {
+        const int radius = req.value(QStringLiteral("radius")).toInt(10);
+        return benchImage(req, [radius](const QImage& i) { return fx::gaussianBlur(i, radius); }, QStringLiteral("radius"), radius);
+    }
+    if (cmd == QStringLiteral("benchMosaic")) {
+        const int block = req.value(QStringLiteral("block")).toInt(12);
+        return benchImage(req, [block](const QImage& i) { return fx::mosaic(i, block); }, QStringLiteral("block"), block);
+    }
     if (cmd == QStringLiteral("ocrSelfTest"))
         return cmdOcrSelfTest(app);
     if (cmd == QStringLiteral("elementAt"))
@@ -425,7 +513,6 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
     if (cmd == QStringLiteral("windows"))
         return cmdWindows(app);
     if (cmd == QStringLiteral("screenshotDesktop")) {
-        // 用 GDI 抓整个虚拟桌面（含本程序的窗口），用于失败截图和诊断
 #ifdef Q_OS_WIN
         QRect bounds;
         for (const auto& s : win::enumerateScreens())
@@ -433,19 +520,27 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
         const QImage img = win::GdiScreenCapture::captureRect(bounds);
         const QString path = req.value(QStringLiteral("path")).toString();
         if (img.isNull() || !img.save(path, "PNG"))
-            return fail(QStringLiteral("抓取或保存失败"));
+            return fail(QStringLiteral("capture or save failed"));
         QJsonObject o = rectToJson(bounds);
         o[QStringLiteral("path")] = path;
         return ok(o);
 #else
-        return fail(QStringLiteral("未实现"));
+        return fail(QStringLiteral("not implemented"));
 #endif
+    }
+    if (cmd == QStringLiteral("runCommand")) {
+        QStringList args;
+        for (const auto& v : req.value(QStringLiteral("args")).toArray())
+            args << v.toString();
+        app.runCommand(args);
+        QApplication::processEvents();
+        return ok();
     }
     if (cmd == QStringLiteral("quit")) {
         QMetaObject::invokeMethod(&app, &App::quit, Qt::QueuedConnection);
         return ok();
     }
-    return fail(QStringLiteral("未知命令：") + cmd);
+    return fail(QStringLiteral("unknown command: ") + cmd);
 }
 
 } // namespace ss

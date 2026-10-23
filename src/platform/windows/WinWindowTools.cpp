@@ -34,4 +34,9 @@ QPoint cursorPhysicalPos()
     return QPoint(p.x, p.y);
 }
 
+void setCursorPhysicalPos(QPoint physical)
+{
+    SetCursorPos(physical.x(), physical.y());
+}
+
 } // namespace ss::win

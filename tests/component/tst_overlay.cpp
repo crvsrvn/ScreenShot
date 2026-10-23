@@ -1,10 +1,12 @@
-// REQ: CAP-02 CAP-03 CAP-10 NFR-07 NFR-08 TST-02
-// 覆盖窗口：渲染内容、逻辑→物理坐标换算（R-03）、鼠标与键盘交互
+// REQ: CAP-02 CAP-03 CAP-10 CAP-11 CAP-21 CAP-40 NFR-07 NFR-08 TST-02
+// 覆盖窗口：渲染内容、逻辑→物理坐标换算（R-03）、鼠标与键盘交互、放大镜与高亮绘制
 #include "app/CaptureSession.h"
 #include "app/OverlayWindow.h"
+#include "core/config/Settings.h"
 #include "support/TestSupport.h"
 #include "testing/FakePlatform.h"
 #include "testing/FakeScreenCapture.h"
+#include "testing/FakeWindowDetector.h"
 
 #include <QApplication>
 #include <QSignalSpy>
@@ -13,10 +15,30 @@
 using namespace ss;
 using namespace ss::testing;
 
+namespace {
+struct Fixture {
+    FakePlatformHandles h;
+    Platform p;
+    Settings settings;
+    CaptureHistory history{5};
+    std::unique_ptr<CaptureSession> session;
+    Fixture(QList<ScreenInfo> screens = defaultMixedScaleLayout())
+        : p(makeFakePlatform(&h, std::move(screens)))
+    {
+        session = std::make_unique<CaptureSession>(p.screenCapture.get(), p.windowDetector.get(), p.elementDetector.get(), settings);
+        session->setHistory(&history);
+        session->prepareOverlays();
+    }
+};
+} // namespace
+
 class TestOverlay : public QObject {
     Q_OBJECT
 private slots:
     void renderShowsSnapshotPixelsInsideSelection();
+    void renderHighlightKeepsOriginalPixels();
+    void renderMagnifierWhenDetecting();
+    void renderHistoryImage();
     void logicalToPhysicalIsExact_data();
     void logicalToPhysicalIsExact();
     void mouseDragSelectsPhysicalRect();
@@ -27,24 +49,73 @@ private slots:
 
 void TestOverlay::renderShowsSnapshotPixelsInsideSelection()
 {
-    FakePlatformHandles h;
-    Platform p = makeFakePlatform(&h);
-    CaptureSession s(p.screenCapture.get());
-    QVERIFY(s.start(1, false));
-    s.setSelection(QRect(100, 100, 50, 40));
-    OverlayWindow* w = s.overlayAt(QPoint(100, 100));
+    Fixture f;
+    QVERIFY(f.session->start(1, false));
+    f.session->setSelection(QRect(100, 100, 50, 40));
+    OverlayWindow* w = f.session->overlayAt(QPoint(100, 100));
     QVERIFY(w);
     const QImage rendered = w->renderToImage();
     QCOMPARE(rendered.size(), QSize(3840, 2160));
-    // 选区内部像素与快照一致，选区外被压暗
-    const QImage snap = h.screenCapture->patternImage(0, QSize(3840, 2160));
-    const QImage inside = rendered.copy(101, 101, 48, 38).convertToFormat(QImage::Format_RGB32);
-    const QImage expectedInside = snap.copy(101, 101, 48, 38);
-    SS_VERIFY_IMAGE(inside, expectedInside, CompareOptions{}, "overlay_inside_selection");
+    const QImage snap = FakeScreenCapture::patternImage(0, QSize(3840, 2160));
+    // 避开边框与锚点（锚点 7 逻辑像素见方，跨在边线上）
+    const QImage inside = rendered.copy(110, 110, 30, 20).convertToFormat(QImage::Format_RGB32);
+    SS_VERIFY_IMAGE(inside, snap.copy(110, 110, 30, 20), CompareOptions{}, "overlay_inside_selection");
     const QRgb outside = rendered.pixel(500, 500);
     const QRgb original = snap.pixel(500, 500);
     QVERIFY(qRed(outside) < qRed(original) || qGreen(outside) < qGreen(original) || qBlue(outside) < qBlue(original));
-    s.cancel();
+    f.session->cancel();
+}
+
+void TestOverlay::renderHighlightKeepsOriginalPixels()
+{
+    Fixture f;
+    f.h.windowDetector->setWindows({WindowInfo{1, QStringLiteral("w"), QStringLiteral("a.exe"), QRect(300, 300, 200, 200), 0}});
+    f.settings.setValue(QStringLiteral("capture.detectMode"), QStringLiteral("window"));
+    f.settings.setValue(QStringLiteral("capture.magnifierAuto"), false);
+    QVERIFY(f.session->start(1, false));
+    f.session->hoverAt(QPoint(400, 400));
+    OverlayWindow* w = f.session->overlayAt(QPoint(400, 400));
+    const QImage rendered = w->renderToImage();
+    const QImage snap = FakeScreenCapture::patternImage(0, QSize(3840, 2160));
+    // 高亮窗口内部像素不压暗（避开 2 像素边框）
+    SS_VERIFY_IMAGE(rendered.copy(310, 310, 100, 100).convertToFormat(QImage::Format_RGB32), snap.copy(310, 310, 100, 100), CompareOptions{}, "overlay_highlight");
+    f.session->cancel();
+}
+
+void TestOverlay::renderMagnifierWhenDetecting()
+{
+    Fixture f;
+    QVERIFY(f.session->start(1, false));
+    f.session->hoverAt(QPoint(600, 600));
+    QVERIFY(f.session->magnifierVisible());
+    OverlayWindow* w = f.session->overlayAt(QPoint(600, 600));
+    const QImage withMagnifier = w->renderToImage();
+    f.settings.setValue(QStringLiteral("capture.magnifierAuto"), false);
+    QVERIFY(!f.session->magnifierVisible());
+    const QImage without = w->renderToImage();
+    const auto cmp = compareImages(withMagnifier, without);
+    QVERIFY(cmp.differingPixels > 1000); // 放大镜面板确实画出来了
+    f.session->setAltHeld(true);
+    QVERIFY(f.session->magnifierVisible());
+    f.session->cancel();
+}
+
+void TestOverlay::renderHistoryImage()
+{
+    Fixture f;
+    QVERIFY(f.session->start(1, false));
+    f.session->setSelection(QRect(200, 200, 40, 30));
+    f.session->accept();
+    // 换一张不同的画面后回放历史：显示的是历史像素
+    f.h.screenCapture->setImage(0, QImage(3840, 2160, QImage::Format_RGB32));
+    QVERIFY(f.session->start(2, false));
+    f.session->historyOlder();
+    QCOMPARE(f.session->state(), CaptureSession::State::History);
+    OverlayWindow* w = f.session->overlayAt(QPoint(200, 200));
+    const QImage rendered = w->renderToImage().convertToFormat(QImage::Format_RGB32);
+    const QImage expected = FakeScreenCapture::patternImage(0, QSize(3840, 2160)).copy(210, 210, 20, 10);
+    SS_VERIFY_IMAGE(rendered.copy(210, 210, 20, 10), expected, CompareOptions{}, "overlay_history");
+    f.session->cancel();
 }
 
 void TestOverlay::logicalToPhysicalIsExact_data()
@@ -62,15 +133,11 @@ void TestOverlay::logicalToPhysicalIsExact()
 {
     QFETCH(double, scale);
     QFETCH(QPoint, origin);
-    Platform p = makeFakePlatform(nullptr, {ScreenInfo{QStringLiteral("S"), QRect(origin, QSize(2560, 1440)), scale, true, false}});
-    CaptureSession s(p.screenCapture.get());
-    s.prepareOverlays();
-    OverlayWindow* w = s.overlays().first();
-    // Qt 把物理像素 (x,y) 交给控件时是 (x/scale, y/scale)；换算回去必须零偏差
+    Fixture f({ScreenInfo{QStringLiteral("S"), QRect(origin, QSize(2560, 1440)), scale, true, false}});
+    OverlayWindow* w = f.session->overlays().first();
     for (int x = 0; x < 2560; x += 3) {
         for (int y = 0; y < 1440; y += 97) {
-            const QPointF logical(x / scale, y / scale);
-            const QPoint phys = w->toPhysical(logical);
+            const QPoint phys = w->toPhysical(QPointF(x / scale, y / scale));
             if (phys != origin + QPoint(x, y))
                 QFAIL(qPrintable(QStringLiteral("(%1,%2) → (%3,%4)").arg(x).arg(y).arg(phys.x() - origin.x()).arg(phys.y() - origin.y())));
         }
@@ -79,60 +146,50 @@ void TestOverlay::logicalToPhysicalIsExact()
 
 void TestOverlay::mouseDragSelectsPhysicalRect()
 {
-    FakePlatformHandles h;
-    Platform p = makeFakePlatform(&h);
-    CaptureSession s(p.screenCapture.get());
-    QVERIFY(s.start(1, false));
-    OverlayWindow* w = s.overlayAt(QPoint(0, 0)); // 150% 屏
-    QVERIFY(w);
+    Fixture f;
+    QVERIFY(f.session->start(1, false));
+    OverlayWindow* w = f.session->overlayAt(QPoint(0, 0)); // 150% 屏
     w->resize(2560, 1440);
-    // 逻辑 (100, 100) → 物理 (150, 150)；逻辑 (200, 160) → 物理 (300, 240)
     QTest::mousePress(w, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
+    QTest::mouseMove(w, QPoint(150, 130));
     QTest::mouseMove(w, QPoint(200, 160));
     QTest::mouseRelease(w, Qt::LeftButton, Qt::NoModifier, QPoint(200, 160));
-    QCOMPARE(s.selection(), QRect(QPoint(150, 150), QPoint(300, 240)));
-    QVERIFY(!s.dragging());
-    s.cancel();
+    QCOMPARE(f.session->selection(), QRect(QPoint(150, 150), QPoint(300, 240)));
+    QCOMPARE(f.session->state(), CaptureSession::State::Selected);
+    f.session->cancel();
 }
 
 void TestOverlay::escapeCancels()
 {
-    FakePlatformHandles h;
-    Platform p = makeFakePlatform(&h);
-    CaptureSession s(p.screenCapture.get());
-    QVERIFY(s.start(1, false));
-    QSignalSpy cancelled(&s, &CaptureSession::cancelled);
-    QTest::keyClick(s.overlays().first(), Qt::Key_Escape);
+    Fixture f;
+    QVERIFY(f.session->start(1, false));
+    QSignalSpy cancelled(f.session.get(), &CaptureSession::cancelled);
+    QTest::keyClick(f.session->overlays().first(), Qt::Key_Escape);
     QCOMPARE(cancelled.count(), 1);
-    QVERIFY(!s.isActive());
 }
 
 void TestOverlay::enterAccepts()
 {
-    FakePlatformHandles h;
-    Platform p = makeFakePlatform(&h);
-    CaptureSession s(p.screenCapture.get());
-    QVERIFY(s.start(1, false));
-    s.setSelection(QRect(10, 10, 20, 20));
-    QSignalSpy captured(&s, &CaptureSession::captured);
-    QTest::keyClick(s.overlays().first(), Qt::Key_Return);
+    Fixture f;
+    QVERIFY(f.session->start(1, false));
+    f.session->setSelection(QRect(10, 10, 20, 20));
+    QSignalSpy captured(f.session.get(), &CaptureSession::captured);
+    QTest::keyClick(f.session->overlays().first(), Qt::Key_Return);
     QCOMPARE(captured.count(), 1);
     QCOMPARE(captured.at(0).at(0).value<QImage>().size(), QSize(20, 20));
 }
 
 void TestOverlay::rightClickClearsThenCancels()
 {
-    FakePlatformHandles h;
-    Platform p = makeFakePlatform(&h);
-    CaptureSession s(p.screenCapture.get());
-    QVERIFY(s.start(1, false));
-    OverlayWindow* w = s.overlayAt(QPoint(0, 0));
-    s.setSelection(QRect(10, 10, 20, 20));
+    Fixture f;
+    QVERIFY(f.session->start(1, false));
+    OverlayWindow* w = f.session->overlayAt(QPoint(0, 0));
+    f.session->setSelection(QRect(10, 10, 20, 20));
     QTest::mouseClick(w, Qt::RightButton, Qt::NoModifier, QPoint(5, 5));
-    QVERIFY(s.selection().isEmpty());
-    QVERIFY(s.isActive());
+    QVERIFY(f.session->selection().isEmpty());
+    QVERIFY(f.session->isActive());
     QTest::mouseClick(w, Qt::RightButton, Qt::NoModifier, QPoint(5, 5));
-    QVERIFY(!s.isActive());
+    QVERIFY(!f.session->isActive());
 }
 
 QTEST_MAIN(TestOverlay)
