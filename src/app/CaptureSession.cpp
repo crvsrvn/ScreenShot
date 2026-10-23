@@ -25,9 +25,119 @@ CaptureSession::CaptureSession(IScreenCapture* capture, IWindowDetector* windows
     , m_windows(windows)
     , m_elements(elements)
     , m_settings(settings)
+    , m_editor(settings)
 {
     connect(&m_elementWatcher, &QFutureWatcher<std::optional<QRect>>::finished, this, &CaptureSession::onElementResult);
+    connect(&m_editor, &AnnotationEditor::changed, this, [this] { updateOverlays(); });
     m_toolbar = new CaptureToolbar(this);
+}
+
+// ---- 标注 ----
+
+void CaptureSession::setTool(AnnotationEditor::Tool tool)
+{
+    if (!isActive())
+        return;
+    if (m_state == State::Selected || m_state == State::History) {
+        if (m_selection.isEmpty())
+            return;
+        m_annotatedBase = currentImage();
+        m_editor.begin(m_annotatedBase, m_selection);
+        if (OverlayWindow* host = overlayAt(m_selection.topLeft()))
+            m_editor.setTextHost(host, host->toLogical(QRect(m_selection.topLeft(), QSize(1, 1))).topLeft(), host->screenInfo().scale);
+        setState(State::Annotating);
+    }
+    if (m_state == State::Annotating)
+        m_editor.setTool(tool);
+    layoutToolbar();
+    updateOverlays();
+}
+
+void CaptureSession::leaveAnnotating()
+{
+    if (m_state != State::Annotating)
+        return;
+    m_editor.finishDraft();
+    // 标注结果固化为当前画面的一部分：回到已选定状态，导出仍用标注后的图
+    setState(m_historyCursor && m_historyCursor->viewingHistory() ? State::History : State::Selected);
+    updateOverlays();
+}
+
+bool CaptureSession::handleAnnotationKey(QKeyEvent* e)
+{
+    const int key = e->key();
+    const bool ctrl = e->modifiers() & Qt::ControlModifier;
+    const bool shift = e->modifiers() & Qt::ShiftModifier;
+    if (m_editor.textEditing())
+        return false; // 输入框自己处理
+    switch (key) {
+    case Qt::Key_Z:
+        if (ctrl) {
+            shift ? m_editor.redo() : m_editor.undo();
+            return true;
+        }
+        break;
+    case Qt::Key_Y:
+        if (ctrl) {
+            m_editor.redo();
+            return true;
+        }
+        break;
+    case Qt::Key_Delete:
+    case Qt::Key_Backspace:
+        m_editor.deleteSelected();
+        return true;
+    case Qt::Key_C:
+        if (ctrl && shift) {
+            m_editor.copySelected();
+            return true;
+        }
+        break;
+    case Qt::Key_V:
+        if (ctrl && shift) {
+            m_editor.pasteCopied();
+            return true;
+        }
+        break;
+    case Qt::Key_Tab:
+        m_editor.toggleArrow();
+        return true;
+    case Qt::Key_BracketLeft:
+    case Qt::Key_1:
+        if (!ctrl) {
+            m_editor.adjustWidth(-1);
+            return true;
+        }
+        break;
+    case Qt::Key_BracketRight:
+    case Qt::Key_2:
+        if (!ctrl) {
+            m_editor.adjustWidth(1);
+            return true;
+        }
+        break;
+    case Qt::Key_T:
+        if (!ctrl) {
+            m_editor.setTool(AnnotationEditor::Tool::Text);
+            return true;
+        }
+        break;
+    case Qt::Key_B:
+        if (!ctrl) {
+            m_editor.setTool(AnnotationEditor::Tool::Pencil);
+            return true;
+        }
+        break;
+    case Qt::Key_Escape:
+        if (m_editor.hasDraft()) {
+            m_editor.cancelDraft();
+            return true;
+        }
+        break;
+    default:
+        break;
+    }
+    return false;
 }
 
 CaptureSession::~CaptureSession()
@@ -263,6 +373,10 @@ void CaptureSession::onElementResult()
 
 SelectionHandle CaptureSession::handleAt(QPoint physical) const
 {
+    if (m_state == State::Annotating) {
+        const SelectionHandle h = m_editor.handleAt(toImage(physical));
+        return h == SelectionHandle::Outside ? SelectionHandle::None : h;
+    }
     if (m_state != State::Selected && m_state != State::History)
         return SelectionHandle::Outside;
     return hitTestSelection(m_selection, physical, kGrip);
@@ -273,6 +387,15 @@ void CaptureSession::pressAt(QPoint physical, Qt::MouseButton button)
     if (!isActive())
         return;
     m_cursor = physical;
+    if (m_state == State::Annotating) {
+        if (button == Qt::RightButton && !m_editor.hasDraft() && m_editor.selectedId() < 0 && !m_editor.textEditing()) {
+            leaveAnnotating(); // 右键结束当前图形 → 已选定
+            return;
+        }
+        m_editor.pressAt(toImage(physical), button, QGuiApplication::keyboardModifiers());
+        m_drag = m_editor.dragMode() == AnnotationEditor::DragMode::None ? Drag::None : Drag::Create; // 让覆盖窗口把移动事件交给 dragTo
+        return;
+    }
     if (button == Qt::RightButton) {
         // 非编辑状态右键：有选区则重新框选，没有则退出（CAP-03、CAP-10）
         if (m_state == State::Selected || m_state == State::History)
@@ -311,6 +434,10 @@ void CaptureSession::dragTo(QPoint physical)
         return;
     m_cursor = physical;
     emit cursorChanged(physical);
+    if (m_state == State::Annotating) {
+        m_editor.moveTo(toImage(physical));
+        return;
+    }
     switch (m_drag) {
     case Drag::ClickCandidate:
         if ((physical - m_dragStart).manhattanLength() > kClickTolerance) {
@@ -350,6 +477,11 @@ void CaptureSession::releaseAt(QPoint physical, Qt::MouseButton button)
 {
     if (!isActive() || button != Qt::LeftButton)
         return;
+    if (m_state == State::Annotating) {
+        m_drag = Drag::None;
+        m_editor.releaseAt(toImage(physical), button);
+        return;
+    }
     const Drag drag = m_drag;
     if (drag == Drag::Create || drag == Drag::Move || drag == Drag::Resize)
         dragTo(physical); // 松开点也计入（必须在清除拖拽状态之前）
@@ -379,6 +511,10 @@ void CaptureSession::doubleClickAt(QPoint physical)
     if (!isActive())
         return;
     m_drag = Drag::None;
+    if (m_state == State::Annotating) {
+        m_editor.doubleClickAt(toImage(physical));
+        return;
+    }
     if ((m_state == State::Selected || m_state == State::History) && m_selection.contains(physical)) {
         accept(); // 双击复制（OUT-01）
     } else if (m_state == State::Detecting && m_highlight && m_highlight->contains(physical)) {
@@ -399,6 +535,10 @@ bool CaptureSession::handleKeyPress(QKeyEvent* e)
     const bool shift = mods & Qt::ShiftModifier;
     if (key != Qt::Key_Shift)
         m_shiftAlone = false;
+    if (key == Qt::Key_Shift)
+        m_editor.setShiftHeld(true);
+    if (m_state == State::Annotating && handleAnnotationKey(e))
+        return true;
     switch (key) {
     case Qt::Key_Escape:
         if (confirmCancel())
@@ -499,6 +639,7 @@ bool CaptureSession::handleKeyRelease(QKeyEvent* e)
         return true;
     }
     if (e->key() == Qt::Key_Shift) {
+        m_editor.setShiftHeld(false);
         if (m_shiftAlone)
             cycleColorFormat(); // 单独按一下 Shift 轮换颜色格式
         m_shiftAlone = false;
@@ -521,7 +662,7 @@ bool CaptureSession::magnifierVisible() const
         return false;
     if (m_altHeld)
         return true;
-    if (!m_settings.boolValue(QStringLiteral("capture.magnifierAuto")))
+    if (!m_settings.boolValue(QStringLiteral("capture.magnifierAuto")) || m_state == State::Annotating)
         return false;
     return m_state == State::Detecting || m_state == State::Selecting || m_drag == Drag::Resize;
 }
@@ -570,7 +711,7 @@ void CaptureSession::copyColor()
 
 void CaptureSession::historyOlder()
 {
-    if (!m_historyCursor || !isActive() || m_drag != Drag::None)
+    if (!m_historyCursor || !isActive() || m_drag != Drag::None || m_state == State::Annotating)
         return;
     if (m_historyCursor->older()) {
         const HistoryEntry& e = m_history->at(m_historyCursor->index());
@@ -613,6 +754,9 @@ QImage CaptureSession::historyImage() const
 
 QImage CaptureSession::currentImage() const
 {
+    // 标注过的画面：显示与导出共用文档的渲染（NFR-08）
+    if (m_editor.active())
+        return m_editor.renderForExport();
     if (m_state == State::History)
         return historyImage();
     if (m_selection.isEmpty())
@@ -648,7 +792,7 @@ void CaptureSession::hideOverlaysTemporarily(bool hide)
 {
     for (auto* w : std::as_const(m_overlays))
         w->setVisible(!hide && m_showOverlays);
-    m_toolbar->setVisible(!hide && m_showOverlays && (m_state == State::Selected || m_state == State::History));
+    m_toolbar->setVisible(!hide && m_showOverlays && (m_state == State::Selected || m_state == State::History || m_state == State::Annotating));
 }
 
 void CaptureSession::save()
@@ -726,6 +870,8 @@ void CaptureSession::finish()
 {
     m_state = State::Idle;
     m_drag = Drag::None;
+    m_editor.end();
+    m_annotatedBase = QImage();
     m_highlight.reset();
     m_elementQueued.reset();
     m_toolbar->hide();
@@ -750,7 +896,8 @@ OverlayWindow* CaptureSession::overlayAt(QPoint physical) const
 
 void CaptureSession::layoutToolbar()
 {
-    const bool show = isActive() && m_showOverlays && (m_state == State::Selected || m_state == State::History) && !m_selection.isEmpty() && !dragging();
+    const bool show = isActive() && m_showOverlays && (m_state == State::Selected || m_state == State::History || m_state == State::Annotating)
+        && !m_selection.isEmpty() && !dragging();
     if (!show) {
         m_toolbar->hide();
         return;

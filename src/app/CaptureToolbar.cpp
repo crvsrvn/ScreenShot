@@ -1,43 +1,318 @@
 #include "app/CaptureToolbar.h"
 
 #include "app/CaptureSession.h"
+#include "core/config/Settings.h"
 
 #include <QApplication>
+#include <QColorDialog>
+#include <QFontComboBox>
 #include <QHBoxLayout>
+#include <QLabel>
+#include <QSlider>
+#include <QSpinBox>
 #include <QToolButton>
+#include <QVBoxLayout>
 
 namespace ss {
+
+namespace {
+
+const QList<QColor> kPalette{QColor(230, 60, 60), QColor(255, 160, 0), QColor(255, 230, 0), QColor(60, 180, 75),
+                             QColor(40, 120, 220), QColor(150, 60, 220), QColor(255, 255, 255), QColor(0, 0, 0)};
+
+struct ToolDef {
+    AnnotationEditor::Tool tool;
+    const char* name;
+    const char* text;
+    const char* tip;
+};
+
+const ToolDef kTools[] = {
+    {AnnotationEditor::Tool::Rect, "rect", QT_TR_NOOP("Rect"), QT_TR_NOOP("Rectangle (Ctrl+1)")},
+    {AnnotationEditor::Tool::Ellipse, "ellipse", QT_TR_NOOP("Ellipse"), QT_TR_NOOP("Ellipse (Ctrl+2)")},
+    {AnnotationEditor::Tool::Line, "line", QT_TR_NOOP("Line"), QT_TR_NOOP("Line / polyline (Ctrl+3); Tab switches to arrow")},
+    {AnnotationEditor::Tool::Arrow, "arrow", QT_TR_NOOP("Arrow"), QT_TR_NOOP("Arrow (Ctrl+4)")},
+    {AnnotationEditor::Tool::Pencil, "pencil", QT_TR_NOOP("Pencil"), QT_TR_NOOP("Pencil (B); Shift for a straight line")},
+    {AnnotationEditor::Tool::Highlighter, "highlighter", QT_TR_NOOP("Marker"), QT_TR_NOOP("Highlighter (Ctrl+5)")},
+    {AnnotationEditor::Tool::Mosaic, "mosaic", QT_TR_NOOP("Mosaic"), QT_TR_NOOP("Mosaic (Ctrl+6)")},
+    {AnnotationEditor::Tool::Blur, "blur", QT_TR_NOOP("Blur"), QT_TR_NOOP("Gaussian blur (Ctrl+7)")},
+    {AnnotationEditor::Tool::Text, "text", QT_TR_NOOP("Text"), QT_TR_NOOP("Text (T); right-click to finish")},
+    {AnnotationEditor::Tool::Eraser, "eraser", QT_TR_NOOP("Eraser"), QT_TR_NOOP("Eraser (Ctrl+8): erases annotations only")},
+};
+
+} // namespace
+
+QString CaptureToolbar::toolName(AnnotationEditor::Tool tool)
+{
+    for (const auto& d : kTools)
+        if (d.tool == tool)
+            return QString::fromLatin1(d.name);
+    return QStringLiteral("none");
+}
+
+AnnotationEditor::Tool CaptureToolbar::toolFromName(const QString& name)
+{
+    for (const auto& d : kTools)
+        if (name == QLatin1String(d.name))
+            return d.tool;
+    return AnnotationEditor::Tool::None;
+}
 
 CaptureToolbar::CaptureToolbar(CaptureSession* session)
     : QWidget(nullptr, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::WindowDoesNotAcceptFocus)
     , m_session(session)
 {
     setAttribute(Qt::WA_ShowWithoutActivating);
-    auto* layout = new QHBoxLayout(this);
+    setStyleSheet(QStringLiteral("QWidget { background: #2b2b2b; color: white; } QToolButton { color: white; padding: 4px 7px; border: none; border-radius: 3px; }"
+                                 "QToolButton:hover { background: #3d6fb4; } QToolButton:checked { background: #1f5aa6; }"
+                                 "QSpinBox, QFontComboBox { background: #3a3a3a; color: white; border: 1px solid #555; }"));
+    auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(4, 4, 4, 4);
-    layout->setSpacing(2);
-    setStyleSheet(QStringLiteral("QWidget { background: #2b2b2b; } QToolButton { color: white; padding: 4px 8px; border: none; } QToolButton:hover { background: #3d6fb4; }"));
-    connect(addButton(QStringLiteral("copy"), tr("Copy"), tr("Copy to clipboard (Enter)")), &QToolButton::clicked, session, &CaptureSession::copy);
-    connect(addButton(QStringLiteral("save"), tr("Save"), tr("Save to file (Ctrl+S); Shift+click for quick save")), &QToolButton::clicked, this, [this] {
+    layout->setSpacing(3);
+
+    m_tools = new QWidget(this);
+    auto* row = new QHBoxLayout(m_tools);
+    row->setContentsMargins(0, 0, 0, 0);
+    row->setSpacing(2);
+    layout->addWidget(m_tools);
+    for (const auto& d : kTools) {
+        QToolButton* b = addButton(m_tools, QString::fromLatin1(d.name), tr(d.text), tr(d.tip), true);
+        m_toolButtons.insert(QString::fromLatin1(d.name), b);
+        const AnnotationEditor::Tool tool = d.tool;
+        connect(b, &QToolButton::clicked, this, [this, tool, b](bool checked) {
+            if (m_syncing)
+                return;
+            m_session->setTool(checked ? tool : AnnotationEditor::Tool::None);
+            if (!checked)
+                b->setChecked(false);
+        });
+    }
+    auto* sep = new QFrame(m_tools);
+    sep->setFrameShape(QFrame::VLine);
+    row->addWidget(sep);
+    connect(addButton(m_tools, QStringLiteral("undo"), tr("Undo"), tr("Undo (Ctrl+Z)")), &QToolButton::clicked, this, [this] { m_session->editor().undo(); });
+    connect(addButton(m_tools, QStringLiteral("redo"), tr("Redo"), tr("Redo (Ctrl+Y)")), &QToolButton::clicked, this, [this] { m_session->editor().redo(); });
+    connect(addButton(m_tools, QStringLiteral("clear"), tr("Clear"), tr("Remove all annotations (undoable)")), &QToolButton::clicked, this, [this] { m_session->editor().clearAll(); });
+    auto* sep2 = new QFrame(m_tools);
+    sep2->setFrameShape(QFrame::VLine);
+    row->addWidget(sep2);
+    connect(addButton(m_tools, QStringLiteral("copy"), tr("Copy"), tr("Copy to clipboard (Enter)")), &QToolButton::clicked, session, &CaptureSession::copy);
+    connect(addButton(m_tools, QStringLiteral("save"), tr("Save"), tr("Save to file (Ctrl+S); Shift+click for quick save")), &QToolButton::clicked, this, [this] {
         if (QApplication::keyboardModifiers() & Qt::ShiftModifier)
             m_session->quickSave();
         else
             m_session->save();
     });
-    connect(addButton(QStringLiteral("quickSave"), tr("Quick save"), tr("Save to the quick save folder (Ctrl+Shift+S)")), &QToolButton::clicked, session, &CaptureSession::quickSave);
-    connect(addButton(QStringLiteral("pin"), tr("Pin"), tr("Pin to screen (Ctrl+T)")), &QToolButton::clicked, session, &CaptureSession::pin);
-    connect(addButton(QStringLiteral("cancel"), tr("Cancel"), tr("Cancel (Esc)")), &QToolButton::clicked, session, &CaptureSession::cancel);
+    connect(addButton(m_tools, QStringLiteral("quickSave"), tr("Quick save"), tr("Save to the quick save folder (Ctrl+Shift+S)")), &QToolButton::clicked, session, &CaptureSession::quickSave);
+    connect(addButton(m_tools, QStringLiteral("pin"), tr("Pin"), tr("Pin to screen (Ctrl+T)")), &QToolButton::clicked, session, &CaptureSession::pin);
+    connect(addButton(m_tools, QStringLiteral("cancel"), tr("Cancel"), tr("Cancel (Esc)")), &QToolButton::clicked, session, &CaptureSession::cancel);
+
+    buildOptions();
+    layout->addWidget(m_options);
+    m_options->hide();
+
+    connect(&session->editor(), &AnnotationEditor::toolChanged, this, [this] { syncFromEditor(); });
+    connect(&session->editor(), &AnnotationEditor::selectionChanged, this, [this] { syncFromEditor(); });
+    connect(session, &CaptureSession::stateChanged, this, [this] { syncFromEditor(); });
 }
 
-QToolButton* CaptureToolbar::addButton(const QString& name, const QString& text, const QString& tooltip)
+QToolButton* CaptureToolbar::addButton(QWidget* row, const QString& name, const QString& text, const QString& tooltip, bool checkable)
 {
-    auto* b = new QToolButton(this);
+    auto* b = new QToolButton(row);
     b->setObjectName(name);
     b->setText(text);
     b->setToolTip(tooltip);
+    b->setCheckable(checkable);
     b->setFocusPolicy(Qt::NoFocus);
-    layout()->addWidget(b);
+    row->layout()->addWidget(b);
     return b;
+}
+
+void CaptureToolbar::buildOptions()
+{
+    m_options = new QWidget(this);
+    auto* row = new QHBoxLayout(m_options);
+    row->setContentsMargins(0, 0, 0, 0);
+    row->setSpacing(2);
+    AnnotationEditor& editor = m_session->editor();
+
+    // 颜色（ANN-03）：预设色板 + 自定义（含透明度）
+    for (const QColor& c : kPalette) {
+        auto* b = new QToolButton(m_options);
+        b->setObjectName(QStringLiteral("color_") + c.name());
+        b->setFixedSize(20, 20);
+        b->setStyleSheet(QStringLiteral("QToolButton { background: %1; border: 1px solid #888; } QToolButton:checked { border: 2px solid white; }").arg(c.name()));
+        b->setCheckable(true);
+        b->setFocusPolicy(Qt::NoFocus);
+        connect(b, &QToolButton::clicked, this, [this, c] {
+            m_session->editor().setColor(c);
+            refreshColorButtons();
+        });
+        row->addWidget(b);
+        m_colorButtons.append(b);
+    }
+    m_customColor = addButton(m_options, QStringLiteral("customColor"), tr("Custom"), tr("Pick a color (with opacity)"));
+    connect(m_customColor, &QToolButton::clicked, this, [this] {
+        const QColor c = QColorDialog::getColor(m_session->editor().style().stroke, nullptr, tr("Annotation color"), QColorDialog::ShowAlphaChannel);
+        if (c.isValid()) {
+            m_session->editor().setColor(c);
+            refreshColorButtons();
+        }
+    });
+
+    // 笔宽（ANN-06）：预设 + 微调
+    auto* widthLabel = new QLabel(tr("Width"), m_options);
+    row->addWidget(widthLabel);
+    const QStringList presets = m_session->settings().stringValue(QStringLiteral("annotation.widthPresets")).split(QLatin1Char(','), Qt::SkipEmptyParts);
+    int shown = 0;
+    for (const QString& p : presets) {
+        const int w = p.trimmed().toInt();
+        if (w <= 0 || shown >= 5)
+            continue;
+        QToolButton* b = addButton(m_options, QStringLiteral("width_%1").arg(w), QString::number(w), tr("Pen width %1").arg(w));
+        connect(b, &QToolButton::clicked, this, [this, w] { m_session->editor().setWidth(w); });
+        ++shown;
+    }
+    m_width = new QSpinBox(m_options);
+    m_width->setObjectName(QStringLiteral("width"));
+    m_width->setRange(1, 100);
+    m_width->setFocusPolicy(Qt::NoFocus);
+    connect(m_width, &QSpinBox::valueChanged, this, [this](int v) {
+        if (!m_syncing)
+            m_session->editor().setWidth(v);
+    });
+    row->addWidget(m_width);
+
+    // 填充（ANN-20）
+    m_fillRow = new QWidget(m_options);
+    auto* fillLayout = new QHBoxLayout(m_fillRow);
+    fillLayout->setContentsMargins(0, 0, 0, 0);
+    QToolButton* fill = addButton(m_fillRow, QStringLiteral("fill"), tr("Fill"), tr("Filled shape"), true);
+    connect(fill, &QToolButton::clicked, this, [this](bool checked) { m_session->editor().setFilled(checked); });
+    row->addWidget(m_fillRow);
+
+    // 形状（荧光笔 / 效果 / 橡皮擦）
+    m_shapeRow = new QWidget(m_options);
+    auto* shapeLayout = new QHBoxLayout(m_shapeRow);
+    shapeLayout->setContentsMargins(0, 0, 0, 0);
+    for (const char* n : {"shape_brush", "shape_rect", "shape_ellipse"}) {
+        const QString name = QString::fromLatin1(n);
+        QToolButton* b = addButton(m_shapeRow, name, name == QLatin1String("shape_brush") ? tr("Brush") : name == QLatin1String("shape_rect") ? tr("Rect") : tr("Ellipse"), tr("Shape"), true);
+        connect(b, &QToolButton::clicked, this, [this, name] {
+            AnnotationEditor& e = m_session->editor();
+            const int idx = name == QLatin1String("shape_brush") ? 0 : name == QLatin1String("shape_rect") ? 1 : 2;
+            if (e.tool() == AnnotationEditor::Tool::Highlighter)
+                e.setHighlighterShape(idx == 0 ? HighlighterAnnotation::Shape::Brush : HighlighterAnnotation::Shape::Rect);
+            else if (e.tool() == AnnotationEditor::Tool::Eraser)
+                e.setEraserShape(static_cast<EraserAnnotation::Shape>(idx));
+            else
+                e.setEffectShape(static_cast<EffectAnnotation::Shape>(idx));
+            syncFromEditor();
+        });
+    }
+    row->addWidget(m_shapeRow);
+
+    // 强度（ANN-29）
+    m_strengthRow = new QWidget(m_options);
+    auto* strengthLayout = new QHBoxLayout(m_strengthRow);
+    strengthLayout->setContentsMargins(0, 0, 0, 0);
+    strengthLayout->addWidget(new QLabel(tr("Strength"), m_strengthRow));
+    m_strength = new QSlider(Qt::Horizontal, m_strengthRow);
+    m_strength->setObjectName(QStringLiteral("strength"));
+    m_strength->setRange(1, 100);
+    m_strength->setFixedWidth(90);
+    m_strength->setFocusPolicy(Qt::NoFocus);
+    connect(m_strength, &QSlider::valueChanged, this, [this](int v) {
+        if (!m_syncing)
+            m_session->editor().setEffectStrength(v);
+    });
+    strengthLayout->addWidget(m_strength);
+    row->addWidget(m_strengthRow);
+
+    // 文字（ANN-32）
+    m_textRow = new QWidget(m_options);
+    auto* textLayout = new QHBoxLayout(m_textRow);
+    textLayout->setContentsMargins(0, 0, 0, 0);
+    m_fontCombo = new QFontComboBox(m_textRow);
+    m_fontCombo->setObjectName(QStringLiteral("font"));
+    m_fontCombo->setFocusPolicy(Qt::NoFocus);
+    m_fontCombo->setFixedWidth(150);
+    m_fontSize = new QSpinBox(m_textRow);
+    m_fontSize->setObjectName(QStringLiteral("fontSize"));
+    m_fontSize->setRange(6, 200);
+    m_fontSize->setFocusPolicy(Qt::NoFocus);
+    QToolButton* bold = addButton(m_textRow, QStringLiteral("bold"), tr("B"), tr("Bold"), true);
+    QToolButton* italic = addButton(m_textRow, QStringLiteral("italic"), tr("I"), tr("Italic"), true);
+    textLayout->insertWidget(0, m_fontCombo);
+    textLayout->insertWidget(1, m_fontSize);
+    auto applyFont = [this, bold, italic] {
+        if (m_syncing)
+            return;
+        QFont f = m_fontCombo->currentFont();
+        f.setPixelSize(m_fontSize->value());
+        f.setBold(bold->isChecked());
+        f.setItalic(italic->isChecked());
+        m_session->editor().setTextFont(f);
+    };
+    connect(m_fontCombo, &QFontComboBox::currentFontChanged, this, applyFont);
+    connect(m_fontSize, &QSpinBox::valueChanged, this, applyFont);
+    connect(bold, &QToolButton::clicked, this, applyFont);
+    connect(italic, &QToolButton::clicked, this, applyFont);
+    row->addWidget(m_textRow);
+    Q_UNUSED(editor);
+}
+
+void CaptureToolbar::refreshColorButtons()
+{
+    const QColor current = m_session->editor().style().stroke;
+    for (int i = 0; i < m_colorButtons.size(); ++i)
+        m_colorButtons[i]->setChecked(kPalette[i].rgb() == current.rgb());
+    m_customColor->setStyleSheet(QStringLiteral("QToolButton { border: 2px solid %1; }").arg(current.name()));
+}
+
+void CaptureToolbar::syncFromEditor()
+{
+    m_syncing = true;
+    AnnotationEditor& e = m_session->editor();
+    const bool annotating = m_session->state() == CaptureSession::State::Annotating;
+    const AnnotationEditor::Tool tool = e.tool();
+    for (auto it = m_toolButtons.cbegin(); it != m_toolButtons.cend(); ++it)
+        it.value()->setChecked(annotating && toolFromName(it.key()) == tool);
+    const bool showOptions = annotating && (tool != AnnotationEditor::Tool::None || e.selectedId() >= 0);
+    m_options->setVisible(showOptions);
+    if (showOptions) {
+        refreshColorButtons();
+        m_width->setValue(e.style().width);
+        m_fillRow->setVisible(tool == AnnotationEditor::Tool::Rect || tool == AnnotationEditor::Tool::Ellipse);
+        if (auto* fill = m_fillRow->findChild<QToolButton*>(QStringLiteral("fill")))
+            fill->setChecked(e.style().filled);
+        const bool shapes = tool == AnnotationEditor::Tool::Highlighter || tool == AnnotationEditor::Tool::Mosaic || tool == AnnotationEditor::Tool::Blur || tool == AnnotationEditor::Tool::Eraser;
+        m_shapeRow->setVisible(shapes);
+        if (shapes) {
+            int idx = 0;
+            if (tool == AnnotationEditor::Tool::Highlighter)
+                idx = e.highlighterShape() == HighlighterAnnotation::Shape::Brush ? 0 : 1;
+            else if (tool == AnnotationEditor::Tool::Eraser)
+                idx = static_cast<int>(e.eraserShape());
+            else
+                idx = static_cast<int>(e.effectShape());
+            m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_brush"))->setChecked(idx == 0);
+            m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_rect"))->setChecked(idx == 1);
+            m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_ellipse"))->setChecked(idx == 2);
+            m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_ellipse"))->setVisible(tool != AnnotationEditor::Tool::Highlighter);
+        }
+        m_strengthRow->setVisible(tool == AnnotationEditor::Tool::Mosaic || tool == AnnotationEditor::Tool::Blur);
+        m_strength->setValue(e.effectStrength());
+        m_textRow->setVisible(tool == AnnotationEditor::Tool::Text);
+        if (tool == AnnotationEditor::Tool::Text) {
+            m_fontCombo->setCurrentFont(e.textFont());
+            m_fontSize->setValue(std::max(6, e.textFont().pixelSize()));
+            m_textRow->findChild<QToolButton*>(QStringLiteral("bold"))->setChecked(e.textFont().bold());
+            m_textRow->findChild<QToolButton*>(QStringLiteral("italic"))->setChecked(e.textFont().italic());
+        }
+    }
+    adjustSize();
+    m_syncing = false;
 }
 
 QToolButton* CaptureToolbar::button(const QString& name) const

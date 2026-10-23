@@ -38,6 +38,7 @@
 #include <QJsonArray>
 #include <QKeyEvent>
 #include <QPainter>
+#include <QPlainTextEdit>
 
 #ifdef Q_OS_WIN
 #include "platform/windows/GdiScreenCapture.h"
@@ -102,6 +103,7 @@ QString stateName(CaptureSession::State s)
     case CaptureSession::State::Selecting: return QStringLiteral("selecting");
     case CaptureSession::State::Selected: return QStringLiteral("selected");
     case CaptureSession::State::History: return QStringLiteral("history");
+    case CaptureSession::State::Annotating: return QStringLiteral("annotating");
     }
     return {};
 }
@@ -527,6 +529,53 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
 #else
         return fail(QStringLiteral("not implemented"));
 #endif
+    }
+    if (cmd == QStringLiteral("annotate")) {
+        // 选择标注工具（进入标注状态）；{"tool":"rect"|...|"none"}
+        session.setTool(CaptureToolbar::toolFromName(req.value(QStringLiteral("tool")).toString()));
+        QApplication::processEvents();
+        return ok();
+    }
+    if (cmd == QStringLiteral("annotateState")) {
+        AnnotationEditor& e = session.editor();
+        QJsonObject o;
+        o[QStringLiteral("active")] = e.active();
+        o[QStringLiteral("tool")] = CaptureToolbar::toolName(e.tool());
+        o[QStringLiteral("count")] = e.document().count();
+        o[QStringLiteral("selectedId")] = e.selectedId();
+        o[QStringLiteral("hasDraft")] = e.hasDraft();
+        o[QStringLiteral("textEditing")] = e.textEditing();
+        o[QStringLiteral("canUndo")] = e.document().canUndo();
+        o[QStringLiteral("canRedo")] = e.document().canRedo();
+        o[QStringLiteral("color")] = e.style().stroke.name(QColor::HexArgb);
+        o[QStringLiteral("width")] = e.style().width;
+        return ok(o);
+    }
+    if (cmd == QStringLiteral("annotateStyle")) {
+        AnnotationEditor& e = session.editor();
+        if (req.contains(QStringLiteral("color")))
+            e.setColor(QColor::fromString(req.value(QStringLiteral("color")).toString()));
+        if (req.contains(QStringLiteral("width")))
+            e.setWidth(req.value(QStringLiteral("width")).toInt());
+        if (req.contains(QStringLiteral("filled")))
+            e.setFilled(req.value(QStringLiteral("filled")).toBool());
+        if (req.contains(QStringLiteral("strength")))
+            e.setEffectStrength(req.value(QStringLiteral("strength")).toInt());
+        return ok();
+    }
+    if (cmd == QStringLiteral("annotateText")) {
+        // 把文字写进正在编辑的输入框并提交
+        AnnotationEditor& e = session.editor();
+        if (!e.textEditing())
+            return fail(QStringLiteral("no text input active"));
+        if (auto* edit = session.overlays().isEmpty() ? nullptr : session.overlays().first()->findChild<QPlainTextEdit*>())
+            edit->setPlainText(req.value(QStringLiteral("text")).toString());
+        for (auto* w : session.overlays())
+            if (auto* edit = w->findChild<QPlainTextEdit*>())
+                edit->setPlainText(req.value(QStringLiteral("text")).toString());
+        e.commitText();
+        QApplication::processEvents();
+        return ok({{QStringLiteral("count"), e.document().count()}});
     }
     if (cmd == QStringLiteral("runCommand")) {
         QStringList args;

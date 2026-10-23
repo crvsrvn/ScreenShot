@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/AnnotationEditor.h"
 #include "core/capture/CaptureHistory.h"
 #include "core/capture/SelectionGeometry.h"
 #include "core/capture/WindowFinder.h"
@@ -32,7 +33,7 @@ class OutputActions;
 class CaptureSession : public QObject {
     Q_OBJECT
 public:
-    enum class State { Idle, Detecting, Selecting, Selected, History };
+    enum class State { Idle, Detecting, Selecting, Selected, History, Annotating };
     Q_ENUM(State)
     enum class DetectMode { Element, Window, Off };
     Q_ENUM(DetectMode)
@@ -100,6 +101,13 @@ public:
     QString colorTextAtCursor() const;
     void copyColor();
 
+    // ---- 标注（M2）----
+    AnnotationEditor& editor() { return m_editor; }
+    // 选择标注工具：从已选定 / 历史状态进入标注；Tool::None 不退出标注
+    void setTool(AnnotationEditor::Tool tool);
+    // 结束标注回到已选定（右键）；标注保留在导出结果里
+    void leaveAnnotating();
+
     // ---- 历史（CAP-40）----
     void historyOlder();
     void historyNewer();
@@ -152,10 +160,15 @@ private:
     bool confirmCancel();
     QRect screenRectAt(QPoint physical) const;
 
+    bool handleAnnotationKey(QKeyEvent* e);
+    QPointF toImage(QPoint physical) const { return QPointF(physical - m_selection.topLeft()); }
+
     IScreenCapture* m_capture;
     IWindowDetector* m_windows;
     IElementDetector* m_elements;
     Settings& m_settings;
+    AnnotationEditor m_editor;
+    QImage m_annotatedBase; // 进入标注时的底图（历史图或裁剪）
     CaptureHistory* m_history = nullptr;
     OutputActions* m_output = nullptr;
     VirtualDesktop m_desktop;

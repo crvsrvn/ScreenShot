@@ -4,6 +4,7 @@ set(APPLIB_SOURCES
     CaptureSession.h CaptureSession.cpp
     OverlayWindow.h OverlayWindow.cpp
     CaptureToolbar.h CaptureToolbar.cpp
+    AnnotationEditor.h AnnotationEditor.cpp
     PinWindow.h PinWindow.cpp
     OutputActions.h OutputActions.cpp
     PreferencesDialog.h PreferencesDialog.cpp

@@ -207,6 +207,16 @@ void OverlayWindow::paintContent(QPainter& p)
             p.drawImage(toLogical(visible).topLeft(), piece);
         }
         paintSelection(p, sel);
+    } else if (state == CaptureSession::State::Annotating) {
+        const QRect sel = m_session->selection();
+        paintSelection(p, sel);
+        const QRect visible = sel.intersected(m_screen.physicalGeometry);
+        if (!visible.isEmpty()) {
+            p.save();
+            p.setClipRect(toLogical(visible));
+            m_session->editor().paint(p, toLogical(QRect(sel.topLeft(), QSize(1, 1))).topLeft(), m_screen.scale);
+            p.restore();
+        }
     } else if (state == CaptureSession::State::Detecting) {
         p.fillRect(rect(), kDim);
         if (auto h = m_session->highlight()) {
@@ -270,6 +280,11 @@ bool OverlayWindow::event(QEvent* e)
 
 void OverlayWindow::updateCursorShape(QPoint physical)
 {
+    if (m_session->state() == CaptureSession::State::Annotating && m_session->editor().tool() != AnnotationEditor::Tool::None
+        && m_session->handleAt(physical) == SelectionHandle::None) {
+        setCursor(Qt::CrossCursor);
+        return;
+    }
     switch (m_session->handleAt(physical)) {
     case SelectionHandle::TopLeft:
     case SelectionHandle::BottomRight: setCursor(Qt::SizeFDiagCursor); break;
@@ -301,7 +316,7 @@ void OverlayWindow::mousePressEvent(QMouseEvent* event)
 void OverlayWindow::mouseMoveEvent(QMouseEvent* event)
 {
     const QPoint phys = toPhysical(event->position());
-    if (m_session->dragging() || m_session->dragKind() == CaptureSession::Drag::ClickCandidate)
+    if (m_session->dragging() || m_session->dragKind() == CaptureSession::Drag::ClickCandidate || m_session->state() == CaptureSession::State::Annotating)
         m_session->dragTo(phys);
     else
         m_session->hoverAt(phys);
