@@ -12,6 +12,14 @@ qt_add_library(screenshot_core STATIC
     fx/Mosaic.h fx/Mosaic.cpp
     util/Clock.h util/Clock.cpp
     util/Mipmap.h util/Mipmap.cpp
+    util/Log.h util/Log.cpp
+    config/Settings.h config/Settings.cpp
+    color/ColorFormat.h color/ColorFormat.cpp
+    output/FileNaming.h output/FileNaming.cpp
+    capture/CaptureHistory.h capture/CaptureHistory.cpp
+    capture/SelectionGeometry.h capture/SelectionGeometry.cpp
+    capture/Magnifier.h capture/Magnifier.cpp
+    capture/WindowFinder.h capture/WindowFinder.cpp
 )
 target_include_directories(screenshot_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(screenshot_core PUBLIC Qt6::Core Qt6::Gui Qt6::Concurrent)
