@@ -1,7 +1,10 @@
-// REQ: GEN-01 GEN-04 GEN-09 NFR-10
-// Windows 系统工具：单实例互斥体、开机自启注册表项、崩溃转储目录、命名管道往返（拒绝远程）
+// REQ: GEN-01 GEN-04 GEN-09 NFR-10 ACT-01 ACT-02
+// Windows 系统工具：单实例互斥体、开机自启注册表项、崩溃转储目录、命名管道往返（拒绝远程）、热键映射（含 PrtSc 与字符键）
+#include "platform/windows/WinGlobalHotkey.h"
 #include "platform/windows/WinPipeServer.h"
 #include "platform/windows/WinSystem.h"
+
+#include <windows.h>
 
 #include <QCoreApplication>
 #include <QDir>
@@ -18,7 +21,28 @@ private slots:
     void autostartRegistryRoundTrip();
     void pendingCrashDumpsSorted();
     void pipeServerRoundTrip();
+    void hotkeyMapping();
 };
+
+void TestWinSystem::hotkeyMapping()
+{
+    unsigned mods = 0, vk = 0;
+    QVERIFY(WinGlobalHotkey::toNative(QKeySequence(QStringLiteral("F1")), mods, vk));
+    QCOMPARE(vk, static_cast<unsigned>(VK_F1));
+    QVERIFY(WinGlobalHotkey::toNative(QKeySequence(QStringLiteral("Ctrl+Shift+Print")), mods, vk)); // ACT-02：含 PrtSc 的组合键
+    QCOMPARE(vk, static_cast<unsigned>(VK_SNAPSHOT));
+    QVERIFY((mods & MOD_CONTROL) && (mods & MOD_SHIFT));
+    QVERIFY(WinGlobalHotkey::toNative(QKeySequence(QStringLiteral("Alt+A")), mods, vk));
+    QCOMPARE(vk, static_cast<unsigned>('A'));
+    QVERIFY(mods & MOD_ALT);
+    QVERIFY(WinGlobalHotkey::toNative(QKeySequence(QStringLiteral("Meta+3")), mods, vk));
+    QCOMPARE(vk, static_cast<unsigned>('3'));
+    QVERIFY(mods & MOD_WIN);
+    // 按当前键盘布局映射字符键（非英文布局也能得到虚拟键）
+    QVERIFY(WinGlobalHotkey::toNative(QKeySequence(QStringLiteral("Ctrl+;")), mods, vk));
+    QVERIFY(vk != 0);
+    QVERIFY(!WinGlobalHotkey::toNative(QKeySequence(), mods, vk));
+}
 
 void TestWinSystem::singleInstanceMutex()
 {

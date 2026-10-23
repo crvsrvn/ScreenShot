@@ -159,7 +159,7 @@ QList<ScenarioResult> Runner::runAll()
     const QStringList ids{QStringLiteral("R-01"), QStringLiteral("R-08"), QStringLiteral("R-16"), QStringLiteral("R-02"),
                           QStringLiteral("R-03"), QStringLiteral("HOTKEY"), QStringLiteral("R-06"), QStringLiteral("R-05"),
                           QStringLiteral("R-07"), QStringLiteral("R-09"), QStringLiteral("R-11"), QStringLiteral("R-17"),
-                          QStringLiteral("M1-FLOW"), QStringLiteral("M1-INSTANCE"), QStringLiteral("M2-ANNOTATE")};
+                          QStringLiteral("M1-FLOW"), QStringLiteral("M1-INSTANCE"), QStringLiteral("M2-ANNOTATE"), QStringLiteral("M3-PINS")};
     QList<ScenarioResult> results;
     logLine(QStringLiteral("交互桌面：%1").arg(desktopUnlocked() ? QStringLiteral("可用") : QStringLiteral("锁屏中，真实输入场景将跳过")));
     for (const auto& id : ids) {
@@ -193,6 +193,7 @@ ScenarioResult Runner::run(const QString& id)
     if (id == QStringLiteral("M1-FLOW")) return m1CaptureFlow();
     if (id == QStringLiteral("M1-INSTANCE")) return m1SingleInstance();
     if (id == QStringLiteral("M2-ANNOTATE")) return m2Annotate();
+    if (id == QStringLiteral("M3-PINS")) return m3Pins();
     ScenarioResult r;
     r.id = id;
     r.summary = QStringLiteral("未知场景");
@@ -670,6 +671,58 @@ ScenarioResult Runner::m2Annotate()
     r.data = QJsonObject{{QStringLiteral("toolbarShown"), toolbarShown}, {QStringLiteral("oneItem"), oneItem}, {QStringLiteral("pixelsOk"), pixelsOk}, {QStringLiteral("file"), saved}};
     r.passed = toolbarShown && oneItem && pixelsOk;
     r.summary = QStringLiteral("工具栏%1，标注%2，保存像素%3").arg(toolbarShown ? QStringLiteral("ok") : QStringLiteral("FAIL"), oneItem ? QStringLiteral("ok") : QStringLiteral("FAIL"), pixelsOk ? QStringLiteral("ok") : QStringLiteral("FAIL"));
+    return r;
+}
+
+ScenarioResult Runner::m3Pins()
+{
+    // REQ: PIN-02 PIN-04 PIN-22 PIN-33 PIN-50
+    ScenarioResult r{QStringLiteral("M3-PINS"), QStringLiteral("M3：贴图在真实桌面上的物理定位、缩放、穿透、关闭恢复、文本贴图")};
+    const QRect g = win::enumerateScreens().first().physicalGeometry;
+    const QPoint at = g.topLeft() + QPoint(400, 300);
+    if (!m_client.call(QStringLiteral("pinAction"), {{QStringLiteral("action"), QStringLiteral("clipboardImage")}, {QStringLiteral("x"), at.x()}, {QStringLiteral("y"), at.y()}, {QStringLiteral("width"), 320}, {QStringLiteral("height"), 200}}).value(QStringLiteral("ok")).toBool()) {
+        r.summary = QStringLiteral("剪贴板贴图失败");
+        return r;
+    }
+    QThread::msleep(200);
+    QJsonObject pins = m_client.call(QStringLiteral("pins"));
+    QJsonObject p = pins.value(QStringLiteral("pins")).toArray().first().toObject();
+    const QRect content(p.value(QStringLiteral("x")).toInt(), p.value(QStringLiteral("y")).toInt(), p.value(QStringLiteral("w")).toInt(), p.value(QStringLiteral("h")).toInt());
+    const QJsonObject nat = p.value(QStringLiteral("native")).toObject();
+    const QRect native(nat.value(QStringLiteral("x")).toInt(), nat.value(QStringLiteral("y")).toInt(), nat.value(QStringLiteral("w")).toInt(), nat.value(QStringLiteral("h")).toInt());
+    // PIN-02：内容矩形与请求位置重合；原生窗口 = 内容 + 阴影边距（24 逻辑像素 × 缩放）
+    const bool placed = content.topLeft() == at && content.size() == QSize(320, 200);
+    const bool nativeOk = native.contains(content) && native.width() - content.width() <= 2 * 24 * 2 + 2;
+    // 缩放两步后尺寸按步长变化
+    m_client.call(QStringLiteral("pinAction"), {{QStringLiteral("index"), 0}, {QStringLiteral("action"), QStringLiteral("zoom")}, {QStringLiteral("steps"), 2}});
+    p = m_client.call(QStringLiteral("pins")).value(QStringLiteral("pins")).toArray().first().toObject();
+    const bool zoomed = std::abs(p.value(QStringLiteral("scale")).toDouble() - 1.21) < 0.001 && p.value(QStringLiteral("w")).toInt() == qRound(320 * 1.21);
+    // 穿透
+    m_client.call(QStringLiteral("pinAction"), {{QStringLiteral("action"), QStringLiteral("passthroughAt")}, {QStringLiteral("x"), at.x() + 10}, {QStringLiteral("y"), at.y() + 10}});
+    const bool through = m_client.call(QStringLiteral("pins")).value(QStringLiteral("pins")).toArray().first().toObject().value(QStringLiteral("passthrough")).toBool();
+    m_client.call(QStringLiteral("pinAction"), {{QStringLiteral("action"), QStringLiteral("passthroughAt")}, {QStringLiteral("x"), g.right() - 5}, {QStringLiteral("y"), g.bottom() - 5}});
+    const bool throughOff = !m_client.call(QStringLiteral("pins")).value(QStringLiteral("pins")).toArray().first().toObject().value(QStringLiteral("passthrough")).toBool();
+    // 关闭 → 恢复
+    m_client.call(QStringLiteral("pinAction"), {{QStringLiteral("index"), 0}, {QStringLiteral("action"), QStringLiteral("close")}});
+    QThread::msleep(100);
+    const int closed = m_client.call(QStringLiteral("pins")).value(QStringLiteral("closed")).toInt();
+    m_client.call(QStringLiteral("pinAction"), {{QStringLiteral("action"), QStringLiteral("restore")}});
+    QThread::msleep(100);
+    pins = m_client.call(QStringLiteral("pins"));
+    const bool restored = closed == 1 && pins.value(QStringLiteral("pins")).toArray().size() == 1 && std::abs(pins.value(QStringLiteral("pins")).toArray().first().toObject().value(QStringLiteral("scale")).toDouble() - 1.21) < 0.001;
+    // 文本贴图
+    const QJsonObject text = m_client.call(QStringLiteral("pinAction"), {{QStringLiteral("action"), QStringLiteral("text")}, {QStringLiteral("text"), QStringLiteral("贴图测试 pin text")}, {QStringLiteral("x"), at.x()}, {QStringLiteral("y"), at.y() + 300}});
+    const bool textOk = text.value(QStringLiteral("ok")).toBool() && text.value(QStringLiteral("w")).toInt() > 50;
+    m_client.call(QStringLiteral("closePins"));
+    r.data = QJsonObject{{QStringLiteral("content"), QStringLiteral("%1,%2 %3x%4").arg(content.x()).arg(content.y()).arg(content.width()).arg(content.height())},
+                         {QStringLiteral("native"), QStringLiteral("%1,%2 %3x%4").arg(native.x()).arg(native.y()).arg(native.width()).arg(native.height())},
+                         {QStringLiteral("placed"), placed}, {QStringLiteral("nativeOk"), nativeOk}, {QStringLiteral("zoomed"), zoomed}, {QStringLiteral("through"), through},
+                         {QStringLiteral("throughOff"), throughOff}, {QStringLiteral("restored"), restored}, {QStringLiteral("textOk"), textOk}};
+    r.passed = placed && nativeOk && zoomed && through && throughOff && restored && textOk;
+    r.summary = QStringLiteral("定位%1 原生%2 缩放%3 穿透%4/%5 恢复%6 文本%7")
+                    .arg(placed ? QStringLiteral("ok") : QStringLiteral("FAIL"), nativeOk ? QStringLiteral("ok") : QStringLiteral("FAIL"), zoomed ? QStringLiteral("ok") : QStringLiteral("FAIL"),
+                         through ? QStringLiteral("ok") : QStringLiteral("FAIL"), throughOff ? QStringLiteral("ok") : QStringLiteral("FAIL"), restored ? QStringLiteral("ok") : QStringLiteral("FAIL"),
+                         textOk ? QStringLiteral("ok") : QStringLiteral("FAIL"));
     return r;
 }
 
