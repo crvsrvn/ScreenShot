@@ -104,7 +104,10 @@ void RectAnnotation::paint(QPainter& p, const RenderContext&) const
         p.setPen(pen());
         p.setBrush(Qt::NoBrush);
     }
-    p.drawRect(m_rect);
+    if (radius() > 0)
+        p.drawRoundedRect(m_rect, radius(), radius());
+    else
+        p.drawRect(m_rect);
     p.restore();
 }
 
@@ -112,6 +115,7 @@ QJsonObject RectAnnotation::toJson() const
 {
     QJsonObject o = Annotation::toJson();
     o[QStringLiteral("rect")] = QJsonArray{m_rect.x(), m_rect.y(), m_rect.width(), m_rect.height()};
+    o[QStringLiteral("radius")] = m_radius;
     return o;
 }
 
@@ -121,6 +125,7 @@ void RectAnnotation::readJson(const QJsonObject& o)
     const QJsonArray r = o.value(QStringLiteral("rect")).toArray();
     if (r.size() == 4)
         m_rect = QRectF(r[0].toDouble(), r[1].toDouble(), r[2].toDouble(), r[3].toDouble());
+    m_radius = o.value(QStringLiteral("radius")).toDouble();
 }
 
 bool EllipseAnnotation::hitTest(QPointF p, double tolerance) const
@@ -199,35 +204,94 @@ QPainterPath LineAnnotation::arrowHead(QPointF from, QPointF to, double width)
     return head;
 }
 
+QString LineAnnotation::headName(Head h)
+{
+    switch (h) {
+    case Head::Triangle: return QStringLiteral("triangle");
+    case Head::Open: return QStringLiteral("open");
+    case Head::Dot: return QStringLiteral("dot");
+    case Head::Bar: return QStringLiteral("bar");
+    case Head::None: break;
+    }
+    return QStringLiteral("none");
+}
+
+LineAnnotation::Head LineAnnotation::headFromName(const QString& name)
+{
+    for (Head h : {Head::Triangle, Head::Open, Head::Dot, Head::Bar})
+        if (headName(h) == name)
+            return h;
+    return Head::None;
+}
+
+double LineAnnotation::paintHead(QPainter& p, Head head, QPointF from, QPointF to) const
+{
+    const QPointF d = to - from;
+    const double len = std::hypot(d.x(), d.y());
+    if (head == Head::None || len < 1e-6)
+        return 0;
+    const QPointF dir = d / len;
+    const QPointF normal(-dir.y(), dir.x());
+    const double size = std::max(8.0, m_style.width * 3.5);
+    p.save();
+    switch (head) {
+    case Head::Triangle:
+        p.setPen(Qt::NoPen);
+        p.setBrush(m_style.stroke);
+        p.drawPath(arrowHead(from, to, m_style.width));
+        p.restore();
+        return size * 0.6;
+    case Head::Open: {
+        p.setPen(QPen(m_style.stroke, m_style.width, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.setBrush(Qt::NoBrush);
+        const QPointF a = to - dir * size + normal * size * 0.5;
+        const QPointF b = to - dir * size - normal * size * 0.5;
+        p.drawPolyline(QPolygonF{a, to, b});
+        p.restore();
+        return 0;
+    }
+    case Head::Dot: {
+        p.setPen(Qt::NoPen);
+        p.setBrush(m_style.stroke);
+        const double r = std::max(3.0, m_style.width * 1.5);
+        p.drawEllipse(to, r, r);
+        p.restore();
+        return 0;
+    }
+    case Head::Bar: {
+        p.setPen(QPen(m_style.stroke, m_style.width, Qt::SolidLine, Qt::FlatCap));
+        p.drawLine(to + normal * size * 0.5, to - normal * size * 0.5);
+        p.restore();
+        return 0;
+    }
+    case Head::None:
+        break;
+    }
+    p.restore();
+    return 0;
+}
+
 void LineAnnotation::paint(QPainter& p, const RenderContext&) const
 {
     if (m_points.size() < 2)
         return;
     p.save();
     p.setRenderHint(QPainter::Antialiasing, true);
-    QPen linePen = pen();
-    p.setPen(linePen);
-    p.setBrush(Qt::NoBrush);
+    // 先画两端箭头，得到线条需要缩短的长度，避免线头露出箭头尖端之外
+    const double shortenEnd = paintHead(p, m_headEnd, m_points[m_points.size() - 2], m_points.last());
+    const double shortenStart = paintHead(p, m_headStart, m_points[1], m_points.first());
     QList<QPointF> pts = m_points;
-    // 箭头端的线条缩短，避免线头露出箭头尖端之外
-    auto shorten = [&](QPointF& end, const QPointF& prev) {
+    auto shorten = [](QPointF& end, const QPointF& prev, double by) {
         const QPointF d = end - prev;
         const double len = std::hypot(d.x(), d.y());
-        const double size = std::max(8.0, m_style.width * 3.5) * 0.6;
-        if (len > size)
-            end = end - d / len * size;
+        if (by > 0 && len > by)
+            end = end - d / len * by;
     };
-    if (m_arrowEnd)
-        shorten(pts.last(), pts[pts.size() - 2]);
-    if (m_arrowStart)
-        shorten(pts.first(), pts[1]);
+    shorten(pts.last(), pts[pts.size() - 2], shortenEnd);
+    shorten(pts.first(), pts[1], shortenStart);
+    p.setPen(pen());
+    p.setBrush(Qt::NoBrush);
     p.drawPolyline(pts.data(), static_cast<int>(pts.size()));
-    p.setPen(Qt::NoPen);
-    p.setBrush(m_style.stroke);
-    if (m_arrowEnd)
-        p.drawPath(arrowHead(m_points[m_points.size() - 2], m_points.last(), m_style.width));
-    if (m_arrowStart)
-        p.drawPath(arrowHead(m_points[1], m_points.first(), m_style.width));
     p.restore();
 }
 
@@ -235,8 +299,8 @@ QJsonObject LineAnnotation::toJson() const
 {
     QJsonObject o = Annotation::toJson();
     o[QStringLiteral("points")] = pointsToJson(m_points);
-    o[QStringLiteral("arrowStart")] = m_arrowStart;
-    o[QStringLiteral("arrowEnd")] = m_arrowEnd;
+    o[QStringLiteral("headStart")] = headName(m_headStart);
+    o[QStringLiteral("headEnd")] = headName(m_headEnd);
     return o;
 }
 
@@ -244,8 +308,13 @@ void LineAnnotation::readJson(const QJsonObject& o)
 {
     Annotation::readJson(o);
     m_points = pointsFromJson(o.value(QStringLiteral("points")).toArray());
-    m_arrowStart = o.value(QStringLiteral("arrowStart")).toBool();
-    m_arrowEnd = o.value(QStringLiteral("arrowEnd")).toBool();
+    m_headStart = headFromName(o.value(QStringLiteral("headStart")).toString());
+    m_headEnd = headFromName(o.value(QStringLiteral("headEnd")).toString());
+    // 兼容旧字段
+    if (o.value(QStringLiteral("arrowStart")).toBool())
+        m_headStart = Head::Triangle;
+    if (o.value(QStringLiteral("arrowEnd")).toBool())
+        m_headEnd = Head::Triangle;
 }
 
 // ---- 铅笔 ----
@@ -282,9 +351,25 @@ void PencilAnnotation::paint(QPainter& p, const RenderContext&) const
     p.save();
     applyRotation(p);
     p.setRenderHint(QPainter::Antialiasing, true);
-    p.setPen(Qt::NoPen);
-    p.setBrush(m_style.stroke);
-    p.drawPath(path());
+    if (m_style.penStyle != Qt::SolidLine && m_points.size() > 1) {
+        // 虚线 / 点线（ANN-21）：沿中心线描边
+        QPainterPath line(m_points.first());
+        if (m_smooth && m_points.size() > 2) {
+            for (int i = 1; i < m_points.size() - 1; ++i)
+                line.quadTo(m_points[i], (m_points[i] + m_points[i + 1]) / 2);
+            line.lineTo(m_points.last());
+        } else {
+            for (int i = 1; i < m_points.size(); ++i)
+                line.lineTo(m_points[i]);
+        }
+        p.setPen(pen());
+        p.setBrush(Qt::NoBrush);
+        p.drawPath(line);
+    } else {
+        p.setPen(Qt::NoPen);
+        p.setBrush(m_style.stroke);
+        p.drawPath(path());
+    }
     p.restore();
 }
 
@@ -460,6 +545,33 @@ void EffectAnnotation::readJson(const QJsonObject& o)
 
 // ---- 文字 ----
 
+QJsonObject TextDecor::toJson() const
+{
+    return {{QStringLiteral("outline"), outline}, {QStringLiteral("outlineColor"), outlineColor.isValid() ? outlineColor.name(QColor::HexArgb) : QString()},
+            {QStringLiteral("outlineWidth"), outlineWidth}, {QStringLiteral("background"), background},
+            {QStringLiteral("backgroundColor"), backgroundColor.name(QColor::HexArgb)}, {QStringLiteral("backgroundRadius"), backgroundRadius},
+            {QStringLiteral("backgroundPadding"), backgroundPadding}, {QStringLiteral("shadow"), shadow},
+            {QStringLiteral("shadowColor"), shadowColor.name(QColor::HexArgb)}, {QStringLiteral("shadowOffset"), QJsonArray{shadowOffset.x(), shadowOffset.y()}}};
+}
+
+TextDecor TextDecor::fromJson(const QJsonObject& o)
+{
+    TextDecor d;
+    d.outline = o.value(QStringLiteral("outline")).toBool();
+    d.outlineColor = QColor::fromString(o.value(QStringLiteral("outlineColor")).toString());
+    d.outlineWidth = o.value(QStringLiteral("outlineWidth")).toInt(d.outlineWidth);
+    d.background = o.value(QStringLiteral("background")).toBool();
+    d.backgroundColor = QColor::fromString(o.value(QStringLiteral("backgroundColor")).toString(d.backgroundColor.name(QColor::HexArgb)));
+    d.backgroundRadius = o.value(QStringLiteral("backgroundRadius")).toInt(d.backgroundRadius);
+    d.backgroundPadding = o.value(QStringLiteral("backgroundPadding")).toInt(d.backgroundPadding);
+    d.shadow = o.value(QStringLiteral("shadow")).toBool();
+    d.shadowColor = QColor::fromString(o.value(QStringLiteral("shadowColor")).toString(d.shadowColor.name(QColor::HexArgb)));
+    const QJsonArray so = o.value(QStringLiteral("shadowOffset")).toArray();
+    if (so.size() == 2)
+        d.shadowOffset = QPointF(so[0].toDouble(), so[1].toDouble());
+    return d;
+}
+
 QSizeF TextAnnotation::textSize() const
 {
     const QFontMetricsF fm(m_font);
@@ -467,7 +579,7 @@ QSizeF TextAnnotation::textSize() const
     double w = 0;
     for (const auto& l : lines)
         w = std::max(w, fm.horizontalAdvance(l));
-    return QSizeF(std::max(w, 4.0) + 4, lines.size() * fm.lineSpacing() + 4);
+    return QSizeF(std::max(w, 4.0) + 4 + 2 * padding(), lines.size() * fm.lineSpacing() + 4 + 2 * padding());
 }
 
 QRectF TextAnnotation::bounds() const
@@ -499,9 +611,44 @@ void TextAnnotation::paint(QPainter& p, const RenderContext&) const
     applyRotation(p);
     p.setRenderHint(QPainter::Antialiasing, true);
     p.setRenderHint(QPainter::TextAntialiasing, true);
-    p.setFont(m_font);
-    p.setPen(m_style.stroke);
-    p.drawText(bounds().adjusted(2, 2, -2, -2), Qt::AlignLeft | Qt::AlignTop, m_text);
+    const QRectF box = bounds();
+    if (m_decor.background) {
+        p.setPen(Qt::NoPen);
+        p.setBrush(m_decor.backgroundColor);
+        p.drawRoundedRect(box, m_decor.backgroundRadius, m_decor.backgroundRadius);
+    }
+    const QRectF textBox = box.adjusted(2 + padding(), 2 + padding(), -2 - padding(), -2 - padding());
+    if (!m_decor.outline && !m_decor.shadow) {
+        p.setFont(m_font);
+        p.setPen(m_style.stroke);
+        p.drawText(textBox, Qt::AlignLeft | Qt::AlignTop, m_text);
+        p.restore();
+        return;
+    }
+    // 描边 / 投影走路径：先投影，再描边，最后填充（ANN-33）
+    QPainterPath path;
+    const QFontMetricsF fm(m_font);
+    double y = textBox.top() + fm.ascent();
+    for (const QString& line : m_text.split(QLatin1Char('\n'))) {
+        path.addText(QPointF(textBox.left(), y), m_font, line);
+        y += fm.lineSpacing();
+    }
+    if (m_decor.shadow) {
+        p.setPen(Qt::NoPen);
+        p.setBrush(m_decor.shadowColor);
+        p.drawPath(path.translated(m_decor.shadowOffset));
+    }
+    if (m_decor.outline) {
+        QColor oc = m_decor.outlineColor;
+        if (!oc.isValid())
+            oc = m_style.stroke.lightnessF() > 0.6 ? QColor(Qt::black) : QColor(Qt::white);
+        p.setPen(QPen(oc, m_decor.outlineWidth * 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.setBrush(Qt::NoBrush);
+        p.drawPath(path);
+    }
+    p.setPen(Qt::NoPen);
+    p.setBrush(m_style.stroke);
+    p.drawPath(path);
     p.restore();
 }
 
@@ -511,6 +658,7 @@ QJsonObject TextAnnotation::toJson() const
     o[QStringLiteral("text")] = m_text;
     o[QStringLiteral("font")] = m_font.toString();
     o[QStringLiteral("pos")] = QJsonArray{m_pos.x(), m_pos.y()};
+    o[QStringLiteral("decor")] = m_decor.toJson();
     return o;
 }
 
@@ -522,6 +670,8 @@ void TextAnnotation::readJson(const QJsonObject& o)
     const QJsonArray p = o.value(QStringLiteral("pos")).toArray();
     if (p.size() == 2)
         m_pos = QPointF(p[0].toDouble(), p[1].toDouble());
+    if (o.contains(QStringLiteral("decor")))
+        m_decor = TextDecor::fromJson(o.value(QStringLiteral("decor")).toObject());
 }
 
 // ---- 橡皮擦 ----

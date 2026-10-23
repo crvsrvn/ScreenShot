@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/annotation/AnnotationDocument.h"
+#include "core/annotation/Extras.h"
 #include "core/annotation/Shapes.h"
 #include "core/capture/SelectionGeometry.h"
 
@@ -22,9 +23,9 @@ class Settings;
 class AnnotationEditor : public QObject {
     Q_OBJECT
 public:
-    enum class Tool { None, Rect, Ellipse, Line, Arrow, Pencil, Highlighter, Mosaic, Blur, Text, Eraser };
+    enum class Tool { None, Rect, Ellipse, Line, Arrow, Pencil, Highlighter, Mosaic, Blur, Text, Eraser, Step, Magnifier };
     Q_ENUM(Tool)
-    enum class DragMode { None, Create, Move, Resize, Rotate, Pending };
+    enum class DragMode { None, Create, Move, Resize, Rotate, Pending, Radius };
 
     explicit AnnotationEditor(Settings& settings, QObject* parent = nullptr);
     ~AnnotationEditor() override;
@@ -57,6 +58,34 @@ public:
     QFont textFont() const { return m_textFont; }
     void toggleArrow(); // Tab：线条 ↔ 箭头
     void setShiftHeld(bool held) { m_shift = held; }
+    // 线型（ANN-21）：实线 / 虚线 / 点线，作用于新建与选中项
+    void setPenStyle(Qt::PenStyle s);
+    // 圆角矩形（ANN-21）：新建矩形与选中矩形的圆角半径
+    void setCornerRadius(double r);
+    double cornerRadius() const { return m_cornerRadius; }
+    // 箭头样式（ANN-25）：起点 / 终点分别设置
+    void setArrowHeads(LineAnnotation::Head start, LineAnnotation::Head end);
+    LineAnnotation::Head arrowHeadStart() const { return m_headStart; }
+    LineAnnotation::Head arrowHeadEnd() const { return m_headEnd; }
+    // 文字装饰（ANN-33）
+    void setTextDecor(const TextDecor& d);
+    TextDecor textDecor() const { return m_textDecor; }
+    // 序号（ANN-35）
+    void setStepStyle(StepAnnotation::NumberStyle s);
+    StepAnnotation::NumberStyle stepStyle() const { return m_stepStyle; }
+    void setStepNumber(int n);     // 手动改选中序号的值
+    int nextStepNumber() const;    // 下一个自动编号
+    // 放大（ANN-37）
+    void setMagnifierZoom(double z) { m_magnifierZoom = std::clamp(z, 1.0, 8.0); applyMagnifierToSelected(); }
+    double magnifierZoom() const { return m_magnifierZoom; }
+    void setMagnifierShape(MagnifierAnnotation::Shape s) { m_magnifierShape = s; applyMagnifierToSelected(); }
+    MagnifierAnnotation::Shape magnifierShape() const { return m_magnifierShape; }
+    void setMagnifierIncludeAnnotations(bool on) { m_magnifierInclude = on; applyMagnifierToSelected(); }
+    bool magnifierIncludeAnnotations() const { return m_magnifierInclude; }
+    void setMagnifierShadow(bool on) { m_magnifierShadow = on; applyMagnifierToSelected(); }
+    bool magnifierShadow() const { return m_magnifierShadow; }
+    // 用给定矩形（图像坐标）直接创建当前工具的形状（ANN-11 右键贴合元素）；工具不支持时返回 false
+    bool createFromRect(const QRectF& r);
 
     // ---- 鼠标（图像坐标）----
     void pressAt(QPointF p, Qt::MouseButton button, Qt::KeyboardModifiers mods);
@@ -68,6 +97,7 @@ public:
     bool textEditing() const { return m_textEdit != nullptr; }
     SelectionHandle handleAt(QPointF p) const; // 选中项上的锚点
     bool rotateHandleAt(QPointF p) const;
+    bool radiusHandleAt(QPointF p) const;      // 圆角矩形的圆角控制点
 
     // ---- 编辑 ----
     int selectedId() const { return m_selectedId; }
@@ -93,6 +123,7 @@ public:
     // 选中项的锚点（图像坐标）
     QList<QPointF> selectionHandlesImage() const;
     QPointF rotateHandleImage() const;
+    QPointF radiusHandleImage() const; // 不适用时返回极远点
 
 signals:
     void changed();
@@ -106,7 +137,9 @@ private:
     void applyStyleToSelected();
     QPointF constrain(QPointF start, QPointF p) const;    // Shift 约束
     double snapAngle(double degrees) const;
-    void startTextInput(QPointF p, TextAnnotation* existing);
+    void startTextInput(QPointF p, Annotation* existing); // 文字或序号说明
+    void applyMagnifierToSelected();
+    void renumberStepsAfterRemoval(int removedNumber);
     void positionTextEdit();
     QRectF selectedBounds() const;
 
@@ -123,6 +156,15 @@ private:
     EraserAnnotation::Shape m_eraserShape = EraserAnnotation::Shape::Brush;
     QFont m_textFont;
     bool m_shift = false;
+    double m_cornerRadius = 0;
+    LineAnnotation::Head m_headStart = LineAnnotation::Head::None;
+    LineAnnotation::Head m_headEnd = LineAnnotation::Head::Triangle;
+    TextDecor m_textDecor;
+    StepAnnotation::NumberStyle m_stepStyle = StepAnnotation::NumberStyle::Numeric;
+    double m_magnifierZoom = 2.0;
+    MagnifierAnnotation::Shape m_magnifierShape = MagnifierAnnotation::Shape::Rect;
+    bool m_magnifierInclude = false;
+    bool m_magnifierShadow = true;
     // 草稿与拖拽
     std::unique_ptr<Annotation> m_draft;
     QPointF m_dragStart;

@@ -10,6 +10,7 @@ class QToolButton;
 class QSpinBox;
 class QSlider;
 class QFontComboBox;
+class QComboBox;
 
 namespace ss {
 
@@ -39,6 +40,16 @@ private:
     QWidget* m_shapeRow = nullptr;
     QWidget* m_strengthRow = nullptr;
     QWidget* m_textRow = nullptr;
+    QWidget* m_styleRow = nullptr;
+    QWidget* m_arrowRow = nullptr;
+    QWidget* m_stepRow = nullptr;
+    QWidget* m_magnifierRow = nullptr;
+    QSpinBox* m_radius = nullptr;
+    QComboBox* m_arrowStart = nullptr;
+    QComboBox* m_arrowEnd = nullptr;
+    QComboBox* m_stepStyle = nullptr;
+    QSpinBox* m_stepValue = nullptr;
+    QSpinBox* m_zoom = nullptr;
     QSpinBox* m_width = nullptr;
     QSlider* m_strength = nullptr;
     QFontComboBox* m_fontCombo = nullptr;

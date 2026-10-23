@@ -637,6 +637,12 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
         o[QStringLiteral("canRedo")] = e.document().canRedo();
         o[QStringLiteral("color")] = e.style().stroke.name(QColor::HexArgb);
         o[QStringLiteral("width")] = e.style().width;
+        o[QStringLiteral("penStyle")] = e.style().penStyle == Qt::DashLine ? QStringLiteral("dash") : e.style().penStyle == Qt::DotLine ? QStringLiteral("dot") : QStringLiteral("solid");
+        o[QStringLiteral("radius")] = e.cornerRadius();
+        QJsonArray types;
+        for (int i = 0; i < e.document().count(); ++i)
+            types.append(e.document().at(i)->type());
+        o[QStringLiteral("types")] = types;
         return ok(o);
     }
     if (cmd == QStringLiteral("annotateStyle")) {
@@ -649,6 +655,26 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
             e.setFilled(req.value(QStringLiteral("filled")).toBool());
         if (req.contains(QStringLiteral("strength")))
             e.setEffectStrength(req.value(QStringLiteral("strength")).toInt());
+        if (req.contains(QStringLiteral("penStyle"))) {
+            const QString ps = req.value(QStringLiteral("penStyle")).toString();
+            e.setPenStyle(ps == QLatin1String("dash") ? Qt::DashLine : ps == QLatin1String("dot") ? Qt::DotLine : Qt::SolidLine);
+        }
+        if (req.contains(QStringLiteral("radius")))
+            e.setCornerRadius(req.value(QStringLiteral("radius")).toDouble());
+        if (req.contains(QStringLiteral("arrowStart")) || req.contains(QStringLiteral("arrowEnd")))
+            e.setArrowHeads(LineAnnotation::headFromName(req.value(QStringLiteral("arrowStart")).toString(LineAnnotation::headName(e.arrowHeadStart()))),
+                            LineAnnotation::headFromName(req.value(QStringLiteral("arrowEnd")).toString(LineAnnotation::headName(e.arrowHeadEnd()))));
+        if (req.contains(QStringLiteral("zoom")))
+            e.setMagnifierZoom(req.value(QStringLiteral("zoom")).toDouble());
+        if (req.contains(QStringLiteral("stepValue")))
+            e.setStepNumber(req.value(QStringLiteral("stepValue")).toInt());
+        if (req.contains(QStringLiteral("outline")) || req.contains(QStringLiteral("background")) || req.contains(QStringLiteral("textShadow"))) {
+            TextDecor d = e.textDecor();
+            d.outline = req.value(QStringLiteral("outline")).toBool(d.outline);
+            d.background = req.value(QStringLiteral("background")).toBool(d.background);
+            d.shadow = req.value(QStringLiteral("textShadow")).toBool(d.shadow);
+            e.setTextDecor(d);
+        }
         return ok();
     }
     if (cmd == QStringLiteral("annotateText")) {

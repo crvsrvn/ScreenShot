@@ -14,6 +14,9 @@ namespace {
 constexpr double kHitTolerance = 4.0;
 constexpr double kHandleGrip = 6.0;
 constexpr double kRotateOffset = 24.0;
+constexpr double kRadiusHandleInset = 12.0; // 圆角控制点离左上角的最小距离
+constexpr double kStepTailMin = 10.0;       // 拖出指示箭头的最小距离
+constexpr QPointF kFar(-1e9, -1e9);
 constexpr int kClickTolerance = 3;
 
 // 文字输入框：Esc 取消、右键 / Ctrl+Enter 提交
@@ -87,6 +90,17 @@ void AnnotationEditor::begin(const QImage& base, const QRect& physicalRegion)
     m_style.width = m_settings.intValue(QStringLiteral("annotation.width"));
     m_style.stroke = QColor::fromString(m_settings.stringValue(QStringLiteral("annotation.color")));
     m_style.fill = m_style.stroke;
+    m_style.penStyle = Qt::SolidLine;
+    m_cornerRadius = 0;
+    const QString step = m_settings.stringValue(QStringLiteral("annotation.stepStyle"));
+    m_stepStyle = step == QLatin1String("alpha") ? StepAnnotation::NumberStyle::Alpha : step == QLatin1String("roman") ? StepAnnotation::NumberStyle::Roman : StepAnnotation::NumberStyle::Numeric;
+    m_magnifierZoom = std::clamp(m_settings.intValue(QStringLiteral("annotation.magnifierZoom")), 1, 8);
+    m_textDecor = TextDecor();
+    m_textDecor.outlineWidth = m_settings.intValue(QStringLiteral("annotation.textOutlineWidth"));
+    m_textDecor.backgroundColor = QColor::fromString(m_settings.stringValue(QStringLiteral("annotation.textBackground")));
+    m_textDecor.backgroundRadius = m_settings.intValue(QStringLiteral("annotation.textBackgroundRadius"));
+    m_textDecor.backgroundPadding = m_settings.intValue(QStringLiteral("annotation.textBackgroundPadding"));
+    m_textDecor.shadowColor = QColor::fromString(m_settings.stringValue(QStringLiteral("annotation.textShadowColor")));
     emit changed();
 }
 
@@ -165,7 +179,138 @@ void AnnotationEditor::toggleArrow()
     else if (m_tool == Tool::Arrow)
         setTool(Tool::Line);
     if (auto* line = dynamic_cast<LineAnnotation*>(m_draft.get()))
-        line->setArrow(false, m_tool == Tool::Arrow);
+        line->setHeads(m_tool == Tool::Arrow ? m_headStart : LineAnnotation::Head::None, m_tool == Tool::Arrow ? m_headEnd : LineAnnotation::Head::None);
+}
+
+void AnnotationEditor::setPenStyle(Qt::PenStyle s)
+{
+    m_style.penStyle = s;
+    applyStyleToSelected();
+}
+
+void AnnotationEditor::setCornerRadius(double r)
+{
+    m_cornerRadius = std::max(0.0, r);
+    if (auto* rect = dynamic_cast<RectAnnotation*>(m_doc.find(m_selectedId)); rect && rect->supportsRadius()) {
+        auto before = rect->clone();
+        rect->setRadius(m_cornerRadius);
+        m_doc.commitModification(m_selectedId, std::move(before));
+    }
+    emit changed();
+}
+
+void AnnotationEditor::setArrowHeads(LineAnnotation::Head start, LineAnnotation::Head end)
+{
+    m_headStart = start;
+    m_headEnd = end;
+    if (auto* line = dynamic_cast<LineAnnotation*>(m_doc.find(m_selectedId))) {
+        auto before = line->clone();
+        line->setHeads(start, end);
+        m_doc.commitModification(m_selectedId, std::move(before));
+    }
+    if (auto* line = dynamic_cast<LineAnnotation*>(m_draft.get()); line && m_tool == Tool::Arrow)
+        line->setHeads(start, end);
+    emit changed();
+}
+
+void AnnotationEditor::setTextDecor(const TextDecor& d)
+{
+    m_textDecor = d;
+    if (auto* text = dynamic_cast<TextAnnotation*>(m_doc.find(m_selectedId))) {
+        auto before = text->clone();
+        text->setDecor(d);
+        m_doc.commitModification(m_selectedId, std::move(before));
+    }
+    emit changed();
+}
+
+void AnnotationEditor::setStepStyle(StepAnnotation::NumberStyle s)
+{
+    m_stepStyle = s;
+    // 样式对整组序号生效
+    m_doc.undoStack().beginMacro(QStringLiteral("step style"));
+    for (int i = 0; i < m_doc.count(); ++i) {
+        if (auto* step = dynamic_cast<StepAnnotation*>(m_doc.at(i))) {
+            auto before = step->clone();
+            step->setNumberStyle(s);
+            m_doc.commitModification(step->id(), std::move(before));
+        }
+    }
+    m_doc.undoStack().endMacro();
+    emit changed();
+}
+
+void AnnotationEditor::setStepNumber(int n)
+{
+    if (auto* step = dynamic_cast<StepAnnotation*>(m_doc.find(m_selectedId))) {
+        auto before = step->clone();
+        step->setNumber(n);
+        m_doc.commitModification(m_selectedId, std::move(before));
+        emit changed();
+    }
+}
+
+int AnnotationEditor::nextStepNumber() const
+{
+    int next = 1;
+    for (int i = 0; i < m_doc.count(); ++i)
+        if (const auto* step = dynamic_cast<const StepAnnotation*>(m_doc.at(i)))
+            next = std::max(next, step->number() + 1);
+    return next;
+}
+
+void AnnotationEditor::renumberStepsAfterRemoval(int removedNumber)
+{
+    if (!m_settings.boolValue(QStringLiteral("annotation.stepRenumber")))
+        return;
+    for (int i = 0; i < m_doc.count(); ++i) {
+        if (auto* step = dynamic_cast<StepAnnotation*>(m_doc.at(i)); step && step->number() > removedNumber) {
+            auto before = step->clone();
+            step->setNumber(step->number() - 1);
+            m_doc.commitModification(step->id(), std::move(before));
+        }
+    }
+}
+
+void AnnotationEditor::applyMagnifierToSelected()
+{
+    if (auto* mag = dynamic_cast<MagnifierAnnotation*>(m_doc.find(m_selectedId))) {
+        auto before = mag->clone();
+        mag->setShape(m_magnifierShape);
+        mag->setIncludeAnnotations(m_magnifierInclude);
+        mag->setShadow(m_magnifierShadow);
+        if (!qFuzzyCompare(mag->zoom(), m_magnifierZoom))
+            mag->setTarget(QRectF(mag->target().topLeft(), mag->source().size() * m_magnifierZoom));
+        m_doc.commitModification(m_selectedId, std::move(before));
+    }
+    emit changed();
+}
+
+bool AnnotationEditor::createFromRect(const QRectF& r)
+{
+    const QRectF rect = r.normalized();
+    if (rect.width() < 2 || rect.height() < 2)
+        return false;
+    finishDraft();
+    m_dragStart = rect.topLeft();
+    m_draft = makeDraft(rect.topLeft());
+    if (!m_draft)
+        return false;
+    if (auto* hl = dynamic_cast<HighlighterAnnotation*>(m_draft.get())) {
+        hl->setShape(HighlighterAnnotation::Shape::Rect);
+        hl->setRect(rect);
+    } else if (auto* eff = dynamic_cast<EffectAnnotation*>(m_draft.get())) {
+        if (eff->shape() == EffectAnnotation::Shape::Brush)
+            eff->setShape(EffectAnnotation::Shape::Rect);
+        eff->setRect(rect);
+    } else if (dynamic_cast<RectAnnotation*>(m_draft.get())) {
+        m_draft->setBounds(rect);
+    } else {
+        m_draft.reset();
+        return false;
+    }
+    commitDraft();
+    return true;
 }
 
 void AnnotationEditor::applyStyleToSelected()
@@ -178,6 +323,7 @@ void AnnotationEditor::applyStyleToSelected()
     s.stroke = m_style.stroke;
     s.fill = m_style.fill;
     s.width = m_style.width;
+    s.penStyle = m_style.penStyle;
     if (a->usesFill())
         s.filled = m_style.filled;
     a->setStyle(s);
@@ -204,7 +350,8 @@ QPointF AnnotationEditor::constrain(QPointF start, QPointF p) const
     case Tool::Ellipse:
     case Tool::Mosaic:
     case Tool::Blur:
-    case Tool::Eraser: {
+    case Tool::Eraser:
+    case Tool::Magnifier: {
         // 正方形 / 正圆
         const double side = std::max(std::abs(p.x() - start.x()), std::abs(p.y() - start.y()));
         return QPointF(start.x() + (p.x() >= start.x() ? side : -side), start.y() + (p.y() >= start.y() ? side : -side));
@@ -233,14 +380,39 @@ std::unique_ptr<Annotation> AnnotationEditor::makeDraft(QPointF start)
 {
     std::unique_ptr<Annotation> a;
     switch (m_tool) {
-    case Tool::Rect: a = std::make_unique<RectAnnotation>(); break;
+    case Tool::Rect: {
+        auto r = std::make_unique<RectAnnotation>();
+        r->setRadius(m_cornerRadius);
+        a = std::move(r);
+        break;
+    }
     case Tool::Ellipse: a = std::make_unique<EllipseAnnotation>(); break;
     case Tool::Line:
     case Tool::Arrow: {
         auto l = std::make_unique<LineAnnotation>();
         l->points() = {start, start};
-        l->setArrow(false, m_tool == Tool::Arrow);
+        if (m_tool == Tool::Arrow)
+            l->setHeads(m_headStart, m_headEnd);
         a = std::move(l);
+        break;
+    }
+    case Tool::Step: {
+        auto s = std::make_unique<StepAnnotation>();
+        s->setCenter(start);
+        s->setNumber(nextStepNumber());
+        s->setNumberStyle(m_stepStyle);
+        s->setFont(m_textFont);
+        a = std::move(s);
+        break;
+    }
+    case Tool::Magnifier: {
+        auto m = std::make_unique<MagnifierAnnotation>();
+        m->setSource(QRectF(start, start));
+        m->setTarget(QRectF(start, start));
+        m->setShape(m_magnifierShape);
+        m->setIncludeAnnotations(m_magnifierInclude);
+        m->setShadow(m_magnifierShadow);
+        a = std::move(m);
         break;
     }
     case Tool::Pencil: {
@@ -291,6 +463,8 @@ std::unique_ptr<Annotation> AnnotationEditor::makeDraft(QPointF start)
     }
     if (m_tool == Tool::Mosaic || m_tool == Tool::Blur || m_tool == Tool::Eraser)
         s.width = std::max(m_style.width * 4, 16); // 画笔形状的刷子宽度
+    if (m_tool == Tool::Step || m_tool == Tool::Magnifier)
+        s.penStyle = m_tool == Tool::Magnifier ? m_style.penStyle : Qt::SolidLine;
     if (!a->usesFill())
         s.filled = false;
     a->setStyle(s);
@@ -330,6 +504,12 @@ void AnnotationEditor::updateDraft(QPointF raw)
             er->setRect(QRectF(m_dragStart, p));
     } else if (auto* rect = dynamic_cast<RectAnnotation*>(m_draft.get())) {
         rect->setBounds(QRectF(m_dragStart, p));
+    } else if (auto* step = dynamic_cast<StepAnnotation*>(m_draft.get())) {
+        // 拖离徽标一定距离：拖出指示箭头（ANN-35）
+        step->setTail((raw - m_dragStart).manhattanLength() >= kStepTailMin ? std::optional<QPointF>(raw) : std::nullopt);
+    } else if (auto* mag = dynamic_cast<MagnifierAnnotation*>(m_draft.get())) {
+        mag->setSource(QRectF(m_dragStart, p));
+        mag->setTarget(mag->source()); // 拖拽期间只显示源框
     }
     emit changed();
 }
@@ -342,11 +522,19 @@ void AnnotationEditor::commitDraft()
     const QRectF b = m_draft->bounds();
     const bool pointish = dynamic_cast<LineAnnotation*>(m_draft.get()) == nullptr && b.width() < 2 && b.height() < 2
         && m_draft->type() != QLatin1String("pencil") && m_draft->type() != QLatin1String("highlighter") && m_draft->type() != QLatin1String("effect")
-        && m_draft->type() != QLatin1String("eraser");
+        && m_draft->type() != QLatin1String("eraser") && m_draft->type() != QLatin1String("step");
     if (pointish) {
         m_draft.reset();
         emit changed();
         return;
+    }
+    if (auto* mag = dynamic_cast<MagnifierAnnotation*>(m_draft.get())) {
+        if (mag->source().width() < 4 || mag->source().height() < 4) {
+            m_draft.reset();
+            emit changed();
+            return;
+        }
+        mag->placeTarget(m_magnifierZoom, QRectF(QPointF(0, 0), QSizeF(m_doc.size())));
     }
     const int id = m_doc.add(std::move(m_draft));
     m_draft.reset();
@@ -420,6 +608,21 @@ QPointF AnnotationEditor::rotateHandleImage() const
     return t.map(QPointF(b.center().x(), b.top() - kRotateOffset));
 }
 
+QPointF AnnotationEditor::radiusHandleImage() const
+{
+    const auto* rect = dynamic_cast<const RectAnnotation*>(m_doc.find(m_selectedId));
+    if (!rect || !rect->supportsRadius() || !qFuzzyIsNull(rect->rotation()))
+        return kFar;
+    const QRectF b = rect->bounds();
+    return QPointF(b.left() + kRadiusHandleInset + rect->radius(), b.top());
+}
+
+bool AnnotationEditor::radiusHandleAt(QPointF p) const
+{
+    const QPointF r = radiusHandleImage();
+    return r.x() > -1e8 && std::abs(r.x() - p.x()) <= kHandleGrip && std::abs(r.y() - p.y()) <= kHandleGrip;
+}
+
 SelectionHandle AnnotationEditor::handleAt(QPointF p) const
 {
     const Annotation* a = m_doc.find(m_selectedId);
@@ -475,6 +678,12 @@ void AnnotationEditor::pressAt(QPointF p, Qt::MouseButton button, Qt::KeyboardMo
         if (rotateHandleAt(p)) {
             m_drag = DragMode::Rotate;
             m_beforeEdit = m_doc.find(m_selectedId)->clone();
+            return;
+        }
+        if (radiusHandleAt(p)) {
+            m_drag = DragMode::Radius;
+            m_beforeEdit = m_doc.find(m_selectedId)->clone();
+            m_editOrigin = m_doc.find(m_selectedId)->bounds();
             return;
         }
         const SelectionHandle h = handleAt(p);
@@ -574,6 +783,13 @@ void AnnotationEditor::moveTo(QPointF p)
         }
         break;
     }
+    case DragMode::Radius:
+        if (auto* rect = dynamic_cast<RectAnnotation*>(m_doc.find(m_selectedId))) {
+            rect->setRadius(std::clamp(p.x() - m_editOrigin.left() - kRadiusHandleInset, 0.0, std::min(m_editOrigin.width(), m_editOrigin.height()) / 2.0));
+            m_cornerRadius = rect->radius();
+            emit changed();
+        }
+        break;
     case DragMode::Rotate: {
         Annotation* a = m_doc.find(m_selectedId);
         if (a) {
@@ -627,6 +843,7 @@ void AnnotationEditor::releaseAt(QPointF p, Qt::MouseButton button)
     case DragMode::Move:
     case DragMode::Resize:
     case DragMode::Rotate:
+    case DragMode::Radius:
         if (m_beforeEdit)
             m_doc.commitModification(m_selectedId, std::move(m_beforeEdit));
         break;
@@ -643,10 +860,9 @@ void AnnotationEditor::doubleClickAt(QPointF p)
         finishDraft();
         return;
     }
-    if (Annotation* a = m_doc.hitTest(p, kHitTolerance); a && a->type() == QLatin1String("text")) {
+    if (Annotation* a = m_doc.hitTest(p, kHitTolerance); a && (a->type() == QLatin1String("text") || a->type() == QLatin1String("step"))) {
         select(a->id());
-        auto* text = static_cast<TextAnnotation*>(a);
-        startTextInput(text->position(), text);
+        startTextInput(a->bounds().topLeft(), a);
     }
 }
 
@@ -662,6 +878,21 @@ void AnnotationEditor::select(int id)
         m_style.fill = a->style().fill;
         m_style.width = a->style().width;
         m_style.filled = a->style().filled;
+        m_style.penStyle = a->style().penStyle;
+        if (const auto* rect = dynamic_cast<const RectAnnotation*>(a); rect && rect->supportsRadius())
+            m_cornerRadius = rect->radius();
+        if (const auto* line = dynamic_cast<const LineAnnotation*>(a); line && line->arrowEnd()) {
+            m_headStart = line->headStart();
+            m_headEnd = line->headEnd();
+        }
+        if (const auto* text = dynamic_cast<const TextAnnotation*>(a))
+            m_textDecor = text->decor();
+        if (const auto* mag = dynamic_cast<const MagnifierAnnotation*>(a)) {
+            m_magnifierZoom = mag->zoom();
+            m_magnifierShape = mag->shape();
+            m_magnifierInclude = mag->includeAnnotations();
+            m_magnifierShadow = mag->shadow();
+        }
     }
     emit selectionChanged(m_selectedId);
     emit changed();
@@ -669,10 +900,16 @@ void AnnotationEditor::select(int id)
 
 void AnnotationEditor::deleteSelected()
 {
-    if (m_selectedId >= 0) {
-        m_doc.remove(m_selectedId);
-        select(-1);
-    }
+    if (m_selectedId < 0)
+        return;
+    const auto* step = dynamic_cast<const StepAnnotation*>(m_doc.find(m_selectedId));
+    const int removedNumber = step ? step->number() : -1;
+    m_doc.undoStack().beginMacro(QStringLiteral("delete"));
+    m_doc.remove(m_selectedId);
+    if (removedNumber > 0)
+        renumberStepsAfterRemoval(removedNumber); // ANN-35：删除中间序号后递补
+    m_doc.undoStack().endMacro();
+    select(-1);
 }
 
 void AnnotationEditor::copySelected()
@@ -724,24 +961,28 @@ void AnnotationEditor::setTextHost(QWidget* host, QPointF hostTopLeft, qreal sca
     positionTextEdit();
 }
 
-void AnnotationEditor::startTextInput(QPointF p, TextAnnotation* existing)
+void AnnotationEditor::startTextInput(QPointF p, Annotation* existing)
 {
     cancelText();
     if (!m_textHost)
         return;
-    m_textPos = existing ? existing->position() : p;
+    const auto* text = dynamic_cast<const TextAnnotation*>(existing);
+    const auto* step = dynamic_cast<const StepAnnotation*>(existing);
+    m_textPos = text ? text->position() : step ? step->badgeRect().topRight() + QPointF(6, 0) : p;
     m_textEditingId = existing ? existing->id() : -1;
     auto* edit = new InlineTextEdit(this, m_textHost);
     m_textEdit = edit;
-    QFont f = existing ? existing->font() : m_textFont;
+    QFont f = text ? text->font() : step ? step->font() : m_textFont;
     // 输入框按逻辑像素显示：字号 / 缩放
     QFont widgetFont = f;
     widgetFont.setPixelSize(std::max(1, static_cast<int>(std::round(f.pixelSize() / m_hostScale))));
     edit->setFont(widgetFont);
     const QColor color = existing ? existing->style().stroke : m_style.stroke;
     edit->setStyleSheet(QStringLiteral("QPlainTextEdit { background: rgba(255,255,255,200); color: %1; border: 1px dashed #3078dc; }").arg(color.name(QColor::HexArgb)));
-    if (existing)
-        edit->setPlainText(existing->text());
+    if (text)
+        edit->setPlainText(text->text());
+    else if (step)
+        edit->setPlainText(step->text());
     connect(edit, &QPlainTextEdit::textChanged, this, [this] { positionTextEdit(); });
     positionTextEdit();
     edit->show();
@@ -774,7 +1015,11 @@ void AnnotationEditor::commitText()
     edit->deleteLater();
     if (m_textEditingId >= 0) {
         if (Annotation* a = m_doc.find(m_textEditingId)) {
-            if (text.trimmed().isEmpty()) {
+            if (auto* step = dynamic_cast<StepAnnotation*>(a)) {
+                auto before = step->clone();
+                step->setText(text.trimmed()); // 序号说明文字（ANN-35），可清空
+                m_doc.commitModification(m_textEditingId, std::move(before));
+            } else if (text.trimmed().isEmpty()) {
                 m_doc.remove(m_textEditingId);
                 select(-1);
             } else {
@@ -788,6 +1033,7 @@ void AnnotationEditor::commitText()
         t->setText(text);
         t->setPosition(m_textPos);
         t->setFont(m_textFont);
+        t->setDecor(m_textDecor);
         AnnotationStyle s = m_style;
         t->setStyle(s);
         const int id = m_doc.add(std::move(t));
@@ -856,6 +1102,13 @@ void AnnotationEditor::paint(QPainter& p, QPointF topLeft, qreal scale) const
         if (r.x() > -1e8) {
             const QPointF l = topLeft + r / scale;
             p.drawEllipse(l, 4, 4);
+        }
+        const QPointF rh = radiusHandleImage();
+        if (rh.x() > -1e8) {
+            // 圆角控制点（ANN-21）：黄色菱形
+            const QPointF l = topLeft + rh / scale;
+            p.setBrush(QColor(255, 200, 0));
+            p.drawPolygon(QPolygonF{l + QPointF(0, -5), l + QPointF(5, 0), l + QPointF(0, 5), l + QPointF(-5, 0)});
         }
         p.restore();
     }

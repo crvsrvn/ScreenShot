@@ -1,5 +1,6 @@
 #include "core/annotation/Annotation.h"
 
+#include "core/annotation/Extras.h"
 #include "core/annotation/Shapes.h"
 
 #include <QJsonArray>
@@ -89,6 +90,10 @@ std::unique_ptr<Annotation> createAnnotation(const QString& type)
         return std::make_unique<TextAnnotation>();
     if (type == QLatin1String("eraser"))
         return std::make_unique<EraserAnnotation>();
+    if (type == QLatin1String("step"))
+        return std::make_unique<StepAnnotation>();
+    if (type == QLatin1String("magnifier"))
+        return std::make_unique<MagnifierAnnotation>();
     return nullptr;
 }
 

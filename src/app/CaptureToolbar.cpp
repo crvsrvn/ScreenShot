@@ -4,6 +4,7 @@
 
 #include <QApplication>
 #include <QColorDialog>
+#include <QComboBox>
 #include <QFontComboBox>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -11,6 +12,7 @@
 #include <QSpinBox>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <cmath>
 #include <tuple>
 
 namespace ss {
@@ -38,7 +40,11 @@ const ToolDef kTools[] = {
     {AnnotationEditor::Tool::Blur, "blur", QT_TR_NOOP("Blur"), QT_TR_NOOP("Gaussian blur (Ctrl+7)")},
     {AnnotationEditor::Tool::Text, "text", QT_TR_NOOP("Text"), QT_TR_NOOP("Text (T); right-click to finish")},
     {AnnotationEditor::Tool::Eraser, "eraser", QT_TR_NOOP("Eraser"), QT_TR_NOOP("Eraser (Ctrl+8): erases annotations only")},
+    {AnnotationEditor::Tool::Step, "step", QT_TR_NOOP("Step"), QT_TR_NOOP("Step number (N): click to add, drag to add a pointer, double-click to add a note")},
+    {AnnotationEditor::Tool::Magnifier, "magnifier", QT_TR_NOOP("Magnify"), QT_TR_NOOP("Magnifier (M): drag the area to enlarge")},
 };
+
+const char* const kHeadNames[] = {"none", "triangle", "open", "dot", "bar"};
 
 } // namespace
 
@@ -211,7 +217,101 @@ void CaptureToolbar::buildOptions()
     fillLayout->setContentsMargins(0, 0, 0, 0);
     QToolButton* fill = addButton(m_fillRow, QStringLiteral("fill"), tr("Fill"), tr("Filled shape"), true);
     connect(fill, &QToolButton::clicked, this, [this](bool checked) { m_target->editor().setFilled(checked); });
+    fillLayout->addWidget(new QLabel(tr("Radius"), m_fillRow));
+    m_radius = new QSpinBox(m_fillRow);
+    m_radius->setObjectName(QStringLiteral("radius"));
+    m_radius->setRange(0, 500);
+    m_radius->setFocusPolicy(Qt::NoFocus);
+    connect(m_radius, &QSpinBox::valueChanged, this, [this](int v) {
+        if (!m_syncing)
+            m_target->editor().setCornerRadius(v);
+    });
+    fillLayout->addWidget(m_radius);
     row->addWidget(m_fillRow);
+
+    // 线型（ANN-21）
+    m_styleRow = new QWidget(m_options);
+    auto* styleLayout = new QHBoxLayout(m_styleRow);
+    styleLayout->setContentsMargins(0, 0, 0, 0);
+    for (const auto& [name, text, style] : QList<std::tuple<QString, QString, Qt::PenStyle>>{{QStringLiteral("style_solid"), tr("Solid"), Qt::SolidLine},
+                                                                                           {QStringLiteral("style_dash"), tr("Dash"), Qt::DashLine},
+                                                                                           {QStringLiteral("style_dot"), tr("Dot"), Qt::DotLine}}) {
+        QToolButton* b = addButton(m_styleRow, name, text, tr("Line style"), true);
+        const Qt::PenStyle s = style;
+        connect(b, &QToolButton::clicked, this, [this, s] {
+            m_target->editor().setPenStyle(s);
+            syncFromEditor();
+        });
+    }
+    row->addWidget(m_styleRow);
+
+    // 箭头样式（ANN-25）：起点 / 终点
+    m_arrowRow = new QWidget(m_options);
+    auto* arrowLayout = new QHBoxLayout(m_arrowRow);
+    arrowLayout->setContentsMargins(0, 0, 0, 0);
+    auto makeHeadCombo = [this, arrowLayout](const QString& name, const QString& label) {
+        arrowLayout->addWidget(new QLabel(label, m_arrowRow));
+        auto* combo = new QComboBox(m_arrowRow);
+        combo->setObjectName(name);
+        combo->setFocusPolicy(Qt::NoFocus);
+        combo->addItems({tr("None"), tr("Triangle"), tr("Open"), tr("Dot"), tr("Bar")});
+        arrowLayout->addWidget(combo);
+        connect(combo, &QComboBox::currentIndexChanged, this, [this] {
+            if (m_syncing)
+                return;
+            m_target->editor().setArrowHeads(LineAnnotation::headFromName(QLatin1String(kHeadNames[m_arrowStart->currentIndex()])),
+                                             LineAnnotation::headFromName(QLatin1String(kHeadNames[m_arrowEnd->currentIndex()])));
+        });
+        return combo;
+    };
+    m_arrowStart = makeHeadCombo(QStringLiteral("arrowStart"), tr("Start"));
+    m_arrowEnd = makeHeadCombo(QStringLiteral("arrowEnd"), tr("End"));
+    row->addWidget(m_arrowRow);
+
+    // 序号（ANN-35）
+    m_stepRow = new QWidget(m_options);
+    auto* stepLayout = new QHBoxLayout(m_stepRow);
+    stepLayout->setContentsMargins(0, 0, 0, 0);
+    m_stepStyle = new QComboBox(m_stepRow);
+    m_stepStyle->setObjectName(QStringLiteral("stepStyle"));
+    m_stepStyle->setFocusPolicy(Qt::NoFocus);
+    m_stepStyle->addItems({tr("1, 2, 3"), tr("A, B, C"), tr("I, II, III")});
+    connect(m_stepStyle, &QComboBox::currentIndexChanged, this, [this](int idx) {
+        if (!m_syncing)
+            m_target->editor().setStepStyle(static_cast<StepAnnotation::NumberStyle>(idx));
+    });
+    stepLayout->addWidget(m_stepStyle);
+    stepLayout->addWidget(new QLabel(tr("Value"), m_stepRow));
+    m_stepValue = new QSpinBox(m_stepRow);
+    m_stepValue->setObjectName(QStringLiteral("stepValue"));
+    m_stepValue->setRange(1, 9999);
+    m_stepValue->setFocusPolicy(Qt::NoFocus);
+    connect(m_stepValue, &QSpinBox::valueChanged, this, [this](int v) {
+        if (!m_syncing)
+            m_target->editor().setStepNumber(v);
+    });
+    stepLayout->addWidget(m_stepValue);
+    row->addWidget(m_stepRow);
+
+    // 放大（ANN-37）
+    m_magnifierRow = new QWidget(m_options);
+    auto* magLayout = new QHBoxLayout(m_magnifierRow);
+    magLayout->setContentsMargins(0, 0, 0, 0);
+    magLayout->addWidget(new QLabel(tr("Zoom"), m_magnifierRow));
+    m_zoom = new QSpinBox(m_magnifierRow);
+    m_zoom->setObjectName(QStringLiteral("zoom"));
+    m_zoom->setRange(1, 8);
+    m_zoom->setFocusPolicy(Qt::NoFocus);
+    connect(m_zoom, &QSpinBox::valueChanged, this, [this](int v) {
+        if (!m_syncing)
+            m_target->editor().setMagnifierZoom(v);
+    });
+    magLayout->addWidget(m_zoom);
+    QToolButton* includeBelow = addButton(m_magnifierRow, QStringLiteral("includeBelow"), tr("With annotations"), tr("Magnify the annotations underneath too"), true);
+    connect(includeBelow, &QToolButton::clicked, this, [this](bool on) { m_target->editor().setMagnifierIncludeAnnotations(on); });
+    QToolButton* magShadow = addButton(m_magnifierRow, QStringLiteral("magShadow"), tr("Shadow"), tr("Drop shadow under the magnified area"), true);
+    connect(magShadow, &QToolButton::clicked, this, [this](bool on) { m_target->editor().setMagnifierShadow(on); });
+    row->addWidget(m_magnifierRow);
 
     // 形状（荧光笔 / 效果 / 橡皮擦）
     m_shapeRow = new QWidget(m_options);
@@ -227,6 +327,8 @@ void CaptureToolbar::buildOptions()
                 e.setHighlighterShape(idx == 0 ? HighlighterAnnotation::Shape::Brush : HighlighterAnnotation::Shape::Rect);
             else if (e.tool() == AnnotationEditor::Tool::Eraser)
                 e.setEraserShape(static_cast<EraserAnnotation::Shape>(idx));
+            else if (e.tool() == AnnotationEditor::Tool::Magnifier)
+                e.setMagnifierShape(idx == 2 ? MagnifierAnnotation::Shape::Ellipse : MagnifierAnnotation::Shape::Rect);
             else
                 e.setEffectShape(static_cast<EffectAnnotation::Shape>(idx));
             syncFromEditor();
@@ -267,6 +369,23 @@ void CaptureToolbar::buildOptions()
     QToolButton* italic = addButton(m_textRow, QStringLiteral("italic"), tr("I"), tr("Italic"), true);
     textLayout->insertWidget(0, m_fontCombo);
     textLayout->insertWidget(1, m_fontSize);
+    // 文字装饰（ANN-33）
+    for (const auto& [name, text, tip] : QList<std::tuple<QString, QString, QString>>{{QStringLiteral("outline"), tr("Outline"), tr("Outline the text")},
+                                                                                     {QStringLiteral("background"), tr("Background"), tr("Fill a box behind the text")},
+                                                                                     {QStringLiteral("textShadow"), tr("Shadow"), tr("Drop shadow under the text")}}) {
+        QToolButton* b = addButton(m_textRow, name, text, tip, true);
+        const QString n = name;
+        connect(b, &QToolButton::clicked, this, [this, n](bool on) {
+            TextDecor d = m_target->editor().textDecor();
+            if (n == QLatin1String("outline"))
+                d.outline = on;
+            else if (n == QLatin1String("background"))
+                d.background = on;
+            else
+                d.shadow = on;
+            m_target->editor().setTextDecor(d);
+        });
+    }
     auto applyFont = [this, bold, italic] {
         if (m_syncing)
             return;
@@ -310,10 +429,36 @@ void CaptureToolbar::syncFromEditor()
     if (showOptions) {
         refreshColorButtons();
         m_width->setValue(e.style().width);
+        const Annotation* selected = e.document().find(e.selectedId());
+        const QString selectedType = selected ? selected->type() : QString();
         m_fillRow->setVisible(tool == AnnotationEditor::Tool::Rect || tool == AnnotationEditor::Tool::Ellipse);
         if (auto* fill = m_fillRow->findChild<QToolButton*>(QStringLiteral("fill")))
             fill->setChecked(e.style().filled);
-        const bool shapes = tool == AnnotationEditor::Tool::Highlighter || tool == AnnotationEditor::Tool::Mosaic || tool == AnnotationEditor::Tool::Blur || tool == AnnotationEditor::Tool::Eraser;
+        const bool radius = tool == AnnotationEditor::Tool::Rect || selectedType == QLatin1String("rect");
+        m_radius->setVisible(radius);
+        m_fillRow->findChild<QLabel*>()->setVisible(radius);
+        m_radius->setValue(static_cast<int>(std::round(e.cornerRadius())));
+        const bool styles = tool == AnnotationEditor::Tool::Rect || tool == AnnotationEditor::Tool::Ellipse || tool == AnnotationEditor::Tool::Line || tool == AnnotationEditor::Tool::Arrow
+            || tool == AnnotationEditor::Tool::Pencil || tool == AnnotationEditor::Tool::Magnifier;
+        m_styleRow->setVisible(styles);
+        m_styleRow->findChild<QToolButton*>(QStringLiteral("style_solid"))->setChecked(e.style().penStyle == Qt::SolidLine);
+        m_styleRow->findChild<QToolButton*>(QStringLiteral("style_dash"))->setChecked(e.style().penStyle == Qt::DashLine);
+        m_styleRow->findChild<QToolButton*>(QStringLiteral("style_dot"))->setChecked(e.style().penStyle == Qt::DotLine);
+        m_arrowRow->setVisible(tool == AnnotationEditor::Tool::Arrow || tool == AnnotationEditor::Tool::Line);
+        m_arrowStart->setCurrentIndex(static_cast<int>(e.arrowHeadStart()));
+        m_arrowEnd->setCurrentIndex(static_cast<int>(e.arrowHeadEnd()));
+        m_stepRow->setVisible(tool == AnnotationEditor::Tool::Step || selectedType == QLatin1String("step"));
+        m_stepStyle->setCurrentIndex(static_cast<int>(e.stepStyle()));
+        m_stepValue->setVisible(selectedType == QLatin1String("step"));
+        m_stepRow->findChild<QLabel*>()->setVisible(selectedType == QLatin1String("step"));
+        if (const auto* step = dynamic_cast<const StepAnnotation*>(selected))
+            m_stepValue->setValue(step->number());
+        m_magnifierRow->setVisible(tool == AnnotationEditor::Tool::Magnifier || selectedType == QLatin1String("magnifier"));
+        m_zoom->setValue(static_cast<int>(std::round(e.magnifierZoom())));
+        m_magnifierRow->findChild<QToolButton*>(QStringLiteral("includeBelow"))->setChecked(e.magnifierIncludeAnnotations());
+        m_magnifierRow->findChild<QToolButton*>(QStringLiteral("magShadow"))->setChecked(e.magnifierShadow());
+        const bool shapes = tool == AnnotationEditor::Tool::Highlighter || tool == AnnotationEditor::Tool::Mosaic || tool == AnnotationEditor::Tool::Blur || tool == AnnotationEditor::Tool::Eraser
+            || tool == AnnotationEditor::Tool::Magnifier;
         m_shapeRow->setVisible(shapes);
         if (shapes) {
             int idx = 0;
@@ -321,21 +466,27 @@ void CaptureToolbar::syncFromEditor()
                 idx = e.highlighterShape() == HighlighterAnnotation::Shape::Brush ? 0 : 1;
             else if (tool == AnnotationEditor::Tool::Eraser)
                 idx = static_cast<int>(e.eraserShape());
+            else if (tool == AnnotationEditor::Tool::Magnifier)
+                idx = e.magnifierShape() == MagnifierAnnotation::Shape::Ellipse ? 2 : 1;
             else
                 idx = static_cast<int>(e.effectShape());
             m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_brush"))->setChecked(idx == 0);
             m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_rect"))->setChecked(idx == 1);
             m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_ellipse"))->setChecked(idx == 2);
             m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_ellipse"))->setVisible(tool != AnnotationEditor::Tool::Highlighter);
+            m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_brush"))->setVisible(tool != AnnotationEditor::Tool::Magnifier);
         }
         m_strengthRow->setVisible(tool == AnnotationEditor::Tool::Mosaic || tool == AnnotationEditor::Tool::Blur);
         m_strength->setValue(e.effectStrength());
-        m_textRow->setVisible(tool == AnnotationEditor::Tool::Text);
-        if (tool == AnnotationEditor::Tool::Text) {
+        m_textRow->setVisible(tool == AnnotationEditor::Tool::Text || selectedType == QLatin1String("text"));
+        if (m_textRow->isVisibleTo(m_options)) {
             m_fontCombo->setCurrentFont(e.textFont());
             m_fontSize->setValue(std::max(6, e.textFont().pixelSize()));
             m_textRow->findChild<QToolButton*>(QStringLiteral("bold"))->setChecked(e.textFont().bold());
             m_textRow->findChild<QToolButton*>(QStringLiteral("italic"))->setChecked(e.textFont().italic());
+            m_textRow->findChild<QToolButton*>(QStringLiteral("outline"))->setChecked(e.textDecor().outline);
+            m_textRow->findChild<QToolButton*>(QStringLiteral("background"))->setChecked(e.textDecor().background);
+            m_textRow->findChild<QToolButton*>(QStringLiteral("textShadow"))->setChecked(e.textDecor().shadow);
         }
     }
     adjustSize();

@@ -21,9 +21,14 @@ public:
     std::unique_ptr<Annotation> clone() const override { return std::make_unique<RectAnnotation>(*this); }
     QJsonObject toJson() const override;
     void readJson(const QJsonObject& o) override;
+    // 圆角（ANN-21）：半径像素，限制在短边一半以内
+    void setRadius(double r) { m_radius = std::max(0.0, r); }
+    double radius() const { return std::min(m_radius, std::min(m_rect.width(), m_rect.height()) / 2.0); }
+    virtual bool supportsRadius() const { return true; }
 
 protected:
     QRectF m_rect;
+    double m_radius = 0;
 };
 
 class EllipseAnnotation : public RectAnnotation {
@@ -32,11 +37,13 @@ public:
     bool hitTest(QPointF p, double tolerance) const override;
     void paint(QPainter& p, const RenderContext&) const override;
     std::unique_ptr<Annotation> clone() const override { return std::make_unique<EllipseAnnotation>(*this); }
+    bool supportsRadius() const override { return false; }
 };
 
-// 折线 / 箭头（ANN-23、ANN-25 基础）：points 至少两个；arrowEnd 画箭头
+// 折线 / 箭头（ANN-23、ANN-25）：points 至少两个；起点与终点各自的箭头样式
 class LineAnnotation : public Annotation {
 public:
+    enum class Head { None, Triangle, Open, Dot, Bar };
     QString type() const override { return QStringLiteral("line"); }
     QRectF bounds() const override;
     void setBounds(const QRectF& r) override;
@@ -50,16 +57,23 @@ public:
 
     QList<QPointF>& points() { return m_points; }
     const QList<QPointF>& points() const { return m_points; }
-    void setArrow(bool start, bool end) { m_arrowStart = start; m_arrowEnd = end; }
-    bool arrowEnd() const { return m_arrowEnd; }
-    bool arrowStart() const { return m_arrowStart; }
+    void setArrow(bool start, bool end) { m_headStart = start ? Head::Triangle : Head::None; m_headEnd = end ? Head::Triangle : Head::None; }
+    void setHeads(Head start, Head end) { m_headStart = start; m_headEnd = end; }
+    bool arrowEnd() const { return m_headEnd != Head::None; }
+    bool arrowStart() const { return m_headStart != Head::None; }
+    Head headStart() const { return m_headStart; }
+    Head headEnd() const { return m_headEnd; }
 
     static QPainterPath arrowHead(QPointF from, QPointF to, double width);
+    static QString headName(Head h);
+    static Head headFromName(const QString& name);
 
 private:
+    // 画一个端点的箭头；返回线条应缩短的长度
+    double paintHead(QPainter& p, Head head, QPointF from, QPointF to) const;
     QList<QPointF> m_points;
-    bool m_arrowStart = false;
-    bool m_arrowEnd = false;
+    Head m_headStart = Head::None;
+    Head m_headEnd = Head::None;
 };
 
 // 铅笔（ANN-27）：自由路径；smooth=true 时用二次贝塞尔平滑
@@ -146,6 +160,23 @@ private:
     int m_strength = 30;
 };
 
+// 文字装饰（ANN-33）：描边、背景、投影
+struct TextDecor {
+    bool outline = false;
+    QColor outlineColor;      // 无效颜色 = 自动取与文字对比的黑 / 白
+    int outlineWidth = 2;
+    bool background = false;
+    QColor backgroundColor = QColor(255, 255, 255, 200);
+    int backgroundRadius = 4;
+    int backgroundPadding = 6;
+    bool shadow = false;
+    QColor shadowColor = QColor(0, 0, 0, 128);
+    QPointF shadowOffset = QPointF(2, 2);
+    bool operator==(const TextDecor&) const = default;
+    QJsonObject toJson() const;
+    static TextDecor fromJson(const QJsonObject& o);
+};
+
 // 文字（ANN-32）：字体、字号、颜色、粗体、斜体；可旋转、可缩放（按包围盒缩放字号）
 class TextAnnotation : public Annotation {
 public:
@@ -166,11 +197,15 @@ public:
     void setPosition(QPointF p) { m_pos = p; } // 左上角
     QPointF position() const { return m_pos; }
     QSizeF textSize() const;
+    void setDecor(const TextDecor& d) { m_decor = d; }
+    const TextDecor& decor() const { return m_decor; }
 
 private:
+    double padding() const { return m_decor.background ? m_decor.backgroundPadding : 0.0; }
     QString m_text;
     QFont m_font{QStringLiteral("Microsoft YaHei"), 16};
     QPointF m_pos;
+    TextDecor m_decor;
 };
 
 // 橡皮擦（ANN-36）：画笔、矩形、椭圆形状，只擦标注不擦底图；擦除区域可二次编辑

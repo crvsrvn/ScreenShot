@@ -54,6 +54,28 @@ void CaptureSession::setTool(AnnotationEditor::Tool tool)
     updateOverlays();
 }
 
+bool CaptureSession::snapAnnotationToElement(QPoint physical)
+{
+    using Tool = AnnotationEditor::Tool;
+    const Tool tool = m_editor.tool();
+    if (tool != Tool::Rect && tool != Tool::Ellipse && tool != Tool::Mosaic && tool != Tool::Blur && tool != Tool::Highlighter)
+        return false;
+    if (!m_selection.contains(physical))
+        return false;
+    std::optional<QRect> rect;
+    if (m_elements)
+        rect = m_elements->elementAt(physical, std::chrono::milliseconds(300));
+    if (!rect)
+        if (const auto w = m_windowFinder.windowAt(physical))
+            rect = w->frame;
+    if (!rect)
+        return false;
+    const QRect clipped = rect->intersected(m_selection);
+    if (clipped.isEmpty())
+        return false;
+    return m_editor.createFromRect(QRectF(clipped.translated(-m_selection.topLeft())));
+}
+
 void CaptureSession::leaveAnnotating()
 {
     if (m_state != State::Annotating)
@@ -126,6 +148,18 @@ bool CaptureSession::handleAnnotationKey(QKeyEvent* e)
     case Qt::Key_B:
         if (!ctrl) {
             m_editor.setTool(AnnotationEditor::Tool::Pencil);
+            return true;
+        }
+        break;
+    case Qt::Key_N:
+        if (!ctrl) {
+            m_editor.setTool(AnnotationEditor::Tool::Step);
+            return true;
+        }
+        break;
+    case Qt::Key_M:
+        if (!ctrl) {
+            m_editor.setTool(AnnotationEditor::Tool::Magnifier);
             return true;
         }
         break;
@@ -639,6 +673,8 @@ void CaptureSession::pressAt(QPoint physical, Qt::MouseButton button)
     m_cursor = physical;
     if (m_state == State::Annotating) {
         if (button == Qt::RightButton && !m_editor.hasDraft() && m_editor.selectedId() < 0 && !m_editor.textEditing()) {
+            if (snapAnnotationToElement(physical)) // ANN-11：右键自动框出鼠标下的 UI 元素
+                return;
             leaveAnnotating(); // 右键结束当前图形 → 已选定
             return;
         }
@@ -812,8 +848,8 @@ bool CaptureSession::handleKeyPress(QKeyEvent* e)
         setTool(tools[key - Qt::Key_1]);
         return true;
     }
-    if (!ctrl && (key == Qt::Key_T || key == Qt::Key_B) && (m_state == State::Selected || m_state == State::History)) {
-        setTool(key == Qt::Key_T ? AnnotationEditor::Tool::Text : AnnotationEditor::Tool::Pencil);
+    if (!ctrl && (key == Qt::Key_T || key == Qt::Key_B || key == Qt::Key_N || key == Qt::Key_M) && (m_state == State::Selected || m_state == State::History)) {
+        setTool(key == Qt::Key_T ? AnnotationEditor::Tool::Text : key == Qt::Key_B ? AnnotationEditor::Tool::Pencil : key == Qt::Key_N ? AnnotationEditor::Tool::Step : AnnotationEditor::Tool::Magnifier);
         return true;
     }
     switch (key) {

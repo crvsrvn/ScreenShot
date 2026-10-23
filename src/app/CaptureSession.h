@@ -199,6 +199,7 @@ private:
     QRect screenRectAt(QPoint physical) const;
 
     bool handleAnnotationKey(QKeyEvent* e);
+    bool snapAnnotationToElement(QPoint physical); // ANN-11
     QPointF toImage(QPoint physical) const { return QPointF(physical - m_selection.topLeft()); }
     bool startWithSnapshots(qint64 triggerNs, QList<ScreenSnapshot> snapshots, bool showOverlays);
     QRect applyRatio(const QRect& r, SelectionHandle handle) const;

@@ -24,6 +24,7 @@ qt_add_library(screenshot_core STATIC
     capture/WindowFinder.h capture/WindowFinder.cpp
     annotation/Annotation.h annotation/Annotation.cpp
     annotation/Shapes.h annotation/Shapes.cpp
+    annotation/Extras.h annotation/Extras.cpp
     annotation/AnnotationDocument.h annotation/AnnotationDocument.cpp
     pin/TextPin.h pin/TextPin.cpp
     stitch/Stitcher.h stitch/Stitcher.cpp

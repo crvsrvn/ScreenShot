@@ -26,6 +26,7 @@ struct AnnotationStyle {
 // 渲染上下文：标注画在“下层内容”之上；马赛克 / 模糊 / 荧光笔正片叠底需要读取下层像素
 struct RenderContext {
     const QImage* below = nullptr; // 已包含底图与更早标注的画布（与 painter 的设备一致，坐标为图像像素）
+    const QImage* base = nullptr;  // 纯底图（不含任何标注）；放大标注“不包含下层标注”时读取
 };
 
 // 标注基类：矢量对象，坐标为图像像素（选区内，左上角为原点），每种标注只实现一个 paint（NFR-08）。

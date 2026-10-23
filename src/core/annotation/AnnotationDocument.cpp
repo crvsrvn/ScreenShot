@@ -216,6 +216,7 @@ void AnnotationDocument::paintItem(QPainter& painter, const Annotation& item, co
 {
     RenderContext ctx;
     ctx.below = &below;
+    ctx.base = &m_base;
     item.paint(painter, ctx);
 }
 
@@ -239,6 +240,7 @@ QImage AnnotationDocument::render(int excludeId) const
         }
         RenderContext ctx;
         ctx.below = &out; // 同一画布：效果类标注读取当前已画内容（含更早的标注）
+        ctx.base = &m_base;
         item.paint(p, ctx);
     }
     return out;
