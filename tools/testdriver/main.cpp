@@ -9,6 +9,7 @@
 
 #include <QCoreApplication>
 #include <QCommandLineParser>
+#include <QDir>
 #include <QProcess>
 #include <QThread>
 #include <cstdio>
@@ -72,9 +73,11 @@ int main(int argc, char* argv[])
     options.only = parser.value(onlyOpt);
 
     const QString pipeName = QStringLiteral("e2e-%1").arg(QCoreApplication::applicationPid());
+    options.channel = QStringLiteral("e2e-%1").arg(QCoreApplication::applicationPid());
+    const QString configPath = QDir::temp().filePath(QStringLiteral("screenshot-e2e-%1.json").arg(QCoreApplication::applicationPid()));
     QProcess proc;
     proc.setProgram(options.appPath);
-    proc.setArguments({QStringLiteral("--test-pipe"), pipeName});
+    proc.setArguments({QStringLiteral("--test-pipe"), pipeName, QStringLiteral("--channel"), options.channel, QStringLiteral("--config"), configPath});
     proc.setProcessChannelMode(QProcess::ForwardedChannels);
     proc.start();
     if (!proc.waitForStarted(10000)) {

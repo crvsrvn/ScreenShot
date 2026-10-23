@@ -33,6 +33,18 @@ ss_add_qtest(tst_capturecore unit/tst_capturecore.cpp unit)
 ss_add_qtest(tst_capturesession component/tst_capturesession.cpp component)
 ss_add_qtest(tst_overlay component/tst_overlay.cpp component)
 ss_add_qtest(tst_pinwindow component/tst_pinwindow.cpp component)
+ss_add_qtest(tst_app component/tst_app.cpp component)
+ss_add_qtest(tst_preferences component/tst_preferences.cpp component)
+ss_add_qtest(tst_i18n component/tst_i18n.cpp component)
+set_property(TEST tst_i18n APPEND PROPERTY ENVIRONMENT "SS_TRANSLATIONS_DIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/translations" "SS_SOURCE_DIR=${CMAKE_SOURCE_DIR}")
+add_dependencies(tst_i18n screenshot_translations)
+if(WIN32)
+    ss_add_qtest(tst_winsystem unit/tst_winsystem.cpp unit)
+    target_link_libraries(tst_winsystem PRIVATE platform_windows)
+elseif(APPLE)
+    ss_add_qtest(tst_mac_permissions macos/tst_mac_permissions.cpp unit)
+    target_link_libraries(tst_mac_permissions PRIVATE platform_macos)
+endif()
 
 # 端到端：测试驱动启动真实程序（需要桌面会话）
 add_test(NAME e2e_m0

@@ -18,8 +18,11 @@
 #include <QScreen>
 #include <QSystemTrayIcon>
 
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN)
 #include "platform/windows/WinSystem.h"
+#elif defined(Q_OS_MACOS)
+#include "platform/macos/MacPermissions.h"
+#include <QPushButton>
 #endif
 
 namespace ss {
@@ -66,12 +69,30 @@ App::App(Platform platform, Settings& settings, QObject* parent)
 App::~App()
 {
     closeAllPins();
+    delete m_trayMenu;
+}
+
+void App::checkPermissions()
+{
+#ifdef Q_OS_MACOS
+    // 未经真机验证：缺少屏幕录制权限时截图不可用，引导用户授权并提供打开设置的入口
+    if (!mac::hasScreenRecordingPermission()) {
+        mac::requestScreenRecordingPermission();
+        QMessageBox box(QMessageBox::Information, tr("Screen recording permission"),
+                        tr("ScreenShot needs the Screen Recording permission to capture the screen. Grant it in System Settings, then restart ScreenShot."));
+        QPushButton* open = box.addButton(tr("Open System Settings"), QMessageBox::ActionRole);
+        box.addButton(QMessageBox::Close);
+        box.exec();
+        if (box.clickedButton() == open)
+            mac::openScreenRecordingSettings();
+    }
+    if (!mac::hasAccessibilityPermission())
+        mac::requestAccessibilityPermission(true); // 元素检测与模拟输入降级，提示由系统弹出
+#endif
 }
 
 void App::setupTray()
 {
-    if (!QSystemTrayIcon::isSystemTrayAvailable())
-        return;
     m_trayMenu = new QMenu();
     m_trayMenu->addAction(tr("Capture\tF1"), this, [this] { startCapture(monotonicNs()); });
     m_trayMenu->addAction(tr("Pin clipboard\tF3"), this, &App::pinFromClipboard);
@@ -85,6 +106,8 @@ void App::setupTray()
     m_trayMenu->addAction(tr("Help"), this, &App::showAbout);
     m_trayMenu->addSeparator();
     m_trayMenu->addAction(tr("Quit"), this, &App::quit);
+    if (!QSystemTrayIcon::isSystemTrayAvailable())
+        return;
     m_tray = new QSystemTrayIcon(makeTrayIcon(), this);
     m_tray->setToolTip(QStringLiteral("ScreenShot"));
     m_tray->setContextMenu(m_trayMenu);

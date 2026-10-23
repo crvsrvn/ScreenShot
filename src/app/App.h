@@ -47,6 +47,11 @@ public:
     void runCommand(const QStringList& command);
     // 启动时提示上次崩溃（GEN-09）
     void notifyCrashDumps(const QStringList& dumps);
+    // 托盘菜单与点击映射（GEN-02、GEN-03）；菜单在没有系统托盘时也会构建，便于测试
+    QMenu* trayMenu() const { return m_trayMenu; }
+    void trayActivated(int reason);
+    // macOS 首次运行权限引导（GEN-14）；其他平台无操作
+    void checkPermissions();
 
 public slots:
     void startCapture(qint64 triggerNs);
@@ -66,7 +71,6 @@ private:
     void registerHotkeys();
     void applySetting(const QString& key);
     void onCaptured(const QImage& image, const QRect& physicalRegion);
-    void trayActivated(int reason);
 
     Platform m_platform;
     Settings& m_settings;

@@ -14,6 +14,7 @@ struct Options {
     QString reportPath;
     bool quick = false;      // 缩短耗时项（迭代次数、空闲等待）
     QString only;            // 只运行某个场景（如 R-02）
+    QString channel;         // 被测程序的单实例通道名
 };
 
 // 一个场景的结论
@@ -53,6 +54,8 @@ private:
     ScenarioResult r16FakeMultiScreen();
     ScenarioResult r17QmlNetworkDependency();
     ScenarioResult hotkeyEndToEnd();
+    ScenarioResult m1CaptureFlow();     // 框选 → 快速保存 → 文件与选区一致
+    ScenarioResult m1SingleInstance();  // 第二个实例把 snip 转交给运行中的实例
 
     // 每个场景开始前把程序恢复到空闲状态（取消截图、关闭贴图）
     void resetApp();

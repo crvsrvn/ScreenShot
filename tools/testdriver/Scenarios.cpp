@@ -14,6 +14,8 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QJsonDocument>
+#include <QProcess>
+#include <QTemporaryDir>
 #include <QThread>
 #include <algorithm>
 #include <cstdio>
@@ -156,7 +158,8 @@ QList<ScenarioResult> Runner::runAll()
     // R-08 紧跟 R-01：在干净的空闲状态测内存；需要真实输入的场景在锁屏时跳过
     const QStringList ids{QStringLiteral("R-01"), QStringLiteral("R-08"), QStringLiteral("R-16"), QStringLiteral("R-02"),
                           QStringLiteral("R-03"), QStringLiteral("HOTKEY"), QStringLiteral("R-06"), QStringLiteral("R-05"),
-                          QStringLiteral("R-07"), QStringLiteral("R-09"), QStringLiteral("R-11"), QStringLiteral("R-17")};
+                          QStringLiteral("R-07"), QStringLiteral("R-09"), QStringLiteral("R-11"), QStringLiteral("R-17"),
+                          QStringLiteral("M1-FLOW"), QStringLiteral("M1-INSTANCE")};
     QList<ScenarioResult> results;
     logLine(QStringLiteral("交互桌面：%1").arg(desktopUnlocked() ? QStringLiteral("可用") : QStringLiteral("锁屏中，真实输入场景将跳过")));
     for (const auto& id : ids) {
@@ -187,6 +190,8 @@ ScenarioResult Runner::run(const QString& id)
     if (id == QStringLiteral("R-16")) return r16FakeMultiScreen();
     if (id == QStringLiteral("R-17")) return r17QmlNetworkDependency();
     if (id == QStringLiteral("HOTKEY")) return hotkeyEndToEnd();
+    if (id == QStringLiteral("M1-FLOW")) return m1CaptureFlow();
+    if (id == QStringLiteral("M1-INSTANCE")) return m1SingleInstance();
     ScenarioResult r;
     r.id = id;
     r.summary = QStringLiteral("未知场景");
@@ -562,6 +567,76 @@ ScenarioResult Runner::r17QmlNetworkDependency()
     r.passed = true; // 只记录结论，决定脚本引擎方案
     r.summary = dependsOnNetwork ? QStringLiteral("Qt6Qml.dll 导入了 Qt6Network.dll → 维持 QuickJS-ng 方案")
                                  : QStringLiteral("Qt6Qml.dll 不直接导入 Qt6Network.dll（导入：%1）").arg(imports.join(QStringLiteral(", ")));
+    return r;
+}
+
+ScenarioResult Runner::m1CaptureFlow()
+{
+    // REQ: CAP-01 CAP-10 CAP-40 OUT-08 GEN-09
+    ScenarioResult r{QStringLiteral("M1-FLOW"), QStringLiteral("M1：真实桌面上框选、快速保存、历史")};
+    QTemporaryDir dir;
+    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("output.quickSaveDir")}, {QStringLiteral("value"), dir.path()}});
+    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("output.fileNamePattern")}, {QStringLiteral("value"), QStringLiteral("e2e_{n}")}});
+    if (!m_client.call(QStringLiteral("capture")).value(QStringLiteral("ok")).toBool()) {
+        r.summary = QStringLiteral("capture 失败");
+        return r;
+    }
+    const auto screens = win::enumerateScreens();
+    const QRect g = screens.first().physicalGeometry;
+    const QPoint a = g.topLeft() + QPoint(200, 200), b = g.topLeft() + QPoint(519, 439);
+    m_client.call(QStringLiteral("mouse"), {{QStringLiteral("action"), QStringLiteral("press")}, {QStringLiteral("x"), a.x()}, {QStringLiteral("y"), a.y()}});
+    m_client.call(QStringLiteral("mouse"), {{QStringLiteral("action"), QStringLiteral("move")}, {QStringLiteral("x"), a.x() + 50}, {QStringLiteral("y"), a.y() + 50}});
+    m_client.call(QStringLiteral("mouse"), {{QStringLiteral("action"), QStringLiteral("release")}, {QStringLiteral("x"), b.x()}, {QStringLiteral("y"), b.y()}});
+    const QJsonObject st = m_client.call(QStringLiteral("state"));
+    const QJsonObject sel = st.value(QStringLiteral("selection")).toObject();
+    const QRect got(sel.value(QStringLiteral("x")).toInt(), sel.value(QStringLiteral("y")).toInt(), sel.value(QStringLiteral("w")).toInt(), sel.value(QStringLiteral("h")).toInt());
+    const bool selOk = got == QRect(a, b) && st.value(QStringLiteral("state")).toString() == QLatin1String("selected") && st.value(QStringLiteral("toolbarVisible")).toBool();
+    // 锚点拖动：右下角再拉 10 像素
+    m_client.call(QStringLiteral("mouse"), {{QStringLiteral("action"), QStringLiteral("press")}, {QStringLiteral("x"), b.x()}, {QStringLiteral("y"), b.y()}});
+    m_client.call(QStringLiteral("mouse"), {{QStringLiteral("action"), QStringLiteral("move")}, {QStringLiteral("x"), b.x() + 10}, {QStringLiteral("y"), b.y() + 10}});
+    m_client.call(QStringLiteral("mouse"), {{QStringLiteral("action"), QStringLiteral("release")}, {QStringLiteral("x"), b.x() + 10}, {QStringLiteral("y"), b.y() + 10}});
+    const QJsonObject sel2 = m_client.call(QStringLiteral("state")).value(QStringLiteral("selection")).toObject();
+    const bool resizeOk = sel2.value(QStringLiteral("w")).toInt() == 330 && sel2.value(QStringLiteral("h")).toInt() == 250;
+    // 当前图像与 GDI 参照比对，然后快速保存
+    const QString cur = tempPng(QStringLiteral("m1-current"));
+    m_client.call(QStringLiteral("currentImage"), {{QStringLiteral("path"), cur}});
+    const QImage out(cur);
+    const QImage ref = win::GdiScreenCapture::captureRect(QRect(a, QSize(330, 250)));
+    const auto cmp = testing::compareImages(out, ref, testing::CompareOptions{0, static_cast<qint64>(330) * 250 / 50});
+    m_client.call(QStringLiteral("key"), {{QStringLiteral("key"), QStringLiteral("Ctrl+Shift+S")}});
+    const QJsonObject after = m_client.call(QStringLiteral("state"));
+    const QString saved = QDir(dir.path()).filePath(QStringLiteral("e2e_1.png"));
+    const bool savedOk = QFile::exists(saved) && QImage(saved).size() == QSize(330, 250) && !after.value(QStringLiteral("capturing")).toBool()
+        && after.value(QStringLiteral("historySize")).toInt() >= 1;
+    // 历史回放
+    m_client.call(QStringLiteral("capture"));
+    m_client.call(QStringLiteral("key"), {{QStringLiteral("key"), QStringLiteral(",")}});
+    const QJsonObject hist = m_client.call(QStringLiteral("state"));
+    const bool histOk = hist.value(QStringLiteral("state")).toString() == QLatin1String("history") && hist.value(QStringLiteral("selection")).toObject().value(QStringLiteral("w")).toInt() == 330;
+    m_client.call(QStringLiteral("cancelCapture"));
+    r.data = QJsonObject{{QStringLiteral("selectionOk"), selOk}, {QStringLiteral("resizeOk"), resizeOk}, {QStringLiteral("pixels"), cmp.summary()}, {QStringLiteral("savedOk"), savedOk}, {QStringLiteral("historyOk"), histOk}};
+    r.passed = selOk && resizeOk && cmp.passed && savedOk && histOk;
+    r.summary = QStringLiteral("框选%1，锚点%2，像素%3，快速保存%4，历史%5").arg(selOk ? QStringLiteral("✓") : QStringLiteral("✗"), resizeOk ? QStringLiteral("✓") : QStringLiteral("✗"),
+                                                                 cmp.passed ? QStringLiteral("✓") : cmp.summary(), savedOk ? QStringLiteral("✓") : QStringLiteral("✗"), histOk ? QStringLiteral("✓") : QStringLiteral("✗"));
+    return r;
+}
+
+ScenarioResult Runner::m1SingleInstance()
+{
+    // REQ: GEN-01 CAP-01
+    ScenarioResult r{QStringLiteral("M1-INSTANCE"), QStringLiteral("M1：第二个实例把 snip 命令转交给运行中的实例")};
+    QProcess second;
+    second.setProgram(m_options.appPath);
+    second.setArguments({QStringLiteral("--channel"), m_options.channel, QStringLiteral("snip")});
+    second.start();
+    const bool exited = second.waitForFinished(10000);
+    QThread::msleep(300);
+    const QJsonObject st = m_client.call(QStringLiteral("state"));
+    const bool capturing = st.value(QStringLiteral("capturing")).toBool();
+    m_client.call(QStringLiteral("cancelCapture"));
+    r.data = QJsonObject{{QStringLiteral("secondExited"), exited}, {QStringLiteral("exitCode"), second.exitCode()}, {QStringLiteral("capturing"), capturing}};
+    r.passed = exited && second.exitCode() == 0 && capturing;
+    r.summary = QStringLiteral("第二实例退出码 %1，运行中的实例%2开始截图").arg(second.exitCode()).arg(capturing ? QStringLiteral("已") : QStringLiteral("未"));
     return r;
 }
 
