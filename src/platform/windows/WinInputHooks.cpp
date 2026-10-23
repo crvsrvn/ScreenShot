@@ -40,6 +40,7 @@ struct HookDispatch {
             case WM_RBUTTONDOWN: button = 3; down = true; break;
             case WM_RBUTTONUP: button = 3; break;
             case WM_MOUSEMOVE: emit g_instance->mouseMoved(pos); break;
+            case WM_MOUSEWHEEL: emit g_instance->mouseWheel(static_cast<short>(HIWORD(m->mouseData)), pos); break;
             default: break;
             }
             if (button) {

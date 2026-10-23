@@ -7,6 +7,7 @@ qt_add_library(screenshot_core STATIC
     ports/IGlobalHotkey.h
     ports/IOcrEngine.h
     ports/IInputSimulator.h
+    ports/IVideoEncoder.h
     ports/Platform.h
     geometry/VirtualDesktop.h geometry/VirtualDesktop.cpp
     fx/Blur.h fx/Blur.cpp
@@ -41,6 +42,11 @@ qt_add_library(screenshot_core STATIC
     output/XlsxWriter.h output/XlsxWriter.cpp
     input/Gestures.h input/Gestures.cpp
     script/ScriptEngine.h script/ScriptEngine.cpp
+    video/Recording.h video/Recording.cpp
+    video/GifEncoder.h video/GifEncoder.cpp
+    video/WebpAnimEncoder.h video/WebpAnimEncoder.cpp
+    video/InputVisualizer.h video/InputVisualizer.cpp
+    video/Playback.h video/Playback.cpp
 )
 target_include_directories(screenshot_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(screenshot_core PUBLIC Qt6::Core Qt6::Gui Qt6::Concurrent PRIVATE ZXing::ZXing qjs)
+target_link_libraries(screenshot_core PUBLIC Qt6::Core Qt6::Gui Qt6::Concurrent PRIVATE ZXing::ZXing qjs webp libwebpmux)

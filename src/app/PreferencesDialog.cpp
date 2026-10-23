@@ -44,7 +44,7 @@ QString PreferencesDialog::pageTitle(const QString& page)
         {QStringLiteral("capture"), QT_TR_NOOP("Capture")}, {QStringLiteral("pin"), QT_TR_NOOP("Pin")},
         {QStringLiteral("annotation"), QT_TR_NOOP("Annotation")}, {QStringLiteral("output"), QT_TR_NOOP("Output")},
         {QStringLiteral("control"), QT_TR_NOOP("Control")}, {QStringLiteral("recognition"), QT_TR_NOOP("Recognition")},
-        {QStringLiteral("advanced"), QT_TR_NOOP("Advanced")},
+        {QStringLiteral("record"), QT_TR_NOOP("Recording")}, {QStringLiteral("advanced"), QT_TR_NOOP("Advanced")},
     };
     const char* t = titles.value(page, nullptr);
     return t ? tr(t) : page;

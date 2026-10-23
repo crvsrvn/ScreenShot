@@ -15,10 +15,13 @@ qt_add_library(platform_windows STATIC
     WinInputHooks.h WinInputHooks.cpp
     WinInputSimulator.h WinInputSimulator.cpp
     WinCursor.h WinCursor.cpp
+    MfVideoWriter.h MfVideoWriter.cpp
+    WasapiCapture.h WasapiCapture.cpp
+    MfCamera.h MfCamera.cpp
     WinPlatform.h WinPlatform.cpp
 )
 target_link_libraries(platform_windows
     PUBLIC screenshot_core
-    PRIVATE d3d11 dxgi dwmapi shcore user32 gdi32 ole32 oleaut32 uiautomationcore windowsapp iphlpapi psapi dbghelp advapi32)
+    PRIVATE d3d11 dxgi dwmapi shcore user32 gdi32 ole32 oleaut32 uiautomationcore windowsapp iphlpapi psapi dbghelp advapi32 mf mfplat mfreadwrite mfuuid)
 # C++/WinRT 头文件体积大，需要 /bigobj；WinRT 异步接口需要协程支持（C++20 已包含）
 target_compile_options(platform_windows PRIVATE /bigobj)

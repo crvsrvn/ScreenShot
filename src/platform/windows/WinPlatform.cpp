@@ -1,5 +1,9 @@
 #include "platform/windows/WinPlatform.h"
 
+#include "platform/windows/MfCamera.h"
+#include "platform/windows/MfVideoWriter.h"
+#include "platform/windows/WasapiCapture.h"
+
 #include "platform/windows/DxgiScreenCapture.h"
 #include "platform/windows/GdiScreenCapture.h"
 #include "platform/windows/WinElementDetector.h"
@@ -53,6 +57,9 @@ Platform makeWindowsPlatform()
     p.hotkey = std::make_unique<WinGlobalHotkey>();
     p.ocr = std::make_unique<WinOcr>();
     p.input = std::make_unique<WinInputSimulator>();
+    p.videoEncoder = [] { return std::unique_ptr<IVideoEncoder>(std::make_unique<MfVideoWriter>()); };
+    p.audioCapture = [] { return std::unique_ptr<IAudioCapture>(std::make_unique<WasapiCapture>()); };
+    p.camera = std::make_unique<MfCamera>();
     return p;
 }
 

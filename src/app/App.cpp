@@ -17,8 +17,11 @@
 #include "app/PinManager.h"
 #include "app/PinWindow.h"
 #include "app/PreferencesDialog.h"
+#include "app/RecordPlaybackDialog.h"
+#include "app/RecordSession.h"
 #include "app/ScrollCaptureSession.h"
 #include "core/config/Settings.h"
+#include "core/output/FileNaming.h"
 #include "core/util/Clock.h"
 
 #include <QApplication>
@@ -97,6 +100,7 @@ App::App(Platform platform, Settings& settings, QObject* parent)
         notify(kind == OutputActions::Kind::AutoSave ? tr("Auto-saved") : tr("Saved"), QDir::toNativeSeparators(path), path); // GEN-07
     });
     connect(m_session.get(), &CaptureSession::scrollRequested, this, [this](const QRect& region) { startScroll(region); });
+    connect(m_session.get(), &CaptureSession::recordRequested, this, [this](const QRect& region) { startRecord(region); });
     connect(m_session.get(), &CaptureSession::sizeInputRequested, this, &App::onSizeInputRequested);
     connect(m_session.get(), &CaptureSession::ocrCopyRequested, this, &App::onOcrCopyRequested);
     connect(m_session.get(), &CaptureSession::codesRequested, this, &App::onCodesRequested);
@@ -591,6 +595,21 @@ QString App::runCommand(const QStringList& command, int requestId)
             pin = m_pins->pinHotkey(at);
         }
         result = pin ? QStringLiteral("ok") : QStringLiteral("nothing to pin");
+    } else if (name == QLatin1String("record")) {
+        // record x,y,w,h|last [--quick] [--start]：准备录制区域；--start 立即开始（按设置延迟）
+        const QString arg = command.value(1);
+        const QStringList p = (arg == QLatin1String("last") ? m_settings.stringValue(QStringLiteral("capture.lastRegion")) : arg).split(QLatin1Char(','));
+        const QRect region = p.size() == 4 ? QRect(p[0].toInt(), p[1].toInt(), p[2].toInt(), p[3].toInt()) : QRect();
+        if (region.isEmpty()) {
+            result = QStringLiteral("error: region required (x,y,w,h or last)");
+        } else if (!startRecord(region)) {
+            result = QStringLiteral("error: ") + m_recordError;
+        } else {
+            if (command.contains(QStringLiteral("--quick")))
+                m_record->setMode(RecordSession::Mode::Quick);
+            if (command.contains(QStringLiteral("--start")))
+                m_record->start();
+        }
     } else if (name == QLatin1String("pins")) {
         // pins hide|show|toggle|close-all|destroy-all|restore|restore-offscreen
         const QString op = command.value(1);
@@ -1069,8 +1088,8 @@ void App::applyInputHooks()
     m_hotCorners = HotCornerDetector(3, m_settings.intValue(QStringLiteral("hotCorner.dwellMs")));
 #ifdef Q_OS_WIN
     const bool needKeyboard = m_settings.stringValue(QStringLiteral("hotkey.doubleTap")) != QLatin1String("none") || m_settings.boolValue(QStringLiteral("hotkey.ignoreInjected"))
-        || m_settings.boolValue(QStringLiteral("globalMouse.enabled"));
-    const bool needMouse = m_settings.boolValue(QStringLiteral("globalMouse.enabled"));
+        || m_settings.boolValue(QStringLiteral("globalMouse.enabled")) || m_recordHooks;
+    const bool needMouse = m_settings.boolValue(QStringLiteral("globalMouse.enabled")) || m_recordHooks;
     if (!needKeyboard && !needMouse) {
         m_hooks.reset();
         return;
@@ -1083,6 +1102,12 @@ void App::applyInputHooks()
             static const int modifiers[] = {0x5B, 0x5C, 0x12, 0xA4, 0xA5, 0x11, 0xA2, 0xA3, 0x10, 0xA0, 0xA1}; // Win / Alt / Ctrl / Shift 的虚拟键
             if (std::find(std::begin(modifiers), std::end(modifiers), vk) != std::end(modifiers))
                 m_gesture.setModifierHeld(false);
+            if (m_record)
+                m_record->noteKey(vk, false);
+        });
+        connect(m_hooks.get(), &win::WinInputHooks::mouseWheel, this, [this](int delta, QPoint pos) {
+            if (m_record)
+                m_record->noteWheel(delta, pos); // VID-06
         });
         connect(m_hooks.get(), &win::WinInputHooks::mouseButton, this, &App::onGlobalMouse);
         connect(m_hooks.get(), &win::WinInputHooks::mouseMoved, this, &App::onGlobalMouseMoved);
@@ -1109,6 +1134,8 @@ void App::runNamedAction(const QString& action)
 void App::onGlobalKeyDown(int vk, bool injected, qint64 nowMs)
 {
     m_injected.keyEvent(vk, injected, nowMs); // ACT-15
+    if (m_record)
+        m_record->noteKey(vk, true); // VID-06
     // 全局鼠标手势的修饰键
     const QString mod = m_settings.stringValue(QStringLiteral("globalMouse.modifier"));
     auto isModifier = [](const QString& name, int key) {
@@ -1135,6 +1162,8 @@ bool App::globalMouseGestureActive() const
 
 void App::onGlobalMouse(int button, bool down, QPoint physical)
 {
+    if (m_record)
+        m_record->noteMouseButton(button, down, physical); // VID-06
     if (!m_settings.boolValue(QStringLiteral("globalMouse.enabled")))
         return;
     if (down) {
@@ -1236,6 +1265,98 @@ NotificationWidget* App::notify(const QString& title, const QString& message, co
     auto* w = new NotificationWidget(title, message, filePath);
     w->show();
     return w;
+}
+
+// ---- 屏幕录制（VID-01 ~ VID-09）----
+
+RecordPlaybackDialog* App::playbackDialog() const
+{
+    return m_playback;
+}
+
+bool App::startRecord(const QRect& physicalRegion, bool showUi)
+{
+    if (m_record)
+        m_record->cancel();
+    m_record = std::make_unique<RecordSession>(m_session->screenCapture(), m_platform, m_settings, m_dataDir.isEmpty() ? QDir::tempPath() : m_dataDir);
+    connect(m_record.get(), &RecordSession::finished, this, &App::finishRecording);
+    connect(m_record.get(), &RecordSession::cancelled, this, [this] {
+        m_recordHooks = false;
+        applyInputHooks();
+        QMetaObject::invokeMethod(this, [this] { m_record.reset(); }, Qt::QueuedConnection);
+    });
+    if (!m_record->begin(physicalRegion, showUi)) {
+        m_recordError = m_record->lastError();
+        m_record.reset();
+        return false;
+    }
+    // 输入可视化需要全局钩子（VID-06）
+    m_recordHooks = m_settings.boolValue(QStringLiteral("record.showClicks")) || m_settings.boolValue(QStringLiteral("record.showKeys"));
+    applyInputHooks();
+    return true;
+}
+
+void App::finishRecording()
+{
+    m_recordHooks = false;
+    applyInputHooks();
+    if (m_record->mode() == RecordSession::Mode::Quick) {
+        // 快速录制（VID-03）：文件已写好，移到快速保存目录并复制为文件
+        const QString src = m_record->quickFilePath();
+        QDir().mkpath(m_output->quickSaveDir());
+        const QString dst = uniqueFilePath(m_output->quickSaveDir(), m_output->makeFileName(QImage()), QStringLiteral("mp4"));
+        const bool moved = QFile::rename(src, dst) || (QFile::copy(src, dst) && QFile::remove(src));
+        if (moved) {
+            auto* mime = new QMimeData;
+            mime->setUrls({QUrl::fromLocalFile(dst)});
+            QGuiApplication::clipboard()->setMimeData(mime);
+            notify(tr("Recording saved"), dst, dst);
+        }
+        m_recordLastFile = moved ? dst : src;
+    } else if (m_record->store()) {
+        m_playback = new RecordPlaybackDialog(m_record->store(), m_settings, *m_output, m_platform.videoEncoder);
+        m_playback->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_playback, &RecordPlaybackDialog::exported, this, [this](const QString& path) { m_recordLastFile = path; });
+        m_playback->show();
+    }
+    QMetaObject::invokeMethod(this, [this] { m_record.reset(); }, Qt::QueuedConnection);
+}
+
+QStringList App::unfinishedRecordings() const
+{
+    QStringList out;
+    const QDir dir(QDir(m_dataDir.isEmpty() ? QDir::tempPath() : m_dataDir).filePath(QStringLiteral("recordings")));
+    for (const QFileInfo& fi : dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name)) {
+        if (FrameStore::hasUnfinished(fi.absoluteFilePath()))
+            out.append(fi.absoluteFilePath());
+    }
+    return out;
+}
+
+RecordPlaybackDialog* App::openRecording(const QString& dir)
+{
+    auto store = std::make_shared<FrameStore>();
+    if (!store->open(dir) || store->frameCount() == 0)
+        return nullptr;
+    store->writeIndex(true);
+    m_playback = new RecordPlaybackDialog(store, m_settings, *m_output, m_platform.videoEncoder);
+    m_playback->setAttribute(Qt::WA_DeleteOnClose);
+    connect(m_playback, &RecordPlaybackDialog::exported, this, [this](const QString& path) { m_recordLastFile = path; });
+    m_playback->show();
+    return m_playback;
+}
+
+int App::recoverRecordings()
+{
+    int opened = 0;
+    for (const QString& dir : unfinishedRecordings()) {
+        const auto answer = QMessageBox::question(nullptr, tr("Recover recording"), tr("A recording was interrupted. Open it now?"), QMessageBox::Yes | QMessageBox::Discard);
+        if (answer == QMessageBox::Yes && openRecording(dir))
+            ++opened;
+        else
+            QDir(dir).removeRecursively();
+    }
+    return opened;
 }
 
 } // namespace ss

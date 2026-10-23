@@ -3,6 +3,7 @@
 #include "core/ports/IElementDetector.h"
 #include "core/ports/IGlobalHotkey.h"
 #include "core/ports/IInputSimulator.h"
+#include "core/ports/IVideoEncoder.h"
 #include "core/ports/IOcrEngine.h"
 #include "core/ports/IScreenCapture.h"
 #include "core/ports/IWindowDetector.h"
@@ -19,6 +20,10 @@ struct Platform {
     std::unique_ptr<IGlobalHotkey> hotkey;
     std::unique_ptr<IOcrEngine> ocr;
     std::unique_ptr<IInputSimulator> input;
+    // 录屏（VID-03 / VID-04 / VID-07）：没有实现时为空
+    VideoEncoderFactory videoEncoder;
+    AudioCaptureFactory audioCapture;
+    std::unique_ptr<ICameraCapture> camera;
 };
 
 } // namespace ss

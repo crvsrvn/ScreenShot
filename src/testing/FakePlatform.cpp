@@ -5,6 +5,7 @@
 #include "testing/FakeInputSimulator.h"
 #include "testing/FakeOcr.h"
 #include "testing/FakeScreenCapture.h"
+#include "testing/FakeVideo.h"
 #include "testing/FakeWindowDetector.h"
 
 namespace ss::testing {
@@ -40,6 +41,9 @@ Platform makeFakePlatform(FakePlatformHandles* handles, QList<ScreenInfo> screen
     p.hotkey = std::move(hotkey);
     p.ocr = std::move(ocr);
     p.input = std::move(input);
+    p.videoEncoder = [] { return std::unique_ptr<IVideoEncoder>(std::make_unique<FakeVideoEncoder>()); };
+    p.audioCapture = [] { return std::unique_ptr<IAudioCapture>(std::make_unique<FakeAudioCapture>()); };
+    p.camera = std::make_unique<FakeCamera>();
     return p;
 }
 

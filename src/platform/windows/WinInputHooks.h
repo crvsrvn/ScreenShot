@@ -27,6 +27,8 @@ signals:
     // button：1 左 2 中 3 右；pos 为物理像素
     void mouseButton(int button, bool down, QPoint pos);
     void mouseMoved(QPoint pos);
+    // 滚轮：delta 正为向上（VID-06）
+    void mouseWheel(int delta, QPoint pos);
 
 private:
     void* m_keyboard = nullptr;

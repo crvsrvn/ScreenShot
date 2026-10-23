@@ -16,6 +16,7 @@ namespace ss::win { class WinInputHooks; }
 #include <QHash>
 #include <QList>
 #include <QObject>
+#include <QPointer>
 #include <memory>
 
 class QSystemTrayIcon;
@@ -31,6 +32,8 @@ class Settings;
 class OutputActions;
 class CommandServer;
 class ScrollCaptureSession;
+class RecordSession;
+class RecordPlaybackDialog;
 class FloatingBar;
 class NotificationWidget;
 
@@ -53,6 +56,16 @@ public:
     // 开始滚动截图（CAP-60）；失败返回 false，原因在 scrollError()
     bool startScroll(const QRect& physicalRegion, bool showUi = true);
     QString scrollError() const { return m_scrollError; }
+    // 屏幕录制（VID-01）：准备录制该区域；失败返回 false，原因在 recordError()
+    bool startRecord(const QRect& physicalRegion, bool showUi = true);
+    RecordSession* recordSession() const { return m_record.get(); }
+    QString recordError() const { return m_recordError; }
+    RecordPlaybackDialog* playbackDialog() const;
+    QString recordLastFile() const { return m_recordLastFile; }
+    // 异常退出后遗留的未完成录制目录（VID-09）；recoverRecordings 询问后打开或删除
+    QStringList unfinishedRecordings() const;
+    RecordPlaybackDialog* openRecording(const QString& dir);
+    int recoverRecordings();
     QList<PinWindow*> pins() const;
     QHash<int, bool> hotkeyStatus() const { return m_hotkeyStatus; }
     bool hotkeysEnabled() const;
@@ -138,6 +151,7 @@ private:
     void finishGlobalMouse(const QRect& region, int button);
     void finishCommand(int requestId, const QString& text);
     void applySetting(const QString& key);
+    void finishRecording();
 
     Platform m_platform;
     Settings& m_settings;
@@ -147,6 +161,11 @@ private:
     std::unique_ptr<PinManager> m_pins;
     std::unique_ptr<CommandServer> m_commands;
     std::unique_ptr<ScrollCaptureSession> m_scroll;
+    std::unique_ptr<RecordSession> m_record;
+    QString m_recordError;
+    QString m_recordLastFile;
+    bool m_recordHooks = false;
+    QPointer<RecordPlaybackDialog> m_playback;
     QImage m_scrollResult;
 public:
     FloatingBar* floatingBar() const { return m_floatingBar.get(); }

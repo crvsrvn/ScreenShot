@@ -121,6 +121,7 @@ int main(int argc, char* argv[])
     app.setDataDir(dataDir);
     app.checkPermissions();
     app.restorePins(); // PIN-54
+    app.recoverRecordings(); // VID-09
 #ifdef Q_OS_WIN
     if (!allowMultiple)
         app.startCommandServer(channel);

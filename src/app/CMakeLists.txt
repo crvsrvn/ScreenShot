@@ -17,6 +17,9 @@ set(APPLIB_SOURCES
     ActionsDialog.h ActionsDialog.cpp
     PinManager.h PinManager.cpp
     ScrollCaptureSession.h ScrollCaptureSession.cpp
+    RecordSession.h RecordSession.cpp
+    RecordWidgets.h RecordWidgets.cpp
+    RecordPlaybackDialog.h RecordPlaybackDialog.cpp
     CustomCaptureDialog.h CustomCaptureDialog.cpp
     OutputActions.h OutputActions.cpp
     PreferencesDialog.h PreferencesDialog.cpp

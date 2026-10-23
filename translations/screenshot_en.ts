@@ -46,339 +46,354 @@
 <context>
     <name>App</name>
     <message>
-        <location filename="../src/app/App.cpp" line="97" />
+        <location filename="../src/app/App.cpp" line="100" />
         <source>Auto-saved</source>
         <translation>Auto-saved</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="97" />
+        <location filename="../src/app/App.cpp" line="100" />
         <source>Saved</source>
         <translation>Saved</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="113" />
+        <location filename="../src/app/App.cpp" line="117" />
         <source>Decode codes</source>
         <translation>Decode codes</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="113" />
-        <location filename="../src/app/App.cpp" line="770" />
+        <location filename="../src/app/App.cpp" line="117" />
+        <location filename="../src/app/App.cpp" line="789" />
         <source>No QR code or barcode found.</source>
         <translation>No QR code or barcode found.</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="170" />
+        <location filename="../src/app/App.cpp" line="174" />
         <source>Screen recording permission</source>
         <translation>Screen recording permission</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="171" />
+        <location filename="../src/app/App.cpp" line="175" />
         <source>ScreenShot needs the Screen Recording permission to capture the screen. Grant it in System Settings, then restart ScreenShot.</source>
         <translation>ScreenShot needs the Screen Recording permission to capture the screen. Grant it in System Settings, then restart ScreenShot.</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="172" />
+        <location filename="../src/app/App.cpp" line="176" />
         <source>Open System Settings</source>
         <translation>Open System Settings</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="186" />
+        <location filename="../src/app/App.cpp" line="190" />
         <source>Capture	F1</source>
         <translation>Capture	F1</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="187" />
+        <location filename="../src/app/App.cpp" line="191" />
         <source>Custom capture...</source>
         <translation>Custom capture...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="188" />
+        <location filename="../src/app/App.cpp" line="192" />
         <source>Quick capture</source>
         <translation>Quick capture</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="189" />
+        <location filename="../src/app/App.cpp" line="193" />
         <source>Full screen</source>
         <translation>Full screen</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="190" />
+        <location filename="../src/app/App.cpp" line="194" />
         <source>Last area</source>
         <translation>Last area</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="191" />
+        <location filename="../src/app/App.cpp" line="195" />
         <source>Active window</source>
         <translation>Active window</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="192" />
+        <location filename="../src/app/App.cpp" line="196" />
         <source>Active screen</source>
         <translation>Active screen</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="193" />
+        <location filename="../src/app/App.cpp" line="197" />
         <source>Screen under cursor</source>
         <translation>Screen under cursor</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="194" />
+        <location filename="../src/app/App.cpp" line="198" />
         <source>Whiteboard</source>
         <translation>Whiteboard</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="195" />
+        <location filename="../src/app/App.cpp" line="199" />
         <source>Pin clipboard	F3</source>
         <translation>Pin clipboard	F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="196" />
-        <location filename="../src/app/App.cpp" line="965" />
+        <location filename="../src/app/App.cpp" line="200" />
+        <location filename="../src/app/App.cpp" line="984" />
         <source>Hide all pins	Shift+F3</source>
         <translation>Hide all pins	Shift+F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="197" />
+        <location filename="../src/app/App.cpp" line="201" />
         <source>Restore closed pin	Ctrl+3</source>
         <translation>Restore closed pin	Ctrl+3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="198" />
+        <location filename="../src/app/App.cpp" line="202" />
         <source>Restore off-screen pins</source>
         <translation>Restore off-screen pins</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="199" />
+        <location filename="../src/app/App.cpp" line="203" />
         <source>Pin files selected in Explorer</source>
         <translation>Pin files selected in Explorer</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="200" />
+        <location filename="../src/app/App.cpp" line="204" />
         <source>All pins</source>
         <translation>All pins</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="201" />
+        <location filename="../src/app/App.cpp" line="205" />
         <source>Thumbnails</source>
         <translation>Thumbnails</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="202" />
+        <location filename="../src/app/App.cpp" line="206" />
         <source>Full size</source>
         <translation>Full size</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="203" />
+        <location filename="../src/app/App.cpp" line="207" />
         <source>Save all to folder...</source>
         <translation>Save all to folder...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="204" />
+        <location filename="../src/app/App.cpp" line="208" />
         <source>Save all pins</source>
         <translation>Save all pins</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="208" />
+        <location filename="../src/app/App.cpp" line="212" />
         <source>Solo selected pins</source>
         <translation>Solo selected pins</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="209" />
+        <location filename="../src/app/App.cpp" line="213" />
         <source>Close all</source>
         <translation>Close all</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="210" />
+        <location filename="../src/app/App.cpp" line="214" />
         <source>Destroy all</source>
         <translation>Destroy all</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="211" />
+        <location filename="../src/app/App.cpp" line="215" />
         <source>Actions</source>
         <translation>Actions</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="213" />
+        <location filename="../src/app/App.cpp" line="217" />
         <source>Recognize</source>
         <translation>Recognize</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="214" />
+        <location filename="../src/app/App.cpp" line="218" />
         <source>Text in image file (OCR)...</source>
         <translation>Text in image file (OCR)...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="215" />
+        <location filename="../src/app/App.cpp" line="219" />
         <source>QR code / barcode in image file...</source>
         <translation>QR code / barcode in image file...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="216" />
+        <location filename="../src/app/App.cpp" line="220" />
         <source>Pin groups</source>
         <translation>Pin groups</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="220" />
+        <location filename="../src/app/App.cpp" line="224" />
         <source>Disable hotkeys</source>
         <translation>Disable hotkeys</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="223" />
+        <location filename="../src/app/App.cpp" line="227" />
         <source>Preferences...</source>
         <translation>Preferences...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="224" />
+        <location filename="../src/app/App.cpp" line="228" />
         <source>Settings file</source>
         <translation>Settings file</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="225" />
+        <location filename="../src/app/App.cpp" line="229" />
         <source>Export settings...</source>
         <translation>Export settings...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="226" />
+        <location filename="../src/app/App.cpp" line="230" />
         <source>Export settings</source>
         <translation>Export settings</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="226" />
-        <location filename="../src/app/App.cpp" line="231" />
+        <location filename="../src/app/App.cpp" line="230" />
+        <location filename="../src/app/App.cpp" line="235" />
         <source>Settings (*.json)</source>
         <translation>Settings (*.json)</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="230" />
+        <location filename="../src/app/App.cpp" line="234" />
         <source>Import settings...</source>
         <translation>Import settings...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="231" />
+        <location filename="../src/app/App.cpp" line="235" />
         <source>Import settings</source>
         <translation>Import settings</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="235" />
+        <location filename="../src/app/App.cpp" line="239" />
         <source>Open settings folder</source>
         <translation>Open settings folder</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="236" />
+        <location filename="../src/app/App.cpp" line="240" />
         <source>Help</source>
         <translation>Help</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="238" />
+        <location filename="../src/app/App.cpp" line="242" />
         <source>Quit</source>
         <translation>Quit</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="298" />
+        <location filename="../src/app/App.cpp" line="302" />
         <source>New group...</source>
         <translation>New group...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="300" />
+        <location filename="../src/app/App.cpp" line="304" />
         <source>New pin group</source>
         <translation>New pin group</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="300" />
+        <location filename="../src/app/App.cpp" line="304" />
         <source>Group name:</source>
         <translation>Group name:</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="305" />
+        <location filename="../src/app/App.cpp" line="309" />
         <source>Next group	Ctrl+Shift+3</source>
         <translation>Next group	Ctrl+Shift+3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="306" />
+        <location filename="../src/app/App.cpp" line="310" />
         <source>Previous group</source>
         <translation>Previous group</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="307" />
+        <location filename="../src/app/App.cpp" line="311" />
         <source>Clear this group</source>
         <translation>Clear this group</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="308" />
+        <location filename="../src/app/App.cpp" line="312" />
         <source>Manage groups...</source>
         <translation>Manage groups...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="410" />
+        <location filename="../src/app/App.cpp" line="414" />
         <source>Hotkey conflict</source>
         <translation>Hotkey conflict</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="410" />
+        <location filename="../src/app/App.cpp" line="414" />
         <source>%1 is already used by another program.</source>
         <translation>%1 is already used by another program.</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="718" />
+        <location filename="../src/app/App.cpp" line="737" />
         <source>Edit actions...</source>
         <translation>Edit actions...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="756" />
+        <location filename="../src/app/App.cpp" line="775" />
         <source>Recognize text in image</source>
         <translation>Recognize text in image</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="756" />
-        <location filename="../src/app/App.cpp" line="765" />
+        <location filename="../src/app/App.cpp" line="775" />
+        <location filename="../src/app/App.cpp" line="784" />
         <source>Images (*.png *.jpg *.jpeg *.bmp *.webp)</source>
         <translation>Images (*.png *.jpg *.jpeg *.bmp *.webp)</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="765" />
-        <location filename="../src/app/App.cpp" line="770" />
+        <location filename="../src/app/App.cpp" line="784" />
+        <location filename="../src/app/App.cpp" line="789" />
         <source>Decode codes in image</source>
         <translation>Decode codes in image</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="779" />
+        <location filename="../src/app/App.cpp" line="798" />
         <source>ScreenShot crashed last time</source>
         <translation>ScreenShot crashed last time</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="779" />
+        <location filename="../src/app/App.cpp" line="798" />
         <source>A crash dump was written to %1</source>
         <translation>A crash dump was written to %1</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="787" />
+        <location filename="../src/app/App.cpp" line="806" />
         <source>Selection size</source>
         <translation>Selection size</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="787" />
+        <location filename="../src/app/App.cpp" line="806" />
         <source>Width x Height (pixels)</source>
         <translation>Width x Height (pixels)</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="938" />
+        <location filename="../src/app/App.cpp" line="957" />
         <source>Scrolling capture</source>
         <translation>Scrolling capture</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="965" />
+        <location filename="../src/app/App.cpp" line="984" />
         <source>Show all pins	Shift+F3</source>
         <translation>Show all pins	Shift+F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="992" />
+        <location filename="../src/app/App.cpp" line="1011" />
         <source>About ScreenShot</source>
         <translation>About ScreenShot</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="993" />
+        <location filename="../src/app/App.cpp" line="1012" />
         <source>&lt;b&gt;ScreenShot&lt;/b&gt;&lt;br&gt;Screenshot and pin tool.&lt;br&gt;&lt;br&gt;Capture: %1&lt;br&gt;Pin clipboard: %2&lt;br&gt;Hide / show pins: %3&lt;br&gt;&lt;br&gt;While capturing: drag to select, Enter / double-click to copy, Ctrl+S to save, Ctrl+Shift+S to quick save, Ctrl+T to pin, Esc to cancel, Tab to switch window / element detection, C to copy the pixel color, WASD and arrow keys to adjust by one pixel, , and . to recall previous captures.</source>
         <translation>&lt;b&gt;ScreenShot&lt;/b&gt;&lt;br&gt;Screenshot and pin tool.&lt;br&gt;&lt;br&gt;Capture: %1&lt;br&gt;Pin clipboard: %2&lt;br&gt;Hide / show pins: %3&lt;br&gt;&lt;br&gt;While capturing: drag to select, Enter / double-click to copy, Ctrl+S to save, Ctrl+Shift+S to quick save, Ctrl+T to pin, Esc to cancel, Tab to switch window / element detection, C to copy the pixel color, WASD and arrow keys to adjust by one pixel, , and . to recall previous captures.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/App.cpp" line="1313" />
+        <source>Recording saved</source>
+        <translation>Recording saved</translation>
+    </message>
+    <message>
+        <location filename="../src/app/App.cpp" line="1353" />
+        <source>Recover recording</source>
+        <translation>Recover recording</translation>
+    </message>
+    <message>
+        <location filename="../src/app/App.cpp" line="1353" />
+        <source>A recording was interrupted. Open it now?</source>
+        <translation>A recording was interrupted. Open it now?</translation>
     </message>
 </context>
 <context>
@@ -1509,6 +1524,11 @@
         <translation>Advanced</translation>
     </message>
     <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="47" />
+        <source>Recording</source>
+        <translation>Recording</translation>
+    </message>
+    <message>
         <location filename="../src/app/PreferencesDialog.cpp" line="132" />
         <source>Browse...</source>
         <translation>Browse...</translation>
@@ -1583,6 +1603,231 @@
     </message>
 </context>
 <context>
+    <name>RecordPlaybackDialog</name>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="46" />
+        <source>Recording</source>
+        <translation>Recording</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="76" />
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="165" />
+        <source>Play</source>
+        <translation>Play</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="88" />
+        <source>Trim start here</source>
+        <translation>Trim start here</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="91" />
+        <source>Trim end here</source>
+        <translation>Trim end here</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="94" />
+        <source>Reset trim</source>
+        <translation>Reset trim</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="103" />
+        <source>No progress overlay</source>
+        <translation>No progress overlay</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="104" />
+        <source>Progress bar</source>
+        <translation>Progress bar</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="105" />
+        <source>Elapsed / total</source>
+        <translation>Elapsed / total</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="106" />
+        <source>Countdown</source>
+        <translation>Countdown</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="113" />
+        <source>Show clicks and keys</source>
+        <translation>Show clicks and keys</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="123" />
+        <source> ms click animation</source>
+        <translation> ms click animation</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="137" />
+        <source>Save...</source>
+        <translation>Save...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="140" />
+        <source>Quick save</source>
+        <translation>Quick save</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="143" />
+        <source>Copy</source>
+        <translation>Copy</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="146" />
+        <source>Discard</source>
+        <translation>Discard</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="159" />
+        <source>Pause</source>
+        <translation>Pause</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="227" />
+        <source>Keep %1 - %2</source>
+        <translation>Keep %1 - %2</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="247" />
+        <source>Nothing to export.</source>
+        <translation>Nothing to export.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="258" />
+        <source>Could not open %1</source>
+        <translation>Could not open %1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="273" />
+        <source>Could not write %1</source>
+        <translation>Could not write %1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="283" />
+        <source>MP4 encoding is not available on this system.</source>
+        <translation>MP4 encoding is not available on this system.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="326" />
+        <source>Save recording</source>
+        <translation>Save recording</translation>
+    </message>
+</context>
+<context>
+    <name>RecordSession</name>
+    <message>
+        <location filename="../src/app/RecordSession.cpp" line="92" />
+        <source>The area is too small to record.</source>
+        <translation>The area is too small to record.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordSession.cpp" line="176" />
+        <source>MP4 encoding is not available on this system.</source>
+        <translation>MP4 encoding is not available on this system.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordSession.cpp" line="192" />
+        <source>Could not create the recording folder %1</source>
+        <translation>Could not create the recording folder %1</translation>
+    </message>
+</context>
+<context>
+    <name>RecordToolbar</name>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="100" />
+        <source>Start</source>
+        <translation>Start</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="101" />
+        <source>Pause</source>
+        <translation>Pause</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="102" />
+        <source>Resume</source>
+        <translation>Resume</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="103" />
+        <source>Stop</source>
+        <translation>Stop</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="104" />
+        <source>Re-record</source>
+        <translation>Re-record</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="109" />
+        <source>Annotate</source>
+        <translation>Annotate</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="114" />
+        <source>Cancel</source>
+        <translation>Cancel</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="122" />
+        <source>Normal (edit, then export)</source>
+        <translation>Normal (edit, then export)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="123" />
+        <source>Quick (MP4 while recording)</source>
+        <translation>Quick (MP4 while recording)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="129" />
+        <source> s delay</source>
+        <translation> s delay</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="136" />
+        <source>%1 fps</source>
+        <translation>%1 fps</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="141" />
+        <source>Light</source>
+        <translation>Light</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="142" />
+        <source>Standard</source>
+        <translation>Standard</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="143" />
+        <source>Raw</source>
+        <translation>Raw</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="147" />
+        <source>Microphone</source>
+        <translation>Microphone</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="151" />
+        <source>System sound</source>
+        <translation>System sound</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="155" />
+        <source>Camera</source>
+        <translation>Camera</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="175" />
+        <source>Starting in %1</source>
+        <translation>Starting in %1</translation>
+    </message>
+</context>
+<context>
     <name>ScrollCaptureSession</name>
     <message>
         <location filename="../src/app/ScrollCaptureSession.cpp" line="201" />
@@ -1647,22 +1892,22 @@
     <message>
         <location filename="../src/core/config/Settings.cpp" line="24" />
         <location filename="../src/core/config/Settings.cpp" line="25" />
-        <location filename="../src/core/config/Settings.cpp" line="211" />
-        <location filename="../src/core/config/Settings.cpp" line="219" />
-        <location filename="../src/core/config/Settings.cpp" line="220" />
-        <location filename="../src/core/config/Settings.cpp" line="221" />
-        <location filename="../src/core/config/Settings.cpp" line="222" />
+        <location filename="../src/core/config/Settings.cpp" line="229" />
+        <location filename="../src/core/config/Settings.cpp" line="237" />
+        <location filename="../src/core/config/Settings.cpp" line="238" />
+        <location filename="../src/core/config/Settings.cpp" line="239" />
+        <location filename="../src/core/config/Settings.cpp" line="240" />
         <source>Capture</source>
         <translation>Capture</translation>
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="24" />
         <location filename="../src/core/config/Settings.cpp" line="25" />
-        <location filename="../src/core/config/Settings.cpp" line="211" />
-        <location filename="../src/core/config/Settings.cpp" line="219" />
-        <location filename="../src/core/config/Settings.cpp" line="220" />
-        <location filename="../src/core/config/Settings.cpp" line="221" />
-        <location filename="../src/core/config/Settings.cpp" line="222" />
+        <location filename="../src/core/config/Settings.cpp" line="229" />
+        <location filename="../src/core/config/Settings.cpp" line="237" />
+        <location filename="../src/core/config/Settings.cpp" line="238" />
+        <location filename="../src/core/config/Settings.cpp" line="239" />
+        <location filename="../src/core/config/Settings.cpp" line="240" />
         <source>Pin clipboard</source>
         <translation>Pin clipboard</translation>
     </message>
@@ -1679,13 +1924,13 @@
         <location filename="../src/core/config/Settings.cpp" line="106" />
         <location filename="../src/core/config/Settings.cpp" line="107" />
         <location filename="../src/core/config/Settings.cpp" line="108" />
-        <location filename="../src/core/config/Settings.cpp" line="215" />
-        <location filename="../src/core/config/Settings.cpp" line="216" />
-        <location filename="../src/core/config/Settings.cpp" line="217" />
-        <location filename="../src/core/config/Settings.cpp" line="219" />
-        <location filename="../src/core/config/Settings.cpp" line="220" />
-        <location filename="../src/core/config/Settings.cpp" line="221" />
-        <location filename="../src/core/config/Settings.cpp" line="222" />
+        <location filename="../src/core/config/Settings.cpp" line="233" />
+        <location filename="../src/core/config/Settings.cpp" line="234" />
+        <location filename="../src/core/config/Settings.cpp" line="235" />
+        <location filename="../src/core/config/Settings.cpp" line="237" />
+        <location filename="../src/core/config/Settings.cpp" line="238" />
+        <location filename="../src/core/config/Settings.cpp" line="239" />
+        <location filename="../src/core/config/Settings.cpp" line="240" />
         <source>Nothing</source>
         <translation>Nothing</translation>
     </message>
@@ -1722,6 +1967,7 @@
     <message>
         <location filename="../src/core/config/Settings.cpp" line="27" />
         <location filename="../src/core/config/Settings.cpp" line="31" />
+        <location filename="../src/core/config/Settings.cpp" line="148" />
         <source>Light</source>
         <translation>Light</translation>
     </message>
@@ -1935,10 +2181,10 @@
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="43" />
-        <location filename="../src/core/config/Settings.cpp" line="158" />
-        <location filename="../src/core/config/Settings.cpp" line="169" />
-        <location filename="../src/core/config/Settings.cpp" line="188" />
-        <location filename="../src/core/config/Settings.cpp" line="209" />
+        <location filename="../src/core/config/Settings.cpp" line="176" />
+        <location filename="../src/core/config/Settings.cpp" line="187" />
+        <location filename="../src/core/config/Settings.cpp" line="206" />
+        <location filename="../src/core/config/Settings.cpp" line="227" />
         <source>Off</source>
         <translation>Off</translation>
     </message>
@@ -2335,6 +2581,7 @@
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="77" />
+        <location filename="../src/core/config/Settings.cpp" line="159" />
         <source>Top left</source>
         <translation>Top left</translation>
     </message>
@@ -2346,6 +2593,7 @@
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="77" />
+        <location filename="../src/core/config/Settings.cpp" line="159" />
         <source>Top right</source>
         <translation>Top right</translation>
     </message>
@@ -2367,6 +2615,7 @@
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="77" />
+        <location filename="../src/core/config/Settings.cpp" line="159" />
         <source>Bottom left</source>
         <translation>Bottom left</translation>
     </message>
@@ -2378,6 +2627,7 @@
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="77" />
+        <location filename="../src/core/config/Settings.cpp" line="159" />
         <source>Bottom right</source>
         <translation>Bottom right</translation>
     </message>
@@ -2692,9 +2942,9 @@
         <location filename="../src/core/config/Settings.cpp" line="106" />
         <location filename="../src/core/config/Settings.cpp" line="107" />
         <location filename="../src/core/config/Settings.cpp" line="108" />
-        <location filename="../src/core/config/Settings.cpp" line="215" />
-        <location filename="../src/core/config/Settings.cpp" line="216" />
-        <location filename="../src/core/config/Settings.cpp" line="217" />
+        <location filename="../src/core/config/Settings.cpp" line="233" />
+        <location filename="../src/core/config/Settings.cpp" line="234" />
+        <location filename="../src/core/config/Settings.cpp" line="235" />
         <source>Copy</source>
         <translation>Copy</translation>
     </message>
@@ -3250,923 +3500,1165 @@
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="147" />
+        <source>Frame rate</source>
+        <translation>Frame rate</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="147" />
+        <source>Frames captured per second.</source>
+        <translation>Frames captured per second.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="147" />
+        <source>5 fps</source>
+        <translation>5 fps</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="147" />
+        <source>16 fps</source>
+        <translation>16 fps</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="147" />
+        <source>24 fps</source>
+        <translation>24 fps</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="147" />
+        <source>30 fps</source>
+        <translation>30 fps</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="147" />
+        <source>60 fps</source>
+        <translation>60 fps</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="148" />
+        <source>Quality</source>
+        <translation>Quality</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="148" />
+        <source>Light halves the size and compresses more; raw keeps every pixel.</source>
+        <translation>Light halves the size and compresses more; raw keeps every pixel.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="148" />
+        <source>Standard</source>
+        <translation>Standard</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="148" />
+        <source>Raw</source>
+        <translation>Raw</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="149" />
+        <source>Recording mode</source>
+        <translation>Recording mode</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="149" />
+        <source>Normal keeps the frames for editing and export; quick writes an MP4 while recording.</source>
+        <translation>Normal keeps the frames for editing and export; quick writes an MP4 while recording.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="149" />
+        <source>Normal (edit, then export)</source>
+        <translation>Normal (edit, then export)</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="149" />
+        <source>Quick (MP4 while recording)</source>
+        <translation>Quick (MP4 while recording)</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="150" />
+        <source>Start delay (seconds)</source>
+        <translation>Start delay (seconds)</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="150" />
+        <source>Countdown before recording starts.</source>
+        <translation>Countdown before recording starts.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="151" />
+        <source>Record microphone</source>
+        <translation>Record microphone</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="151" />
+        <source>Include the default microphone.</source>
+        <translation>Include the default microphone.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="152" />
+        <source>Record system sound</source>
+        <translation>Record system sound</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="152" />
+        <source>Include what the computer plays.</source>
+        <translation>Include what the computer plays.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="153" />
+        <source>Microphone volume (%)</source>
+        <translation>Microphone volume (%)</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="153" />
+        <source>Gain applied to the microphone track.</source>
+        <translation>Gain applied to the microphone track.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="154" />
+        <source>System sound volume (%)</source>
+        <translation>System sound volume (%)</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="154" />
+        <source>Gain applied to the system sound track.</source>
+        <translation>Gain applied to the system sound track.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="155" />
+        <source>Show mouse clicks and wheel</source>
+        <translation>Show mouse clicks and wheel</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="155" />
+        <source>Draw a ripple where the mouse is clicked and an arrow when the wheel turns.</source>
+        <translation>Draw a ripple where the mouse is clicked and an arrow when the wheel turns.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="156" />
+        <source>Show pressed keys</source>
+        <translation>Show pressed keys</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="156" />
+        <source>Draw the keys pressed during the recording.</source>
+        <translation>Draw the keys pressed during the recording.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="157" />
+        <source>Mouse animation length (ms)</source>
+        <translation>Mouse animation length (ms)</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="157" />
+        <source>How long the click ripple is shown.</source>
+        <translation>How long the click ripple is shown.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="158" />
+        <source>Camera picture-in-picture</source>
+        <translation>Camera picture-in-picture</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="158" />
+        <source>Overlay the camera image on the recording.</source>
+        <translation>Overlay the camera image on the recording.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="159" />
+        <source>Camera corner</source>
+        <translation>Camera corner</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="159" />
+        <source>Where the camera image is placed.</source>
+        <translation>Where the camera image is placed.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="160" />
+        <source>Camera size (% of width)</source>
+        <translation>Camera size (% of width)</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="160" />
+        <source>Width of the camera image relative to the recording.</source>
+        <translation>Width of the camera image relative to the recording.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="161" />
+        <source>Export format</source>
+        <translation>Export format</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="161" />
+        <source>Default format in the playback window.</source>
+        <translation>Default format in the playback window.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="161" />
+        <source>MP4</source>
+        <translation>MP4</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="161" />
+        <source>GIF</source>
+        <translation>GIF</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="162" />
+        <source>Progress overlay</source>
+        <translation>Progress overlay</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="162" />
+        <source>Progress shown on the exported video.</source>
+        <translation>Progress shown on the exported video.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="162" />
+        <source>Bar</source>
+        <translation>Bar</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="162" />
+        <source>Elapsed / total</source>
+        <translation>Elapsed / total</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="162" />
+        <source>Countdown</source>
+        <translation>Countdown</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="163" />
+        <source>WebP quality</source>
+        <translation>WebP quality</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="163" />
+        <source>0-100.</source>
+        <translation>0-100.</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="165" />
         <source>Save folder</source>
         <translation>Save folder</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="147" />
+        <location filename="../src/core/config/Settings.cpp" line="165" />
         <source>Default folder for the save dialog.</source>
         <translation>Default folder for the save dialog.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="148" />
+        <location filename="../src/core/config/Settings.cpp" line="166" />
         <source>Save format</source>
         <translation>Save format</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="148" />
+        <location filename="../src/core/config/Settings.cpp" line="166" />
         <source>Format used by the save dialog and quick save.</source>
         <translation>Format used by the save dialog and quick save.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="148" />
-        <location filename="../src/core/config/Settings.cpp" line="158" />
+        <location filename="../src/core/config/Settings.cpp" line="166" />
+        <location filename="../src/core/config/Settings.cpp" line="176" />
         <source>PNG</source>
         <translation>PNG</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="148" />
-        <location filename="../src/core/config/Settings.cpp" line="158" />
+        <location filename="../src/core/config/Settings.cpp" line="166" />
+        <location filename="../src/core/config/Settings.cpp" line="176" />
         <source>JPEG</source>
         <translation>JPEG</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="148" />
+        <location filename="../src/core/config/Settings.cpp" line="166" />
         <source>BMP</source>
         <translation>BMP</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="148" />
-        <location filename="../src/core/config/Settings.cpp" line="158" />
+        <location filename="../src/core/config/Settings.cpp" line="161" />
+        <location filename="../src/core/config/Settings.cpp" line="166" />
+        <location filename="../src/core/config/Settings.cpp" line="176" />
         <source>WebP</source>
         <translation>WebP</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="149" />
+        <location filename="../src/core/config/Settings.cpp" line="167" />
         <source>Quick save folder</source>
         <translation>Quick save folder</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="149" />
+        <location filename="../src/core/config/Settings.cpp" line="167" />
         <source>Folder used by quick save (Ctrl+Shift+S). Empty means the Pictures folder.</source>
         <translation>Folder used by quick save (Ctrl+Shift+S). Empty means the Pictures folder.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="150" />
+        <location filename="../src/core/config/Settings.cpp" line="168" />
         <source>File name pattern</source>
         <translation>File name pattern</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="150" />
+        <location filename="../src/core/config/Settings.cpp" line="168" />
         <source>Pattern for generated file names. Variables: {date} {time} {timestamp} {width} {height} {n} {title} {process} {uuid} {computer} {env:NAME}; modifiers |trunc:N |noext; / makes sub-folders.</source>
         <translation>Pattern for generated file names. Variables: {date} {time} {timestamp} {width} {height} {n} {title} {process} {uuid} {computer} {env:NAME}; modifiers |trunc:N |noext; / makes sub-folders.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="151" />
+        <location filename="../src/core/config/Settings.cpp" line="169" />
         <source>JPEG / WebP quality</source>
         <translation>JPEG / WebP quality</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="151" />
+        <location filename="../src/core/config/Settings.cpp" line="169" />
         <source>0 to 100.</source>
         <translation>0 to 100.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="152" />
+        <location filename="../src/core/config/Settings.cpp" line="170" />
         <source>Copy after saving</source>
         <translation>Copy after saving</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="152" />
+        <location filename="../src/core/config/Settings.cpp" line="170" />
         <source>Also put the image on the clipboard after it is saved.</source>
         <translation>Also put the image on the clipboard after it is saved.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="153" />
+        <location filename="../src/core/config/Settings.cpp" line="171" />
         <source>Write metadata</source>
         <translation>Write metadata</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="153" />
+        <location filename="../src/core/config/Settings.cpp" line="171" />
         <source>Store the source window, process and capture time in the image file (PNG / JPEG / WebP text fields).</source>
         <translation>Store the source window, process and capture time in the image file (PNG / JPEG / WebP text fields).</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="154" />
+        <location filename="../src/core/config/Settings.cpp" line="172" />
         <source>Run after saving</source>
         <translation>Run after saving</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="154" />
+        <location filename="../src/core/config/Settings.cpp" line="172" />
         <source>External command run after a file is saved; {path} is replaced by the file path. Empty disables it.</source>
         <translation>External command run after a file is saved; {path} is replaced by the file path. Empty disables it.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="155" />
+        <location filename="../src/core/config/Settings.cpp" line="173" />
         <source>PDF page margin (mm)</source>
         <translation>PDF page margin (mm)</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="155" />
+        <location filename="../src/core/config/Settings.cpp" line="173" />
         <source>Margin around the image when saving as PDF.</source>
         <translation>Margin around the image when saving as PDF.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="156" />
+        <location filename="../src/core/config/Settings.cpp" line="174" />
         <source>Split tall images into PDF pages</source>
         <translation>Split tall images into PDF pages</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="156" />
+        <location filename="../src/core/config/Settings.cpp" line="174" />
         <source>Long captures are cut into A4 pages instead of being scaled onto one page.</source>
         <translation>Long captures are cut into A4 pages instead of being scaled onto one page.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="157" />
+        <location filename="../src/core/config/Settings.cpp" line="175" />
         <source>Automatic quality</source>
         <translation>Automatic quality</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="157" />
+        <location filename="../src/core/config/Settings.cpp" line="175" />
         <source>Use a sensible default quality (JPEG 92, WebP 90) instead of the number above.</source>
         <translation>Use a sensible default quality (JPEG 92, WebP 90) instead of the number above.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="158" />
+        <location filename="../src/core/config/Settings.cpp" line="176" />
         <source>Copy as file</source>
         <translation>Copy as file</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="158" />
+        <location filename="../src/core/config/Settings.cpp" line="176" />
         <source>Also put an image file on the clipboard so it can be pasted into file managers, terminals and chat apps. Auto: only when the image has transparency.</source>
         <translation>Also put an image file on the clipboard so it can be pasted into file managers, terminals and chat apps. Auto: only when the image has transparency.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="158" />
-        <location filename="../src/core/config/Settings.cpp" line="166" />
-        <location filename="../src/core/config/Settings.cpp" line="169" />
+        <location filename="../src/core/config/Settings.cpp" line="176" />
+        <location filename="../src/core/config/Settings.cpp" line="184" />
+        <location filename="../src/core/config/Settings.cpp" line="187" />
         <source>Automatic</source>
         <translation>Automatic</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="159" />
+        <location filename="../src/core/config/Settings.cpp" line="177" />
         <source>Auto save</source>
         <translation>Auto save</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="159" />
+        <location filename="../src/core/config/Settings.cpp" line="177" />
         <source>Save an extra copy of every successful capture.</source>
         <translation>Save an extra copy of every successful capture.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="160" />
+        <location filename="../src/core/config/Settings.cpp" line="178" />
         <source>Auto save folder</source>
         <translation>Auto save folder</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="160" />
+        <location filename="../src/core/config/Settings.cpp" line="178" />
         <source>Folder for auto-saved captures. Empty means Pictures/ScreenShot.</source>
         <translation>Folder for auto-saved captures. Empty means Pictures/ScreenShot.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="161" />
+        <location filename="../src/core/config/Settings.cpp" line="179" />
         <source>Delete auto-saved files after (days)</source>
         <translation>Delete auto-saved files after (days)</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="161" />
+        <location filename="../src/core/config/Settings.cpp" line="179" />
         <source>Auto-saved files older than this are deleted at startup. 0 keeps them forever.</source>
         <translation>Auto-saved files older than this are deleted at startup. 0 keeps them forever.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="163" />
+        <location filename="../src/core/config/Settings.cpp" line="181" />
         <source>Show OCR result window</source>
         <translation>Show OCR result window</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="163" />
+        <location filename="../src/core/config/Settings.cpp" line="181" />
         <source>After recognizing text, open an editable result window besides copying the text.</source>
         <translation>After recognizing text, open an editable result window besides copying the text.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="164" />
+        <location filename="../src/core/config/Settings.cpp" line="182" />
         <source>OCR language</source>
         <translation>OCR language</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="164" />
+        <location filename="../src/core/config/Settings.cpp" line="182" />
         <source>Language tag of an installed OCR pack (for example zh-Hans-CN or en-US); auto picks from your profile languages.</source>
         <translation>Language tag of an installed OCR pack (for example zh-Hans-CN or en-US); auto picks from your profile languages.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="165" />
+        <location filename="../src/core/config/Settings.cpp" line="183" />
         <source>OCR mode</source>
         <translation>OCR mode</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="165" />
+        <location filename="../src/core/config/Settings.cpp" line="183" />
         <source>Fast uses the image as is; accurate enlarges it first, which helps with small text but takes longer.</source>
         <translation>Fast uses the image as is; accurate enlarges it first, which helps with small text but takes longer.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="165" />
+        <location filename="../src/core/config/Settings.cpp" line="183" />
         <source>Fast</source>
         <translation>Fast</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="165" />
+        <location filename="../src/core/config/Settings.cpp" line="183" />
         <source>Accurate</source>
         <translation>Accurate</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="166" />
+        <location filename="../src/core/config/Settings.cpp" line="184" />
         <source>OCR text layout</source>
         <translation>OCR text layout</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="166" />
+        <location filename="../src/core/config/Settings.cpp" line="184" />
         <source>Auto joins the lines of a paragraph; no newlines puts everything on one line; multiline keeps one line per recognized line.</source>
         <translation>Auto joins the lines of a paragraph; no newlines puts everything on one line; multiline keeps one line per recognized line.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="166" />
+        <location filename="../src/core/config/Settings.cpp" line="184" />
         <source>No newlines</source>
         <translation>No newlines</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="166" />
+        <location filename="../src/core/config/Settings.cpp" line="184" />
         <source>Multiline</source>
         <translation>Multiline</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="167" />
+        <location filename="../src/core/config/Settings.cpp" line="185" />
         <source>OCR punctuation</source>
         <translation>OCR punctuation</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="167" />
+        <location filename="../src/core/config/Settings.cpp" line="185" />
         <source>Keep as recognized, or convert to half-width / full-width.</source>
         <translation>Keep as recognized, or convert to half-width / full-width.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="167" />
+        <location filename="../src/core/config/Settings.cpp" line="185" />
         <source>Keep</source>
         <translation>Keep</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="167" />
+        <location filename="../src/core/config/Settings.cpp" line="185" />
         <source>Half-width</source>
         <translation>Half-width</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="167" />
+        <location filename="../src/core/config/Settings.cpp" line="185" />
         <source>Full-width</source>
         <translation>Full-width</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="168" />
+        <location filename="../src/core/config/Settings.cpp" line="186" />
         <source>Selectable text on image pins</source>
         <translation>Selectable text on image pins</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="168" />
+        <location filename="../src/core/config/Settings.cpp" line="186" />
         <source>Recognize text on image pins so it can be selected, copied and dragged out; Alt+drag moves the pin instead.</source>
         <translation>Recognize text on image pins so it can be selected, copied and dragged out; Alt+drag moves the pin instead.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="169" />
+        <location filename="../src/core/config/Settings.cpp" line="187" />
         <source>QR / barcode detection while capturing</source>
         <translation>QR / barcode detection while capturing</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="169" />
+        <location filename="../src/core/config/Settings.cpp" line="187" />
         <source>Off; manual (toolbar button); auto (a button appears when a code is found); show (the content opens right away).</source>
         <translation>Off; manual (toolbar button); auto (a button appears when a code is found); show (the content opens right away).</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="169" />
+        <location filename="../src/core/config/Settings.cpp" line="187" />
         <source>Manual</source>
         <translation>Manual</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="169" />
+        <location filename="../src/core/config/Settings.cpp" line="187" />
         <source>Show content</source>
         <translation>Show content</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="170" />
+        <location filename="../src/core/config/Settings.cpp" line="188" />
         <source>Recent capture areas</source>
         <translation>Recent capture areas</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="170" />
+        <location filename="../src/core/config/Settings.cpp" line="188" />
         <source>Remembered automatically; R loads the last area, Shift+R earlier ones.</source>
         <translation>Remembered automatically; R loads the last area, Shift+R earlier ones.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="171" />
+        <location filename="../src/core/config/Settings.cpp" line="189" />
         <source>Recent capture areas to keep</source>
         <translation>Recent capture areas to keep</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="171" />
+        <location filename="../src/core/config/Settings.cpp" line="189" />
         <source>How many areas R / Shift+R can go back through.</source>
         <translation>How many areas R / Shift+R can go back through.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="172" />
+        <location filename="../src/core/config/Settings.cpp" line="190" />
         <source>Skip element detection for</source>
         <translation>Skip element detection for</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="172" />
+        <location filename="../src/core/config/Settings.cpp" line="190" />
         <source>Process names, separated by commas. Only the window frame is detected for these programs.</source>
         <translation>Process names, separated by commas. Only the window frame is detected for these programs.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="173" />
+        <location filename="../src/core/config/Settings.cpp" line="191" />
         <source>Conservative element detection for</source>
         <translation>Conservative element detection for</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="173" />
+        <location filename="../src/core/config/Settings.cpp" line="191" />
         <source>Process names, separated by commas. These programs get a short timeout and no element hierarchy, which avoids freezes.</source>
         <translation>Process names, separated by commas. These programs get a short timeout and no element hierarchy, which avoids freezes.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="174" />
+        <location filename="../src/core/config/Settings.cpp" line="192" />
         <source>Size unit</source>
         <translation>Size unit</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="174" />
+        <location filename="../src/core/config/Settings.cpp" line="192" />
         <source>Show the selection size in physical or logical (scaled) pixels. Ctrl+U toggles while capturing.</source>
         <translation>Show the selection size in physical or logical (scaled) pixels. Ctrl+U toggles while capturing.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="174" />
+        <location filename="../src/core/config/Settings.cpp" line="192" />
         <source>Physical pixels</source>
         <translation>Physical pixels</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="174" />
+        <location filename="../src/core/config/Settings.cpp" line="192" />
         <source>Logical pixels</source>
         <translation>Logical pixels</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="175" />
+        <location filename="../src/core/config/Settings.cpp" line="193" />
         <source>Selection anchors</source>
         <translation>Selection anchors</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="175" />
+        <location filename="../src/core/config/Settings.cpp" line="193" />
         <source>Handles drawn on the selection: none, the four corners, or corners and edges.</source>
         <translation>Handles drawn on the selection: none, the four corners, or corners and edges.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="175" />
+        <location filename="../src/core/config/Settings.cpp" line="162" />
+        <location filename="../src/core/config/Settings.cpp" line="193" />
         <source>None</source>
         <translation>None</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="175" />
+        <location filename="../src/core/config/Settings.cpp" line="193" />
         <source>Four corners</source>
         <translation>Four corners</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="175" />
+        <location filename="../src/core/config/Settings.cpp" line="193" />
         <source>Eight</source>
         <translation>Eight</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="176" />
+        <location filename="../src/core/config/Settings.cpp" line="194" />
         <source>Hide anchors below (pixels)</source>
         <translation>Hide anchors below (pixels)</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="176" />
+        <location filename="../src/core/config/Settings.cpp" line="194" />
         <source>Anchors are hidden when the selection is smaller than this on either side.</source>
         <translation>Anchors are hidden when the selection is smaller than this on either side.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="177" />
+        <location filename="../src/core/config/Settings.cpp" line="195" />
         <source>Selection border width</source>
         <translation>Selection border width</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="177" />
+        <location filename="../src/core/config/Settings.cpp" line="195" />
         <source>In pixels.</source>
         <translation>In pixels.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="178" />
+        <location filename="../src/core/config/Settings.cpp" line="196" />
         <source>Selection border color</source>
         <translation>Selection border color</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="178" />
+        <location filename="../src/core/config/Settings.cpp" line="196" />
         <source>Empty uses the accent color.</source>
         <translation>Empty uses the accent color.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="179" />
+        <location filename="../src/core/config/Settings.cpp" line="197" />
         <source>Mask color</source>
         <translation>Mask color</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="179" />
+        <location filename="../src/core/config/Settings.cpp" line="197" />
         <source>Color (with opacity) drawn over the screen outside the selection.</source>
         <translation>Color (with opacity) drawn over the screen outside the selection.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="180" />
+        <location filename="../src/core/config/Settings.cpp" line="198" />
         <source>Animate the detection frame</source>
         <translation>Animate the detection frame</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="180" />
+        <location filename="../src/core/config/Settings.cpp" line="198" />
         <source>Slide the highlight smoothly from one window or element to the next.</source>
         <translation>Slide the highlight smoothly from one window or element to the next.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="181" />
+        <location filename="../src/core/config/Settings.cpp" line="199" />
         <source>Magnifier</source>
         <translation>Magnifier</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="181" />
+        <location filename="../src/core/config/Settings.cpp" line="199" />
         <source>Off hides the magnifier completely, including with Alt.</source>
         <translation>Off hides the magnifier completely, including with Alt.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="182" />
+        <location filename="../src/core/config/Settings.cpp" line="200" />
         <source>Magnifier area (pixels)</source>
         <translation>Magnifier area (pixels)</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="182" />
+        <location filename="../src/core/config/Settings.cpp" line="200" />
         <source>Width of the magnified area in screen pixels (odd numbers keep the cursor centered).</source>
         <translation>Width of the magnified area in screen pixels (odd numbers keep the cursor centered).</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="183" />
+        <location filename="../src/core/config/Settings.cpp" line="201" />
         <source>Magnifier grid</source>
         <translation>Magnifier grid</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="183" />
+        <location filename="../src/core/config/Settings.cpp" line="201" />
         <source>Draw a pixel grid in the magnifier.</source>
         <translation>Draw a pixel grid in the magnifier.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="184" />
+        <location filename="../src/core/config/Settings.cpp" line="202" />
         <source>Magnifier grid color</source>
         <translation>Magnifier grid color</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="184" />
+        <location filename="../src/core/config/Settings.cpp" line="202" />
         <source>Color (with opacity) of the grid lines.</source>
         <translation>Color (with opacity) of the grid lines.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="185" />
+        <location filename="../src/core/config/Settings.cpp" line="203" />
         <source>Magnifier shortcut hint</source>
         <translation>Magnifier shortcut hint</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="185" />
+        <location filename="../src/core/config/Settings.cpp" line="203" />
         <source>Show the C / Shift hint line.</source>
         <translation>Show the C / Shift hint line.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="186" />
+        <location filename="../src/core/config/Settings.cpp" line="204" />
         <source>Magnifier coordinates</source>
         <translation>Magnifier coordinates</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="186" />
+        <location filename="../src/core/config/Settings.cpp" line="204" />
         <source>Show the cursor position and selection size.</source>
         <translation>Show the cursor position and selection size.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="187" />
+        <location filename="../src/core/config/Settings.cpp" line="205" />
         <source>Magnifier color value</source>
         <translation>Magnifier color value</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="187" />
+        <location filename="../src/core/config/Settings.cpp" line="205" />
         <source>Show the color of the pixel under the cursor.</source>
         <translation>Show the color of the pixel under the cursor.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="188" />
+        <location filename="../src/core/config/Settings.cpp" line="206" />
         <source>Guide lines</source>
         <translation>Guide lines</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="188" />
+        <location filename="../src/core/config/Settings.cpp" line="206" />
         <source>When to show the guides: never, while Alt is held, or always.</source>
         <translation>When to show the guides: never, while Alt is held, or always.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="188" />
+        <location filename="../src/core/config/Settings.cpp" line="206" />
         <source>While Alt is held</source>
         <translation>While Alt is held</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="188" />
+        <location filename="../src/core/config/Settings.cpp" line="206" />
         <source>Always</source>
         <translation>Always</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="189" />
+        <location filename="../src/core/config/Settings.cpp" line="207" />
         <source>Cursor crosshair</source>
         <translation>Cursor crosshair</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="189" />
+        <location filename="../src/core/config/Settings.cpp" line="207" />
         <source>Full-screen lines through the cursor.</source>
         <translation>Full-screen lines through the cursor.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="190" />
+        <location filename="../src/core/config/Settings.cpp" line="208" />
         <source>Selection center lines</source>
         <translation>Selection center lines</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="190" />
+        <location filename="../src/core/config/Settings.cpp" line="208" />
         <source>Lines through the center of the selection.</source>
         <translation>Lines through the center of the selection.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="191" />
+        <location filename="../src/core/config/Settings.cpp" line="209" />
         <source>Selection edge lines</source>
         <translation>Selection edge lines</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="191" />
+        <location filename="../src/core/config/Settings.cpp" line="209" />
         <source>Extend the selection edges to the screen borders.</source>
         <translation>Extend the selection edges to the screen borders.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="192" />
+        <location filename="../src/core/config/Settings.cpp" line="210" />
         <source>Keep cancelled captures in history</source>
         <translation>Keep cancelled captures in history</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="192" />
+        <location filename="../src/core/config/Settings.cpp" line="210" />
         <source>Pressing Esc with a selection still records it, so a mistaken Esc loses nothing.</source>
         <translation>Pressing Esc with a selection still records it, so a mistaken Esc loses nothing.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="193" />
+        <location filename="../src/core/config/Settings.cpp" line="211" />
         <source>History folder</source>
         <translation>History folder</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="193" />
+        <location filename="../src/core/config/Settings.cpp" line="211" />
         <source>Also save every history entry as a file here and load them back on start. Empty keeps the history in memory only.</source>
         <translation>Also save every history entry as a file here and load them back on start. Empty keeps the history in memory only.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="194" />
+        <location filename="../src/core/config/Settings.cpp" line="212" />
         <source>HDR color correction</source>
         <translation>HDR color correction</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="194" />
+        <location filename="../src/core/config/Settings.cpp" line="212" />
         <source>How HDR screens are converted to SDR captures: keep highlights (soft compression) or keep brightness (clip highlights).</source>
         <translation>How HDR screens are converted to SDR captures: keep highlights (soft compression) or keep brightness (clip highlights).</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="194" />
+        <location filename="../src/core/config/Settings.cpp" line="212" />
         <source>Keep highlights</source>
         <translation>Keep highlights</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="194" />
+        <location filename="../src/core/config/Settings.cpp" line="212" />
         <source>Keep brightness</source>
         <translation>Keep brightness</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="195" />
+        <location filename="../src/core/config/Settings.cpp" line="213" />
         <location filename="../tests/component/tst_i18n.cpp" line="26" />
         <source>Capture hotkey</source>
         <translation>Capture hotkey</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="195" />
+        <location filename="../src/core/config/Settings.cpp" line="213" />
         <source>Global hotkey that starts a capture.</source>
         <translation>Global hotkey that starts a capture.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="196" />
+        <location filename="../src/core/config/Settings.cpp" line="214" />
         <source>Pin hotkey</source>
         <translation>Pin hotkey</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="196" />
+        <location filename="../src/core/config/Settings.cpp" line="214" />
         <source>Global hotkey that pins the clipboard.</source>
         <translation>Global hotkey that pins the clipboard.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="197" />
+        <location filename="../src/core/config/Settings.cpp" line="215" />
         <source>Hide / show pins hotkey</source>
         <translation>Hide / show pins hotkey</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="197" />
+        <location filename="../src/core/config/Settings.cpp" line="215" />
         <source>Global hotkey that hides or shows all pins.</source>
         <translation>Global hotkey that hides or shows all pins.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="198" />
+        <location filename="../src/core/config/Settings.cpp" line="216" />
         <source>Restore closed pin hotkey</source>
         <translation>Restore closed pin hotkey</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="198" />
+        <location filename="../src/core/config/Settings.cpp" line="216" />
         <source>Global hotkey that brings back the last closed pin.</source>
         <translation>Global hotkey that brings back the last closed pin.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="199" />
+        <location filename="../src/core/config/Settings.cpp" line="217" />
         <source>Click-through hotkey</source>
         <translation>Click-through hotkey</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="199" />
+        <location filename="../src/core/config/Settings.cpp" line="217" />
         <source>Global hotkey that toggles mouse click-through for the pin under the cursor; with no pin there, turns click-through off for all pins.</source>
         <translation>Global hotkey that toggles mouse click-through for the pin under the cursor; with no pin there, turns click-through off for all pins.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="200" />
+        <location filename="../src/core/config/Settings.cpp" line="218" />
         <source>Next pin group hotkey</source>
         <translation>Next pin group hotkey</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="200" />
+        <location filename="../src/core/config/Settings.cpp" line="218" />
         <source>Global hotkey that switches to the next pin group.</source>
         <translation>Global hotkey that switches to the next pin group.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="201" />
+        <location filename="../src/core/config/Settings.cpp" line="219" />
         <source>Previous pin group hotkey</source>
         <translation>Previous pin group hotkey</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="201" />
+        <location filename="../src/core/config/Settings.cpp" line="219" />
         <source>Global hotkey that goes back to the previous pin group.</source>
         <translation>Global hotkey that goes back to the previous pin group.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="202" />
+        <location filename="../src/core/config/Settings.cpp" line="220" />
         <source>Actions</source>
         <translation>Actions</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="202" />
+        <location filename="../src/core/config/Settings.cpp" line="220" />
         <source>Custom actions (JSON). Edit them from the tray menu: Actions...</source>
         <translation>Custom actions (JSON). Edit them from the tray menu: Actions...</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="203" />
+        <location filename="../src/core/config/Settings.cpp" line="221" />
         <source>Ignore hotkeys when these programs are in front</source>
         <translation>Ignore hotkeys when these programs are in front</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="203" />
+        <location filename="../src/core/config/Settings.cpp" line="221" />
         <source>Process names, separated by commas.</source>
         <translation>Process names, separated by commas.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="204" />
+        <location filename="../src/core/config/Settings.cpp" line="222" />
         <source>Allow single-key hotkeys</source>
         <translation>Allow single-key hotkeys</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="204" />
+        <location filename="../src/core/config/Settings.cpp" line="222" />
         <source>Let a plain letter, digit or symbol act as a global hotkey (function keys are always allowed).</source>
         <translation>Let a plain letter, digit or symbol act as a global hotkey (function keys are always allowed).</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="205" />
+        <location filename="../src/core/config/Settings.cpp" line="223" />
         <source>Toggle window on top hotkey</source>
         <translation>Toggle window on top hotkey</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="205" />
+        <location filename="../src/core/config/Settings.cpp" line="223" />
         <source>Windows only: keep or release the window under the cursor on top.</source>
         <translation>Windows only: keep or release the window under the cursor on top.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="206" />
+        <location filename="../src/core/config/Settings.cpp" line="224" />
         <source>Paste as image hotkey</source>
         <translation>Paste as image hotkey</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="206" />
+        <location filename="../src/core/config/Settings.cpp" line="224" />
         <source>Convert the clipboard to an image, then paste it into the active program.</source>
         <translation>Convert the clipboard to an image, then paste it into the active program.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="207" />
+        <location filename="../src/core/config/Settings.cpp" line="225" />
         <source>Paste as plain text hotkey</source>
         <translation>Paste as plain text hotkey</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="207" />
+        <location filename="../src/core/config/Settings.cpp" line="225" />
         <source>Strip formatting from the clipboard, then paste it into the active program.</source>
         <translation>Strip formatting from the clipboard, then paste it into the active program.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="208" />
+        <location filename="../src/core/config/Settings.cpp" line="226" />
         <source>In-app shortcuts</source>
         <translation>In-app shortcuts</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="208" />
+        <location filename="../src/core/config/Settings.cpp" line="226" />
         <source>Overrides for the capture and pin shortcuts (JSON, {"context.action": "Ctrl+X"}). Contexts: capture, pin, pinImage, pinText.</source>
         <translation>Overrides for the capture and pin shortcuts (JSON, {"context.action": "Ctrl+X"}). Contexts: capture, pin, pinImage, pinText.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="209" />
+        <location filename="../src/core/config/Settings.cpp" line="227" />
         <source>Double-tap modifier</source>
         <translation>Double-tap modifier</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="209" />
+        <location filename="../src/core/config/Settings.cpp" line="227" />
         <source>Tapping this modifier twice quickly triggers the action below (Windows only).</source>
         <translation>Tapping this modifier twice quickly triggers the action below (Windows only).</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="209" />
-        <location filename="../src/core/config/Settings.cpp" line="214" />
+        <location filename="../src/core/config/Settings.cpp" line="227" />
+        <location filename="../src/core/config/Settings.cpp" line="232" />
         <source>Ctrl</source>
         <translation>Ctrl</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="209" />
-        <location filename="../src/core/config/Settings.cpp" line="214" />
+        <location filename="../src/core/config/Settings.cpp" line="227" />
+        <location filename="../src/core/config/Settings.cpp" line="232" />
         <source>Shift</source>
         <translation>Shift</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="209" />
-        <location filename="../src/core/config/Settings.cpp" line="214" />
+        <location filename="../src/core/config/Settings.cpp" line="227" />
+        <location filename="../src/core/config/Settings.cpp" line="232" />
         <source>Alt</source>
         <translation>Alt</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="210" />
+        <location filename="../src/core/config/Settings.cpp" line="228" />
         <source>Double-tap interval (ms)</source>
         <translation>Double-tap interval (ms)</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="210" />
+        <location filename="../src/core/config/Settings.cpp" line="228" />
         <source>Maximum time between the two taps.</source>
         <translation>Maximum time between the two taps.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="211" />
+        <location filename="../src/core/config/Settings.cpp" line="229" />
         <source>Double-tap action</source>
         <translation>Double-tap action</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="211" />
+        <location filename="../src/core/config/Settings.cpp" line="229" />
         <source>What a modifier double-tap does.</source>
         <translation>What a modifier double-tap does.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="211" />
-        <location filename="../src/core/config/Settings.cpp" line="219" />
-        <location filename="../src/core/config/Settings.cpp" line="220" />
-        <location filename="../src/core/config/Settings.cpp" line="221" />
-        <location filename="../src/core/config/Settings.cpp" line="222" />
+        <location filename="../src/core/config/Settings.cpp" line="229" />
+        <location filename="../src/core/config/Settings.cpp" line="237" />
+        <location filename="../src/core/config/Settings.cpp" line="238" />
+        <location filename="../src/core/config/Settings.cpp" line="239" />
+        <location filename="../src/core/config/Settings.cpp" line="240" />
         <source>Hide / show pins</source>
         <translation>Hide / show pins</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="212" />
+        <location filename="../src/core/config/Settings.cpp" line="230" />
         <source>Ignore simulated key presses</source>
         <translation>Ignore simulated key presses</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="212" />
+        <location filename="../src/core/config/Settings.cpp" line="230" />
         <source>Hotkeys sent by macro tools or other programs are ignored (Windows only).</source>
         <translation>Hotkeys sent by macro tools or other programs are ignored (Windows only).</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="213" />
+        <location filename="../src/core/config/Settings.cpp" line="231" />
         <source>Global mouse capture</source>
         <translation>Global mouse capture</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="213" />
+        <location filename="../src/core/config/Settings.cpp" line="231" />
         <source>Hold the modifier and drag with a mouse button over any program to capture that area (Windows only).</source>
         <translation>Hold the modifier and drag with a mouse button over any program to capture that area (Windows only).</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="214" />
+        <location filename="../src/core/config/Settings.cpp" line="232" />
         <source>Global mouse modifier</source>
         <translation>Global mouse modifier</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="214" />
+        <location filename="../src/core/config/Settings.cpp" line="232" />
         <source>Key to hold while dragging.</source>
         <translation>Key to hold while dragging.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="214" />
+        <location filename="../src/core/config/Settings.cpp" line="232" />
         <source>Win</source>
         <translation>Win</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="215" />
+        <location filename="../src/core/config/Settings.cpp" line="233" />
         <source>Global mouse: left button</source>
         <translation>Global mouse: left button</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="215" />
-        <location filename="../src/core/config/Settings.cpp" line="216" />
-        <location filename="../src/core/config/Settings.cpp" line="217" />
+        <location filename="../src/core/config/Settings.cpp" line="233" />
+        <location filename="../src/core/config/Settings.cpp" line="234" />
+        <location filename="../src/core/config/Settings.cpp" line="235" />
         <source>What happens with the dragged area.</source>
         <translation>What happens with the dragged area.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="215" />
-        <location filename="../src/core/config/Settings.cpp" line="216" />
-        <location filename="../src/core/config/Settings.cpp" line="217" />
+        <location filename="../src/core/config/Settings.cpp" line="233" />
+        <location filename="../src/core/config/Settings.cpp" line="234" />
+        <location filename="../src/core/config/Settings.cpp" line="235" />
         <source>Pin</source>
         <translation>Pin</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="215" />
-        <location filename="../src/core/config/Settings.cpp" line="216" />
-        <location filename="../src/core/config/Settings.cpp" line="217" />
+        <location filename="../src/core/config/Settings.cpp" line="233" />
+        <location filename="../src/core/config/Settings.cpp" line="234" />
+        <location filename="../src/core/config/Settings.cpp" line="235" />
         <source>Copy recognized text</source>
         <translation>Copy recognized text</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="215" />
-        <location filename="../src/core/config/Settings.cpp" line="216" />
-        <location filename="../src/core/config/Settings.cpp" line="217" />
+        <location filename="../src/core/config/Settings.cpp" line="233" />
+        <location filename="../src/core/config/Settings.cpp" line="234" />
+        <location filename="../src/core/config/Settings.cpp" line="235" />
         <source>Save</source>
         <translation>Save</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="216" />
+        <location filename="../src/core/config/Settings.cpp" line="234" />
         <source>Global mouse: middle button</source>
         <translation>Global mouse: middle button</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="217" />
+        <location filename="../src/core/config/Settings.cpp" line="235" />
         <source>Global mouse: right button</source>
         <translation>Global mouse: right button</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="218" />
+        <location filename="../src/core/config/Settings.cpp" line="236" />
         <source>Hot corner dwell (ms)</source>
         <translation>Hot corner dwell (ms)</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="218" />
+        <location filename="../src/core/config/Settings.cpp" line="236" />
         <source>How long the cursor must rest in a corner.</source>
         <translation>How long the cursor must rest in a corner.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="219" />
+        <location filename="../src/core/config/Settings.cpp" line="237" />
         <source>Hot corner: top-left</source>
         <translation>Hot corner: top-left</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="219" />
-        <location filename="../src/core/config/Settings.cpp" line="220" />
-        <location filename="../src/core/config/Settings.cpp" line="221" />
-        <location filename="../src/core/config/Settings.cpp" line="222" />
+        <location filename="../src/core/config/Settings.cpp" line="237" />
+        <location filename="../src/core/config/Settings.cpp" line="238" />
+        <location filename="../src/core/config/Settings.cpp" line="239" />
+        <location filename="../src/core/config/Settings.cpp" line="240" />
         <source>Action when the cursor rests in this corner.</source>
         <translation>Action when the cursor rests in this corner.</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="219" />
-        <location filename="../src/core/config/Settings.cpp" line="220" />
-        <location filename="../src/core/config/Settings.cpp" line="221" />
-        <location filename="../src/core/config/Settings.cpp" line="222" />
+        <location filename="../src/core/config/Settings.cpp" line="237" />
+        <location filename="../src/core/config/Settings.cpp" line="238" />
+        <location filename="../src/core/config/Settings.cpp" line="239" />
+        <location filename="../src/core/config/Settings.cpp" line="240" />
         <source>Restore closed pin</source>
         <translation>Restore closed pin</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="220" />
+        <location filename="../src/core/config/Settings.cpp" line="238" />
         <source>Hot corner: top-right</source>
         <translation>Hot corner: top-right</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="221" />
+        <location filename="../src/core/config/Settings.cpp" line="239" />
         <source>Hot corner: bottom-left</source>
         <translation>Hot corner: bottom-left</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="222" />
+        <location filename="../src/core/config/Settings.cpp" line="240" />
         <source>Hot corner: bottom-right</source>
         <translation>Hot corner: bottom-right</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="223" />
+        <location filename="../src/core/config/Settings.cpp" line="241" />
         <source>Global hotkeys enabled</source>
         <translation>Global hotkeys enabled</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="223" />
+        <location filename="../src/core/config/Settings.cpp" line="241" />
         <source>Turn all global hotkeys on or off.</source>
         <translation>Turn all global hotkeys on or off.</translation>
     </message>
@@ -4481,339 +4973,354 @@
 <context>
     <name>ss::App</name>
     <message>
-        <location filename="../src/app/App.cpp" line="97" />
+        <location filename="../src/app/App.cpp" line="100" />
         <source>Auto-saved</source>
         <translation>Auto-saved</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="97" />
+        <location filename="../src/app/App.cpp" line="100" />
         <source>Saved</source>
         <translation>Saved</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="113" />
+        <location filename="../src/app/App.cpp" line="117" />
         <source>Decode codes</source>
         <translation>Decode codes</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="113" />
-        <location filename="../src/app/App.cpp" line="770" />
+        <location filename="../src/app/App.cpp" line="117" />
+        <location filename="../src/app/App.cpp" line="789" />
         <source>No QR code or barcode found.</source>
         <translation>No QR code or barcode found.</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="170" />
+        <location filename="../src/app/App.cpp" line="174" />
         <source>Screen recording permission</source>
         <translation>Screen recording permission</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="171" />
+        <location filename="../src/app/App.cpp" line="175" />
         <source>ScreenShot needs the Screen Recording permission to capture the screen. Grant it in System Settings, then restart ScreenShot.</source>
         <translation>ScreenShot needs the Screen Recording permission to capture the screen. Grant it in System Settings, then restart ScreenShot.</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="172" />
+        <location filename="../src/app/App.cpp" line="176" />
         <source>Open System Settings</source>
         <translation>Open System Settings</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="186" />
+        <location filename="../src/app/App.cpp" line="190" />
         <source>Capture	F1</source>
         <translation>Capture	F1</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="187" />
+        <location filename="../src/app/App.cpp" line="191" />
         <source>Custom capture...</source>
         <translation>Custom capture...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="188" />
+        <location filename="../src/app/App.cpp" line="192" />
         <source>Quick capture</source>
         <translation>Quick capture</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="189" />
+        <location filename="../src/app/App.cpp" line="193" />
         <source>Full screen</source>
         <translation>Full screen</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="190" />
+        <location filename="../src/app/App.cpp" line="194" />
         <source>Last area</source>
         <translation>Last area</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="191" />
+        <location filename="../src/app/App.cpp" line="195" />
         <source>Active window</source>
         <translation>Active window</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="192" />
+        <location filename="../src/app/App.cpp" line="196" />
         <source>Active screen</source>
         <translation>Active screen</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="193" />
+        <location filename="../src/app/App.cpp" line="197" />
         <source>Screen under cursor</source>
         <translation>Screen under cursor</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="194" />
+        <location filename="../src/app/App.cpp" line="198" />
         <source>Whiteboard</source>
         <translation>Whiteboard</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="195" />
+        <location filename="../src/app/App.cpp" line="199" />
         <source>Pin clipboard	F3</source>
         <translation>Pin clipboard	F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="196" />
-        <location filename="../src/app/App.cpp" line="965" />
+        <location filename="../src/app/App.cpp" line="200" />
+        <location filename="../src/app/App.cpp" line="984" />
         <source>Hide all pins	Shift+F3</source>
         <translation>Hide all pins	Shift+F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="197" />
+        <location filename="../src/app/App.cpp" line="201" />
         <source>Restore closed pin	Ctrl+3</source>
         <translation>Restore closed pin	Ctrl+3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="198" />
+        <location filename="../src/app/App.cpp" line="202" />
         <source>Restore off-screen pins</source>
         <translation>Restore off-screen pins</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="199" />
+        <location filename="../src/app/App.cpp" line="203" />
         <source>Pin files selected in Explorer</source>
         <translation>Pin files selected in Explorer</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="200" />
+        <location filename="../src/app/App.cpp" line="204" />
         <source>All pins</source>
         <translation>All pins</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="201" />
+        <location filename="../src/app/App.cpp" line="205" />
         <source>Thumbnails</source>
         <translation>Thumbnails</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="202" />
+        <location filename="../src/app/App.cpp" line="206" />
         <source>Full size</source>
         <translation>Full size</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="203" />
+        <location filename="../src/app/App.cpp" line="207" />
         <source>Save all to folder...</source>
         <translation>Save all to folder...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="204" />
+        <location filename="../src/app/App.cpp" line="208" />
         <source>Save all pins</source>
         <translation>Save all pins</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="208" />
+        <location filename="../src/app/App.cpp" line="212" />
         <source>Solo selected pins</source>
         <translation>Solo selected pins</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="209" />
+        <location filename="../src/app/App.cpp" line="213" />
         <source>Close all</source>
         <translation>Close all</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="210" />
+        <location filename="../src/app/App.cpp" line="214" />
         <source>Destroy all</source>
         <translation>Destroy all</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="211" />
+        <location filename="../src/app/App.cpp" line="215" />
         <source>Actions</source>
         <translation>Actions</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="213" />
+        <location filename="../src/app/App.cpp" line="217" />
         <source>Recognize</source>
         <translation>Recognize</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="214" />
+        <location filename="../src/app/App.cpp" line="218" />
         <source>Text in image file (OCR)...</source>
         <translation>Text in image file (OCR)...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="215" />
+        <location filename="../src/app/App.cpp" line="219" />
         <source>QR code / barcode in image file...</source>
         <translation>QR code / barcode in image file...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="216" />
+        <location filename="../src/app/App.cpp" line="220" />
         <source>Pin groups</source>
         <translation>Pin groups</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="220" />
+        <location filename="../src/app/App.cpp" line="224" />
         <source>Disable hotkeys</source>
         <translation>Disable hotkeys</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="223" />
+        <location filename="../src/app/App.cpp" line="227" />
         <source>Preferences...</source>
         <translation>Preferences...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="224" />
+        <location filename="../src/app/App.cpp" line="228" />
         <source>Settings file</source>
         <translation>Settings file</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="225" />
+        <location filename="../src/app/App.cpp" line="229" />
         <source>Export settings...</source>
         <translation>Export settings...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="226" />
+        <location filename="../src/app/App.cpp" line="230" />
         <source>Export settings</source>
         <translation>Export settings</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="226" />
-        <location filename="../src/app/App.cpp" line="231" />
+        <location filename="../src/app/App.cpp" line="230" />
+        <location filename="../src/app/App.cpp" line="235" />
         <source>Settings (*.json)</source>
         <translation>Settings (*.json)</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="230" />
+        <location filename="../src/app/App.cpp" line="234" />
         <source>Import settings...</source>
         <translation>Import settings...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="231" />
+        <location filename="../src/app/App.cpp" line="235" />
         <source>Import settings</source>
         <translation>Import settings</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="235" />
+        <location filename="../src/app/App.cpp" line="239" />
         <source>Open settings folder</source>
         <translation>Open settings folder</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="236" />
+        <location filename="../src/app/App.cpp" line="240" />
         <source>Help</source>
         <translation>Help</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="238" />
+        <location filename="../src/app/App.cpp" line="242" />
         <source>Quit</source>
         <translation>Quit</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="298" />
+        <location filename="../src/app/App.cpp" line="302" />
         <source>New group...</source>
         <translation>New group...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="300" />
+        <location filename="../src/app/App.cpp" line="304" />
         <source>New pin group</source>
         <translation>New pin group</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="300" />
+        <location filename="../src/app/App.cpp" line="304" />
         <source>Group name:</source>
         <translation>Group name:</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="305" />
+        <location filename="../src/app/App.cpp" line="309" />
         <source>Next group	Ctrl+Shift+3</source>
         <translation>Next group	Ctrl+Shift+3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="306" />
+        <location filename="../src/app/App.cpp" line="310" />
         <source>Previous group</source>
         <translation>Previous group</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="307" />
+        <location filename="../src/app/App.cpp" line="311" />
         <source>Clear this group</source>
         <translation>Clear this group</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="308" />
+        <location filename="../src/app/App.cpp" line="312" />
         <source>Manage groups...</source>
         <translation>Manage groups...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="410" />
+        <location filename="../src/app/App.cpp" line="414" />
         <source>Hotkey conflict</source>
         <translation>Hotkey conflict</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="410" />
+        <location filename="../src/app/App.cpp" line="414" />
         <source>%1 is already used by another program.</source>
         <translation>%1 is already used by another program.</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="718" />
+        <location filename="../src/app/App.cpp" line="737" />
         <source>Edit actions...</source>
         <translation>Edit actions...</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="756" />
+        <location filename="../src/app/App.cpp" line="775" />
         <source>Recognize text in image</source>
         <translation>Recognize text in image</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="756" />
-        <location filename="../src/app/App.cpp" line="765" />
+        <location filename="../src/app/App.cpp" line="775" />
+        <location filename="../src/app/App.cpp" line="784" />
         <source>Images (*.png *.jpg *.jpeg *.bmp *.webp)</source>
         <translation>Images (*.png *.jpg *.jpeg *.bmp *.webp)</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="765" />
-        <location filename="../src/app/App.cpp" line="770" />
+        <location filename="../src/app/App.cpp" line="784" />
+        <location filename="../src/app/App.cpp" line="789" />
         <source>Decode codes in image</source>
         <translation>Decode codes in image</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="779" />
+        <location filename="../src/app/App.cpp" line="798" />
         <source>ScreenShot crashed last time</source>
         <translation>ScreenShot crashed last time</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="779" />
+        <location filename="../src/app/App.cpp" line="798" />
         <source>A crash dump was written to %1</source>
         <translation>A crash dump was written to %1</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="787" />
+        <location filename="../src/app/App.cpp" line="806" />
         <source>Selection size</source>
         <translation>Selection size</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="787" />
+        <location filename="../src/app/App.cpp" line="806" />
         <source>Width x Height (pixels)</source>
         <translation>Width x Height (pixels)</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="938" />
+        <location filename="../src/app/App.cpp" line="957" />
         <source>Scrolling capture</source>
         <translation>Scrolling capture</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="965" />
+        <location filename="../src/app/App.cpp" line="984" />
         <source>Show all pins	Shift+F3</source>
         <translation>Show all pins	Shift+F3</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="992" />
+        <location filename="../src/app/App.cpp" line="1011" />
         <source>About ScreenShot</source>
         <translation>About ScreenShot</translation>
     </message>
     <message>
-        <location filename="../src/app/App.cpp" line="993" />
+        <location filename="../src/app/App.cpp" line="1012" />
         <source>&lt;b&gt;ScreenShot&lt;/b&gt;&lt;br&gt;Screenshot and pin tool.&lt;br&gt;&lt;br&gt;Capture: %1&lt;br&gt;Pin clipboard: %2&lt;br&gt;Hide / show pins: %3&lt;br&gt;&lt;br&gt;While capturing: drag to select, Enter / double-click to copy, Ctrl+S to save, Ctrl+Shift+S to quick save, Ctrl+T to pin, Esc to cancel, Tab to switch window / element detection, C to copy the pixel color, WASD and arrow keys to adjust by one pixel, , and . to recall previous captures.</source>
         <translation>&lt;b&gt;ScreenShot&lt;/b&gt;&lt;br&gt;Screenshot and pin tool.&lt;br&gt;&lt;br&gt;Capture: %1&lt;br&gt;Pin clipboard: %2&lt;br&gt;Hide / show pins: %3&lt;br&gt;&lt;br&gt;While capturing: drag to select, Enter / double-click to copy, Ctrl+S to save, Ctrl+Shift+S to quick save, Ctrl+T to pin, Esc to cancel, Tab to switch window / element detection, C to copy the pixel color, WASD and arrow keys to adjust by one pixel, , and . to recall previous captures.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/App.cpp" line="1313" />
+        <source>Recording saved</source>
+        <translation>Recording saved</translation>
+    </message>
+    <message>
+        <location filename="../src/app/App.cpp" line="1353" />
+        <source>Recover recording</source>
+        <translation>Recover recording</translation>
+    </message>
+    <message>
+        <location filename="../src/app/App.cpp" line="1353" />
+        <source>A recording was interrupted. Open it now?</source>
+        <translation>A recording was interrupted. Open it now?</translation>
     </message>
 </context>
 <context>
@@ -5939,6 +6446,11 @@
         <translation>Advanced</translation>
     </message>
     <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="47" />
+        <source>Recording</source>
+        <translation>Recording</translation>
+    </message>
+    <message>
         <location filename="../src/app/PreferencesDialog.cpp" line="132" />
         <source>Browse...</source>
         <translation>Browse...</translation>
@@ -5947,6 +6459,231 @@
         <location filename="../src/app/PreferencesDialog.cpp" line="137" />
         <source>Choose folder</source>
         <translation>Choose folder</translation>
+    </message>
+</context>
+<context>
+    <name>ss::RecordPlaybackDialog</name>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="46" />
+        <source>Recording</source>
+        <translation>Recording</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="76" />
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="165" />
+        <source>Play</source>
+        <translation>Play</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="88" />
+        <source>Trim start here</source>
+        <translation>Trim start here</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="91" />
+        <source>Trim end here</source>
+        <translation>Trim end here</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="94" />
+        <source>Reset trim</source>
+        <translation>Reset trim</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="103" />
+        <source>No progress overlay</source>
+        <translation>No progress overlay</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="104" />
+        <source>Progress bar</source>
+        <translation>Progress bar</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="105" />
+        <source>Elapsed / total</source>
+        <translation>Elapsed / total</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="106" />
+        <source>Countdown</source>
+        <translation>Countdown</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="113" />
+        <source>Show clicks and keys</source>
+        <translation>Show clicks and keys</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="123" />
+        <source> ms click animation</source>
+        <translation> ms click animation</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="137" />
+        <source>Save...</source>
+        <translation>Save...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="140" />
+        <source>Quick save</source>
+        <translation>Quick save</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="143" />
+        <source>Copy</source>
+        <translation>Copy</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="146" />
+        <source>Discard</source>
+        <translation>Discard</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="159" />
+        <source>Pause</source>
+        <translation>Pause</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="227" />
+        <source>Keep %1 - %2</source>
+        <translation>Keep %1 - %2</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="247" />
+        <source>Nothing to export.</source>
+        <translation>Nothing to export.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="258" />
+        <source>Could not open %1</source>
+        <translation>Could not open %1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="273" />
+        <source>Could not write %1</source>
+        <translation>Could not write %1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="283" />
+        <source>MP4 encoding is not available on this system.</source>
+        <translation>MP4 encoding is not available on this system.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordPlaybackDialog.cpp" line="326" />
+        <source>Save recording</source>
+        <translation>Save recording</translation>
+    </message>
+</context>
+<context>
+    <name>ss::RecordSession</name>
+    <message>
+        <location filename="../src/app/RecordSession.cpp" line="92" />
+        <source>The area is too small to record.</source>
+        <translation>The area is too small to record.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordSession.cpp" line="176" />
+        <source>MP4 encoding is not available on this system.</source>
+        <translation>MP4 encoding is not available on this system.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordSession.cpp" line="192" />
+        <source>Could not create the recording folder %1</source>
+        <translation>Could not create the recording folder %1</translation>
+    </message>
+</context>
+<context>
+    <name>ss::RecordToolbar</name>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="100" />
+        <source>Start</source>
+        <translation>Start</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="101" />
+        <source>Pause</source>
+        <translation>Pause</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="102" />
+        <source>Resume</source>
+        <translation>Resume</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="103" />
+        <source>Stop</source>
+        <translation>Stop</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="104" />
+        <source>Re-record</source>
+        <translation>Re-record</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="109" />
+        <source>Annotate</source>
+        <translation>Annotate</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="114" />
+        <source>Cancel</source>
+        <translation>Cancel</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="122" />
+        <source>Normal (edit, then export)</source>
+        <translation>Normal (edit, then export)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="123" />
+        <source>Quick (MP4 while recording)</source>
+        <translation>Quick (MP4 while recording)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="129" />
+        <source> s delay</source>
+        <translation> s delay</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="136" />
+        <source>%1 fps</source>
+        <translation>%1 fps</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="141" />
+        <source>Light</source>
+        <translation>Light</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="142" />
+        <source>Standard</source>
+        <translation>Standard</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="143" />
+        <source>Raw</source>
+        <translation>Raw</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="147" />
+        <source>Microphone</source>
+        <translation>Microphone</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="151" />
+        <source>System sound</source>
+        <translation>System sound</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="155" />
+        <source>Camera</source>
+        <translation>Camera</translation>
+    </message>
+    <message>
+        <location filename="../src/app/RecordWidgets.cpp" line="175" />
+        <source>Starting in %1</source>
+        <translation>Starting in %1</translation>
     </message>
 </context>
 <context>
