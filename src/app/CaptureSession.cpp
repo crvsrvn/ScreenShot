@@ -1,6 +1,7 @@
 #include "app/CaptureSession.h"
 
 #include "app/CaptureToolbar.h"
+#include "app/EncodePreviewDialog.h"
 #include "app/OutputActions.h"
 #include "app/OverlayWindow.h"
 #include "core/config/Settings.h"
@@ -894,6 +895,7 @@ bool CaptureSession::handleKeyPress(QKeyEvent* e)
     const Qt::KeyboardModifiers mods = e->modifiers();
     const bool ctrl = mods & Qt::ControlModifier;
     const bool shift = mods & Qt::ShiftModifier;
+    const bool alt = mods & Qt::AltModifier;
     if (key != Qt::Key_Shift)
         m_shiftAlone = false;
     if (key == Qt::Key_Shift) {
@@ -966,6 +968,10 @@ bool CaptureSession::handleKeyPress(QKeyEvent* e)
             copyColor();
         return true;
     case Qt::Key_S:
+        if (ctrl && alt) {
+            previewAndSave(); // OUT-07
+            return true;
+        }
         if (ctrl && shift) {
             quickSave();
             return true;
@@ -1369,6 +1375,28 @@ std::optional<WindowInfo> CaptureSession::sourceWindow() const
     if (m_selection.isEmpty())
         return m_windowFinder.windowAt(m_cursor);
     return m_windowFinder.windowAt(m_selection.center());
+}
+
+void CaptureSession::previewAndSave()
+{
+    if (!isActive() || !m_output)
+        return;
+    const QImage image = finalImage();
+    if (image.isNull())
+        return;
+    hideOverlaysTemporarily(true);
+    EncodePreviewDialog dialog(image, *m_output);
+    const bool ok = dialog.exec() == QDialog::Accepted;
+    if (isActive())
+        hideOverlaysTemporarily(false);
+    if (!ok)
+        return;
+    m_settings.setValue(QStringLiteral("output.saveFormat"), dialog.format());
+    if (dialog.format() != QLatin1String("png")) {
+        m_settings.setValue(QStringLiteral("output.qualityAuto"), false);
+        m_settings.setValue(QStringLiteral("output.jpegQuality"), dialog.quality());
+    }
+    save();
 }
 
 void CaptureSession::print()

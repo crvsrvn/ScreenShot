@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QColor>
 #include <QDateTime>
 #include <QHash>
 #include <QImage>
@@ -31,6 +32,7 @@ struct PinGroup {
     QList<PinWindow*> pins;
     QList<ClosedPin> closed;
     QHash<PinWindow*, QDateTime> created;
+    QColor color; // 颜色标签（GRP-02），无效 = 默认
 };
 
 // 贴图管理（PIN-01、PIN-03、PIN-04、PIN-11、PIN-33、PIN-50 ~ PIN-53、PIN-55、PIN-60、GRP-01）
@@ -84,6 +86,25 @@ public:
     int currentGroupIndex() const { return m_current; }
     QString currentGroupName() const { return current().name; }
     int newGroup(const QString& name);          // 新建并切换；返回索引
+    // 组管理器（GRP-02）
+    bool renameGroup(int index, const QString& name);
+    bool removeGroup(int index, int migrateTo); // 贴图与历史迁到 migrateTo
+    bool moveGroup(int from, int to);
+    void setGroupColor(int index, const QColor& color);
+    QColor groupColor(int index) const;
+    // GRP-03：把贴图移到其他组；每组“屏幕上 / 总数”
+    bool movePinToGroup(PinWindow* pin, int index);
+    std::pair<int, int> groupCounts(int index) const;
+    // 独显（PIN-61）：只显示选中的贴图
+    void setSolo(bool on);
+    bool solo() const { return m_solo; }
+    // 托盘批量（PIN-62）
+    void setAllThumbnails(bool on);
+    int saveAllToFolder(const QString& dir);
+    // 资源管理器选中的文件（PIN-12）
+    PinWindow* pinExplorerSelection(QPoint physicalTopLeft);
+    // 重复贴图策略（PIN-14）：返回已存在的贴图（抖动 / 恢复）或空（照常贴）
+    PinWindow* handleDuplicate(const QImage& image);
     bool switchToGroup(int index);
     bool switchToGroupNamed(const QString& name);
     void nextGroup();
@@ -120,6 +141,8 @@ private:
     QSet<PinWindow*> m_selected;
     bool m_hidden = false;
     bool m_clipboardDirty = true;
+    bool m_solo = false;
+    void syncGroupInfo();
 };
 
 } // namespace ss

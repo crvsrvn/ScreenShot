@@ -487,10 +487,16 @@ void TestPinP1::multiSelectOperations()
     QCOMPARE(m.closedPins().size(), 2);
     // Ctrl+单击切换选中
     c->show();
-    QMouseEvent ctrlClick(QEvent::MouseButtonPress, QPointF(50, 50), QPointF(50, 50), Qt::LeftButton, Qt::LeftButton, Qt::ControlModifier);
-    QApplication::sendEvent(c, &ctrlClick);
+    // Ctrl+按下再松开（没拖动）= 切换选中；拖动则是拖出内容（PIN-40）
+    auto ctrlClick = [c] {
+        QMouseEvent press(QEvent::MouseButtonPress, QPointF(50, 50), QPointF(50, 50), Qt::LeftButton, Qt::LeftButton, Qt::ControlModifier);
+        QApplication::sendEvent(c, &press);
+        QMouseEvent release(QEvent::MouseButtonRelease, QPointF(50, 50), QPointF(50, 50), Qt::LeftButton, Qt::NoButton, Qt::ControlModifier);
+        QApplication::sendEvent(c, &release);
+    };
+    ctrlClick();
     QVERIFY(c->selected());
-    QApplication::sendEvent(c, &ctrlClick);
+    ctrlClick();
     QVERIFY(!c->selected());
 }
 

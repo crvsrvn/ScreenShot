@@ -178,6 +178,7 @@ public:
     void quickSave() override;   // OUT-08
     void pin() override;         // PIN-02
     void print() override;       // OUT-11
+    void previewAndSave();       // OUT-07：预估大小 / 预览编码后保存
     // 截图来源窗口（选区中心所在的窗口），用于文件名变量（OUT-10）
     std::optional<WindowInfo> sourceWindow() const;
     void cancel() override;

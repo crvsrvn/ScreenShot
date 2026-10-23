@@ -10,6 +10,8 @@ set(APPLIB_SOURCES
     Theme.h Theme.cpp
     Notification.h Notification.cpp
     FloatingBar.h FloatingBar.cpp
+    GroupDialog.h GroupDialog.cpp
+    EncodePreviewDialog.h EncodePreviewDialog.cpp
     ResultDialogs.h ResultDialogs.cpp
     ActionsDialog.h ActionsDialog.cpp
     PinManager.h PinManager.cpp

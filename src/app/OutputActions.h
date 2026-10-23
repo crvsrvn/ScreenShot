@@ -35,8 +35,14 @@ public:
     int cleanupAutoSave();
     // 打印（OUT-11）：pdfPath 非空时打印到 PDF 文件（测试 / 无打印机），否则弹打印对话框
     bool print(const QImage& image, QWidget* parent, const QString& pdfPath = QString());
-    // 按设置的格式与质量写文件；无半透明像素时去掉透明通道（OUT-05）
+    // 按设置的格式与质量写文件；无半透明像素时去掉透明通道（OUT-05）；pdf 按页边距 / 分页（OUT-04）
     bool writeImage(const QImage& image, const QString& path, const QString& format) const;
+    // 编码到内存（OUT-07 预估大小）；quality<0 用设置
+    QByteArray encode(const QImage& image, const QString& format, int quality = -1) const;
+    // 保存后的动作（OUT-12 复制、OUT-14 外部命令）
+    void afterSave(const QImage& image, const QString& path);
+    // 可保存的格式（含运行时存在插件的 avif）
+    static QStringList saveFormats();
     static bool hasTranslucentPixels(const QImage& image);
 
     QString defaultSaveDir() const;

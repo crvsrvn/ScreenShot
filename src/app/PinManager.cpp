@@ -18,7 +18,12 @@
 #include <QImageReader>
 #include <QMimeData>
 #include <QScreen>
+#include <QTimer>
 #include <QUrl>
+
+#if defined(Q_OS_WIN)
+#include "platform/windows/WinShell.h"
+#endif
 
 namespace ss {
 
@@ -27,7 +32,7 @@ PinManager::PinManager(Settings& settings, OutputActions* output, QObject* paren
     , m_settings(settings)
     , m_output(output)
 {
-    m_groups.append(PinGroup{tr("Default"), {}, {}, {}});
+    m_groups.append(PinGroup{tr("Default"), {}, {}, {}, {}});
     connect(QApplication::clipboard(), &QClipboard::dataChanged, this, [this] { m_clipboardDirty = true; });
 }
 
@@ -97,6 +102,9 @@ PinWindow* PinManager::attach(PinWindow* pin, QPoint physicalTopLeft, const QDat
     connect(pin, &PinWindow::groupAction, this, &PinManager::onGroupAction);
     connect(pin, &PinWindow::ocrRequested, this, &PinManager::ocrRequested);
     connect(pin, &PinWindow::codesRequested, this, &PinManager::codesRequested);
+    connect(pin, &PinWindow::moveToGroupRequested, this, [this](PinWindow* p, int index) { movePinToGroup(p, index); });
+    pin->setGroupColor(current().color);
+    pin->setGroupNames(groupNames());
     // 吸附目标：同组其他可见贴图的内容矩形（PIN-21）
     pin->setSnapTargets([this, pin] {
         QList<QRectF> rects;
@@ -113,12 +121,64 @@ PinWindow* PinManager::attach(PinWindow* pin, QPoint physicalTopLeft, const QDat
     return pin;
 }
 
+PinWindow* PinManager::handleDuplicate(const QImage& image)
+{
+    const QString policy = m_settings.stringValue(QStringLiteral("pin.duplicateBehavior"));
+    if (policy == QLatin1String("duplicate") || image.isNull())
+        return nullptr;
+    const QImage probe = image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    for (PinWindow* p : pins()) {
+        if (p->originalImage() == probe) {
+            if (policy == QLatin1String("shake")) {
+                // 抖动已有贴图（PIN-14）
+                const QPointF origin = p->contentTopLeft();
+                for (int i = 0; i < 6; ++i)
+                    QTimer::singleShot(30 * i, p, [p, origin, i] { p->moveContentTo(origin + QPointF(i == 5 ? 0 : (i % 2 ? 8 : -8), 0)); });
+                p->raise();
+                p->show();
+            }
+            return p;
+        }
+    }
+    if (policy == QLatin1String("restore")) {
+        PinGroup& g = current();
+        for (int i = 0; i < g.closed.size(); ++i) {
+            if (g.closed[i].image.convertToFormat(QImage::Format_ARGB32_Premultiplied) == probe) {
+                const ClosedPin entry = g.closed.takeAt(i);
+                auto* pin = new PinWindow(entry.image, m_settings, m_output);
+                pin->applyStateJson(entry.state);
+                return attach(pin, QPoint(entry.state.value(QStringLiteral("x")).toInt(), entry.state.value(QStringLiteral("y")).toInt()), entry.created);
+            }
+        }
+    }
+    return nullptr;
+}
+
 PinWindow* PinManager::pinImage(const QImage& image, QPoint physicalTopLeft)
 {
     if (image.isNull())
         return nullptr;
+    if (PinWindow* existing = handleDuplicate(image))
+        return existing;
     auto* pin = new PinWindow(image, m_settings, m_output);
     return attach(pin, physicalTopLeft, QDateTime::currentDateTime());
+}
+
+PinWindow* PinManager::pinExplorerSelection(QPoint physicalTopLeft)
+{
+#if defined(Q_OS_WIN)
+    QMimeData mime;
+    QList<QUrl> urls;
+    for (const QString& f : win::selectedExplorerFiles())
+        urls.append(QUrl::fromLocalFile(f));
+    if (urls.isEmpty())
+        return nullptr;
+    mime.setUrls(urls);
+    return pinMime(&mime, physicalTopLeft);
+#else
+    Q_UNUSED(physicalTopLeft);
+    return nullptr;
+#endif
 }
 
 PinWindow* PinManager::pinText(const QString& text, QPoint physicalTopLeft)
@@ -410,6 +470,8 @@ void PinManager::clearSelection()
     for (PinWindow* p : pins())
         p->setSelected(false);
     m_selected.clear();
+    if (m_solo)
+        setSolo(false);
 }
 
 void PinManager::onGroupAction(PinWindow* origin, const QString& action, double arg)
@@ -434,7 +496,145 @@ void PinManager::onGroupAction(PinWindow* origin, const QString& action, double 
     }
 }
 
-// ---- 分组（GRP-01）----
+// ---- 独显 / 批量（PIN-61、PIN-62）----
+
+void PinManager::setSolo(bool on)
+{
+    m_solo = on;
+    for (PinWindow* p : pins())
+        p->setVisible(!on || m_selected.contains(p));
+    emit pinsChanged();
+}
+
+void PinManager::setAllThumbnails(bool on)
+{
+    for (PinWindow* p : pins())
+        if (p->thumbnail() != on)
+            p->toggleThumbnail();
+}
+
+int PinManager::saveAllToFolder(const QString& dir)
+{
+    QDir().mkpath(dir);
+    int n = 0;
+    for (PinWindow* p : pins()) {
+        const QString path = QDir(dir).filePath(QStringLiteral("pin-%1.png").arg(n + 1, 3, 10, QLatin1Char('0')));
+        if (p->displayedImage().save(path, "PNG"))
+            ++n;
+    }
+    return n;
+}
+
+// ---- 分组（GRP-01、GRP-02、GRP-03）----
+
+void PinManager::syncGroupInfo()
+{
+    const QStringList names = groupNames();
+    for (int gi = 0; gi < m_groups.size(); ++gi)
+        for (PinWindow* p : m_groups[gi].pins) {
+            p->setGroupIndex(gi);
+            p->setGroupColor(m_groups[gi].color);
+            p->setGroupNames(names);
+        }
+}
+
+bool PinManager::renameGroup(int index, const QString& name)
+{
+    if (index < 0 || index >= m_groups.size() || name.trimmed().isEmpty())
+        return false;
+    m_groups[index].name = name.trimmed();
+    syncGroupInfo();
+    emit groupChanged(m_current);
+    return true;
+}
+
+bool PinManager::removeGroup(int index, int migrateTo)
+{
+    if (index < 0 || index >= m_groups.size() || migrateTo < 0 || migrateTo >= m_groups.size() || index == migrateTo || m_groups.size() <= 1)
+        return false;
+    PinGroup& from = m_groups[index];
+    PinGroup& to = m_groups[migrateTo];
+    for (PinWindow* p : from.pins) {
+        to.pins.append(p);
+        to.created.insert(p, from.created.value(p));
+    }
+    to.closed.append(from.closed);
+    trimClosed(to);
+    m_groups.removeAt(index);
+    if (migrateTo > index)
+        --migrateTo;
+    const int current = m_current == index ? migrateTo : (m_current > index ? m_current - 1 : m_current);
+    m_previous = std::clamp(m_previous > index ? m_previous - 1 : (m_previous == index ? current : m_previous), 0, static_cast<int>(m_groups.size()) - 1);
+    m_current = current;
+    for (int gi = 0; gi < m_groups.size(); ++gi)
+        for (PinWindow* p : m_groups[gi].pins)
+            p->setVisible(gi == m_current && !m_hidden);
+    syncGroupInfo();
+    emit groupChanged(m_current);
+    emit pinsChanged();
+    return true;
+}
+
+bool PinManager::moveGroup(int from, int to)
+{
+    if (from < 0 || to < 0 || from >= m_groups.size() || to >= m_groups.size() || from == to)
+        return false;
+    m_groups.move(from, to);
+    auto remap = [from, to](int i) {
+        if (i == from)
+            return to;
+        if (from < to && i > from && i <= to)
+            return i - 1;
+        if (from > to && i >= to && i < from)
+            return i + 1;
+        return i;
+    };
+    m_current = remap(m_current);
+    m_previous = remap(m_previous);
+    syncGroupInfo();
+    emit groupChanged(m_current);
+    return true;
+}
+
+void PinManager::setGroupColor(int index, const QColor& color)
+{
+    if (index < 0 || index >= m_groups.size())
+        return;
+    m_groups[index].color = color;
+    syncGroupInfo();
+}
+
+QColor PinManager::groupColor(int index) const
+{
+    return index >= 0 && index < m_groups.size() ? m_groups[index].color : QColor();
+}
+
+bool PinManager::movePinToGroup(PinWindow* pin, int index)
+{
+    const int from = groupIndexOf(pin);
+    if (from < 0 || index < 0 || index >= m_groups.size() || from == index)
+        return false;
+    m_groups[from].pins.removeOne(pin);
+    m_groups[index].pins.append(pin);
+    m_groups[index].created.insert(pin, m_groups[from].created.take(pin));
+    m_selected.remove(pin);
+    pin->setSelected(false);
+    pin->setVisible(index == m_current && !m_hidden);
+    syncGroupInfo();
+    emit pinsChanged();
+    return true;
+}
+
+std::pair<int, int> PinManager::groupCounts(int index) const
+{
+    if (index < 0 || index >= m_groups.size())
+        return {0, 0};
+    int onScreen = 0;
+    for (PinWindow* p : m_groups[index].pins)
+        if (p->isVisible())
+            ++onScreen;
+    return {onScreen, static_cast<int>(m_groups[index].pins.size())};
+}
 
 QStringList PinManager::groupNames() const
 {
@@ -455,8 +655,9 @@ int PinManager::groupIndexOf(PinWindow* pin) const
 int PinManager::newGroup(const QString& name)
 {
     const QString n = name.trimmed().isEmpty() ? tr("Group %1").arg(m_groups.size() + 1) : name.trimmed();
-    m_groups.append(PinGroup{n, {}, {}, {}});
+    m_groups.append(PinGroup{n, {}, {}, {}, {}});
     switchToGroup(static_cast<int>(m_groups.size()) - 1);
+    syncGroupInfo();
     return m_current;
 }
 
@@ -530,7 +731,8 @@ bool PinManager::saveState(const QString& dir) const
             o[QStringLiteral("visible")] = pin->isVisible() || m_hidden;
             pins.append(o);
         }
-        groups.append(QJsonObject{{QStringLiteral("name"), m_groups[gi].name}, {QStringLiteral("pins"), pins}});
+        groups.append(QJsonObject{{QStringLiteral("name"), m_groups[gi].name}, {QStringLiteral("pins"), pins},
+                                  {QStringLiteral("color"), m_groups[gi].color.isValid() ? m_groups[gi].color.name(QColor::HexArgb) : QString()}});
     }
     QJsonObject rootObj{{QStringLiteral("groups"), groups}, {QStringLiteral("current"), m_current}};
     QFile f(d.filePath(QStringLiteral("pins.json")));
@@ -552,9 +754,10 @@ int PinManager::restoreState(const QString& dir)
     for (int gi = 0; gi < groups.size(); ++gi) {
         const QJsonObject g = groups[gi].toObject();
         if (gi >= m_groups.size())
-            m_groups.append(PinGroup{g.value(QStringLiteral("name")).toString(), {}, {}, {}});
+            m_groups.append(PinGroup{g.value(QStringLiteral("name")).toString(), {}, {}, {}, {}});
         else if (gi > 0)
             m_groups[gi].name = g.value(QStringLiteral("name")).toString();
+        m_groups[gi].color = QColor::fromString(g.value(QStringLiteral("color")).toString());
         m_current = gi;
         for (const QJsonValue& v : g.value(QStringLiteral("pins")).toArray()) {
             const QJsonObject o = v.toObject();
@@ -595,6 +798,7 @@ int PinManager::restoreState(const QString& dir)
                 pin->hide();
     }
     m_current = std::clamp(savedCurrent, 0, static_cast<int>(m_groups.size()) - 1);
+    syncGroupInfo();
     emit groupChanged(m_current);
     emit pinsChanged();
     return restored;

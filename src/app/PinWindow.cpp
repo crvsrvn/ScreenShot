@@ -13,8 +13,13 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QContextMenuEvent>
+#include <QBitmap>
+#include <QDir>
+#include <QDrag>
 #include <QDragEnterEvent>
 #include <QDropEvent>
+#include <QInputDialog>
+#include <QNativeGestureEvent>
 #include <QMessageBox>
 #include <QMimeData>
 #include <QGuiApplication>
@@ -24,11 +29,13 @@
 #include <QPainter>
 #include <QScreen>
 #include <QWheelEvent>
+#include <QUrl>
 #include <QWindow>
 #include <QJsonArray>
 #include <cmath>
 
 #if defined(Q_OS_WIN)
+#include "platform/windows/WinShell.h"
 #include "platform/windows/WinWindowTools.h"
 #endif
 
@@ -178,6 +185,23 @@ void PinWindow::relayout()
     if (m_clipped)
         update();
     layoutToolbar();
+    updateClickThroughMask();
+}
+
+void PinWindow::updateClickThroughMask()
+{
+    // PIN-37 透明模式：透明像素处可点穿（用窗口遮罩实现）
+    const bool transparentMode = m_settings.stringValue(QStringLiteral("pin.alphaBackground")) == QLatin1String("transparent");
+    if (!transparentMode || !m_display.hasAlphaChannel() || m_annotating) {
+        clearMask();
+        return;
+    }
+    const QRectF content = contentRect().translated(-pos());
+    QImage alpha = m_display.createAlphaMask().convertToFormat(QImage::Format_Mono);
+    alpha = alpha.scaled(content.size().toSize().expandedTo(QSize(1, 1)));
+    QRegion region(QBitmap::fromImage(alpha));
+    region.translate(content.topLeft().toPoint());
+    setMask(region);
 }
 
 void PinWindow::applyNativeGeometry()
@@ -196,6 +220,10 @@ void PinWindow::showEvent(QShowEvent* e)
 {
     QWidget::showEvent(e);
     applyNativeGeometry();
+#if defined(Q_OS_WIN)
+    if (m_settings.boolValue(QStringLiteral("pin.allDesktops")))
+        win::setWindowOnAllDesktops(reinterpret_cast<void*>(winId()), true); // PIN-56
+#endif
 }
 
 void PinWindow::moveEvent(QMoveEvent* e)
@@ -227,10 +255,38 @@ void PinWindow::setScale(qreal scale, bool interactive)
     zoomAt(contentRect().topLeft() - pos(), scale / m_scale, interactive);
 }
 
+QPointF PinWindow::zoomAnchorLogical(QPointF cursorLogical) const
+{
+    // PIN-23：缩放中心
+    const QString anchor = m_settings.stringValue(QStringLiteral("pin.zoomAnchor"));
+    const QRectF c = contentRect().translated(-pos());
+    if (anchor == QLatin1String("center"))
+        return c.center();
+    if (anchor == QLatin1String("topLeft"))
+        return c.topLeft();
+    if (anchor == QLatin1String("topRight"))
+        return c.topRight();
+    if (anchor == QLatin1String("bottomLeft"))
+        return c.bottomLeft();
+    if (anchor == QLatin1String("bottomRight"))
+        return c.bottomRight();
+    return cursorLogical;
+}
+
 void PinWindow::zoomStep(int steps, QPointF anchorLogical)
 {
+    if (lockBlocks(QStringLiteral("zoom")))
+        return;
     const qreal step = m_settings.intValue(QStringLiteral("pin.zoomStep")) / 100.0;
-    zoomAt(anchorLogical, std::pow(1.0 + step, steps), true);
+    zoomAt(zoomAnchorLogical(anchorLogical), std::pow(1.0 + step, steps), true);
+}
+
+void PinWindow::zoomStepFine(int steps, QPointF anchorLogical)
+{
+    if (lockBlocks(QStringLiteral("zoom")))
+        return;
+    const qreal step = m_settings.intValue(QStringLiteral("pin.zoomFineStep")) / 100.0;
+    zoomAt(zoomAnchorLogical(anchorLogical), std::pow(1.0 + step, steps), true);
 }
 
 void PinWindow::zoomAt(QPointF anchorLogical, qreal factor, bool interactive)
@@ -303,6 +359,19 @@ void PinWindow::rebuildTransformed()
         m_transformedFull = m_transformedFull.convertToFormat(QImage::Format_ARGB32);
         m_transformedFull.invertPixels(QImage::InvertRgb);
         m_transformedFull = m_transformedFull.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    }
+    if (m_brightness != 0) {
+        // PIN-28：亮度按百分比线性缩放
+        QImage img = m_transformedFull.convertToFormat(QImage::Format_ARGB32);
+        const double k = 1.0 + m_brightness / 100.0;
+        for (int y = 0; y < img.height(); ++y) {
+            auto* line = reinterpret_cast<QRgb*>(img.scanLine(y));
+            for (int x = 0; x < img.width(); ++x) {
+                const QRgb c = line[x];
+                line[x] = qRgba(std::clamp(static_cast<int>(qRed(c) * k), 0, 255), std::clamp(static_cast<int>(qGreen(c) * k), 0, 255), std::clamp(static_cast<int>(qBlue(c) * k), 0, 255), qAlpha(c));
+            }
+        }
+        m_transformedFull = img.convertToFormat(QImage::Format_ARGB32_Premultiplied);
     }
     m_transformedFull.setDevicePixelRatio(1.0);
     if (!m_viewRect.isEmpty())
@@ -491,7 +560,8 @@ QJsonObject PinWindow::stateJson() const
     const QPoint tl = physicalTopLeft();
     QJsonObject o{{QStringLiteral("x"), tl.x()}, {QStringLiteral("y"), tl.y()}, {QStringLiteral("scale"), m_scale}, {QStringLiteral("opacity"), m_opacity},
                   {QStringLiteral("rotation"), m_rotation}, {QStringLiteral("flipH"), m_flipH}, {QStringLiteral("flipV"), m_flipV}, {QStringLiteral("passthrough"), m_passthrough},
-                  {QStringLiteral("gray"), m_gray}, {QStringLiteral("invert"), m_invert}, {QStringLiteral("topmost"), m_topmost}};
+                  {QStringLiteral("gray"), m_gray}, {QStringLiteral("invert"), m_invert}, {QStringLiteral("topmost"), m_topmost},
+                  {QStringLiteral("brightness"), m_brightness}, {QStringLiteral("locked"), m_locked}, {QStringLiteral("title"), m_title}};
     if (!m_cropRect.isNull())
         o[QStringLiteral("crop")] = QJsonArray{m_cropRect.x(), m_cropRect.y(), m_cropRect.width(), m_cropRect.height()};
     if (!m_viewRect.isEmpty())
@@ -514,6 +584,9 @@ void PinWindow::applyStateJson(const QJsonObject& o)
     m_flipV = o.value(QStringLiteral("flipV")).toBool();
     m_gray = o.value(QStringLiteral("gray")).toBool();
     m_invert = o.value(QStringLiteral("invert")).toBool();
+    m_brightness = o.value(QStringLiteral("brightness")).toInt(0);
+    m_locked = o.value(QStringLiteral("locked")).toBool();
+    m_title = o.value(QStringLiteral("title")).toString();
     const QJsonArray crop = o.value(QStringLiteral("crop")).toArray();
     if (crop.size() == 4)
         m_cropRect = QRect(crop[0].toInt(), crop[1].toInt(), crop[2].toInt(), crop[3].toInt());
@@ -532,6 +605,8 @@ void PinWindow::applyStateJson(const QJsonObject& o)
 
 void PinWindow::closePin(bool userGesture)
 {
+    if (userGesture && lockBlocks(QStringLiteral("close")))
+        return;
     if (m_selected) { // 多选：一起关闭（PIN-60），由管理器统一确认
         emit groupAction(this, QStringLiteral("close"), 0);
         return;
@@ -546,6 +621,8 @@ void PinWindow::closePin(bool userGesture)
 
 void PinWindow::destroyPin(bool userGesture)
 {
+    if (userGesture && lockBlocks(QStringLiteral("close")))
+        return;
     if (m_selected) {
         emit groupAction(this, QStringLiteral("destroy"), 0);
         return;
@@ -556,6 +633,99 @@ void PinWindow::destroyPin(bool userGesture)
         toggleToolbar();
     hide();
     emit destroyed(this);
+}
+
+// ---- 亮度（PIN-28）----
+
+void PinWindow::setBrightness(int percent)
+{
+    percent = std::clamp(percent, -100, 100);
+    if (m_brightness == percent)
+        return;
+    m_brightness = percent;
+    rebuildTransformed();
+    update();
+}
+
+void PinWindow::resetProcessing()
+{
+    m_gray = false;
+    m_invert = false;
+    m_brightness = 0;
+    rebuildTransformed();
+    update();
+}
+
+// ---- 锁定（PIN-34）----
+
+void PinWindow::setLocked(bool on)
+{
+    if (m_locked == on)
+        return;
+    m_locked = on;
+    update();
+}
+
+bool PinWindow::lockBlocks(const QString& what) const
+{
+    if (!m_locked)
+        return false;
+    const QString type = m_settings.stringValue(QStringLiteral("pin.lockType"));
+    return type == QLatin1String("all") || type == what;
+}
+
+// ---- 标题（PIN-35）----
+
+void PinWindow::setTitle(const QString& title)
+{
+    m_title = title.trimmed();
+    update();
+}
+
+void PinWindow::editTitle()
+{
+    bool ok = false;
+    const QString t = QInputDialog::getText(this, tr("Pin title"), tr("Title:"), QLineEdit::Normal, m_title, &ok);
+    if (ok)
+        setTitle(t);
+}
+
+// ---- 拖出（PIN-40）----
+
+QMimeData* PinWindow::makeDragMimeData() const
+{
+    auto* mime = new QMimeData;
+    switch (m_kind) {
+    case ContentKind::Text:
+        mime->setText(textPlain());
+        mime->setHtml(textHtml());
+        break;
+    case ContentKind::Color:
+        mime->setText(colorFormatLines(m_color).first().text);
+        mime->setImageData(displayedImage());
+        break;
+    case ContentKind::File:
+        mime->setUrls({QUrl::fromLocalFile(m_filePath)});
+        mime->setText(QDir::toNativeSeparators(m_filePath));
+        break;
+    case ContentKind::Image:
+        mime->setImageData(displayedImage());
+        break;
+    }
+    return mime;
+}
+
+bool PinWindow::event(QEvent* e)
+{
+    // 触控板手势缩放（PIN-43）
+    if (e->type() == QEvent::NativeGesture) {
+        auto* g = static_cast<QNativeGestureEvent*>(e);
+        if (g->gestureType() == Qt::ZoomNativeGesture && !lockBlocks(QStringLiteral("zoom"))) {
+            zoomAt(zoomAnchorLogical(g->position()), 1.0 + g->value(), true);
+            return true;
+        }
+    }
+    return QWidget::event(e);
 }
 
 // ---- 标注层（ANN-16）----
@@ -591,8 +761,12 @@ QColor PinWindow::shadowColor() const
         return Qt::transparent;
     if (m_passthrough)
         return QColor(230, 130, 30, 170);
+    if (m_locked)
+        return QColor(160, 60, 220, 170);
     if (m_selected)
         return QColor(60, 190, 90, 180);
+    if (m_groupColor.isValid())
+        return QColor(m_groupColor.red(), m_groupColor.green(), m_groupColor.blue(), 170); // 组的颜色标签（GRP-02）
     if (m_groupIndex > 0)
         return QColor::fromHsv((m_groupIndex * 67) % 360, 200, 220, 170); // 每个分组一种色相
     if (!isActiveWindow())
@@ -750,6 +924,20 @@ QMenu* PinWindow::buildMenu()
     QAction* top = menu->addAction(tr("Always on top\tT"), this, [this](bool on) { setTopmost(on); });
     top->setCheckable(true);
     top->setChecked(m_topmost);
+    QAction* lock = menu->addAction(tr("Lock\tL"), this, [this](bool on) { setLocked(on); });
+    lock->setCheckable(true);
+    lock->setChecked(m_locked);
+    menu->addAction(tr("Title...\tF2"), this, &PinWindow::editTitle);
+    menu->addAction(tr("Brighter\t8"), this, [this] { setBrightness(m_brightness + 10); });
+    menu->addAction(tr("Darker\t7"), this, [this] { setBrightness(m_brightness - 10); });
+    menu->addAction(tr("Reset image processing\t0"), this, &PinWindow::resetProcessing);
+    if (m_groupNames.size() > 1) {
+        QMenu* groups = menu->addMenu(tr("Move to group"));
+        for (int i = 0; i < m_groupNames.size(); ++i) {
+            QAction* a = groups->addAction(m_groupNames[i], this, [this, i] { emit moveToGroupRequested(this, i); });
+            a->setEnabled(i != m_groupIndex);
+        }
+    }
     menu->addSeparator();
     menu->addAction(tr("Close\tEsc"), this, [this] { closePin(true); });
     menu->addAction(tr("Destroy\tShift+Esc"), this, [this] { destroyPin(true); });
@@ -784,6 +972,29 @@ void PinWindow::contextMenuEvent(QContextMenuEvent* e)
 }
 
 // ---- 绘制 ----
+
+void PinWindow::paintAlphaBackground(QPainter& p, const QRectF& content)
+{
+    // PIN-37：带透明通道的图像的背景
+    if (!m_display.hasAlphaChannel())
+        return;
+    const QString mode = m_settings.stringValue(QStringLiteral("pin.alphaBackground"));
+    if (mode == QLatin1String("transparent"))
+        return;
+    if (mode == QLatin1String("pseudo")) {
+        p.fillRect(content, QColor(255, 255, 255, 40)); // 伪透明：淡淡的白
+        return;
+    }
+    const QColor a = mode == QLatin1String("checkerDark") ? QColor(60, 60, 60) : QColor(255, 255, 255);
+    const QColor b = mode == QLatin1String("checkerDark") ? QColor(90, 90, 90) : QColor(204, 204, 204);
+    p.save();
+    p.setClipRect(content);
+    const int cell = 8;
+    for (int y = 0; y * cell < content.height(); ++y)
+        for (int x = 0; x * cell < content.width(); ++x)
+            p.fillRect(QRectF(content.left() + x * cell, content.top() + y * cell, cell, cell), ((x + y) % 2) ? a : b);
+    p.restore();
+}
 
 void PinWindow::drawShadow(QPainter& p, const QRectF& content)
 {
@@ -828,9 +1039,11 @@ void PinWindow::paintEvent(QPaintEvent*)
         const QRectF desktop = desktopBounds();
         const bool huge = content.width() * content.height() > desktop.width() * desktop.height() * 1.5;
         const bool exact = qFuzzyCompare(m_scale, 1.0);
-        if (m_interactive || exact || huge) {
-            const QImage& level = m_mipmap.levelForScale(m_scale / m_dpr);
-            p.setRenderHint(QPainter::SmoothPixmapTransform, !m_interactive && !exact);
+        const bool smoothZoom = m_settings.boolValue(QStringLiteral("pin.smoothZoom"));
+        paintAlphaBackground(p, content);
+        if (m_interactive || exact || huge || !smoothZoom) {
+            const QImage& level = smoothZoom ? m_mipmap.levelForScale(m_scale / m_dpr) : m_display;
+            p.setRenderHint(QPainter::SmoothPixmapTransform, !m_interactive && !exact && smoothZoom);
             if (exact) {
                 // 1:1 物理像素：按设备像素画，避免任何重采样（NFR-08）
                 p.save();
@@ -851,13 +1064,24 @@ void PinWindow::paintEvent(QPaintEvent*)
             p.drawPixmap(content.topLeft(), m_smooth);
         }
     }
-    QPen pen(m_passthrough ? QColor(220, 120, 40, 200) : m_selected ? QColor(60, 190, 90, 230) : QColor(40, 120, 220, 200));
+    QPen pen(m_passthrough ? QColor(220, 120, 40, 200) : m_locked ? QColor(160, 60, 220, 220) : m_selected ? QColor(60, 190, 90, 230) : QColor(40, 120, 220, 200));
     pen.setCosmetic(true);
-    if (m_selected)
+    if (m_selected || m_locked)
         pen.setWidth(2);
     p.setPen(pen);
     p.setBrush(Qt::NoBrush);
     p.drawRect(content.adjusted(0, 0, -1, -1));
+    if (!m_title.isEmpty()) {
+        // 标题（PIN-35）：画在内容上方或下方的阴影区
+        const bool top = m_settings.stringValue(QStringLiteral("pin.titlePosition")) != QLatin1String("bottom");
+        QFont f = p.font();
+        f.setPointSize(9);
+        p.setFont(f);
+        const QRectF bar = top ? QRectF(content.left(), content.top() - 20, content.width(), 18) : QRectF(content.left(), content.bottom() + 2, content.width(), 18);
+        p.fillRect(bar, QColor(0, 0, 0, 170));
+        p.setPen(Qt::white);
+        p.drawText(bar.adjusted(4, 0, -4, 0), Qt::AlignVCenter | Qt::AlignLeft, p.fontMetrics().elidedText(m_title, Qt::ElideRight, static_cast<int>(bar.width() - 8)));
+    }
     // 文本选择高亮（PIN-06）
     if (m_textSelecting && !m_annotating) {
         const qreal k = m_scale / m_dpr;
@@ -964,9 +1188,13 @@ void PinWindow::mousePressEvent(QMouseEvent* event)
     }
     if (event->button() == Qt::LeftButton) {
         if ((event->modifiers() & Qt::ControlModifier) && !m_annotating) {
-            emit selectToggleRequested(this); // PIN-60：Ctrl+单击多选
+            // Ctrl+单击 = 多选（PIN-60）；Ctrl+拖动 = 拖出内容（PIN-40），松开时再判断
+            m_ctrlPressed = true;
+            m_ctrlPressPos = event->globalPosition().toPoint();
             return;
         }
+        if (lockBlocks(QStringLiteral("move")))
+            return;
         if (m_textSelecting && !m_annotating) {
             textSelectAt(toImage(event->position()), event->modifiers() & Qt::ShiftModifier);
             m_dragging = false;
@@ -1016,6 +1244,16 @@ void PinWindow::mouseMoveEvent(QMouseEvent* event)
         zoomAt(contentRect().topLeft() - pos(), next / m_scale, true);
         return;
     }
+    if (m_ctrlPressed) {
+        if ((event->globalPosition().toPoint() - m_ctrlPressPos).manhattanLength() > 8) {
+            m_ctrlPressed = false;
+            auto* drag = new QDrag(this);
+            drag->setMimeData(makeDragMimeData());
+            drag->setPixmap(QPixmap::fromImage(displayedImage().scaled(96, 96, Qt::KeepAspectRatio)));
+            drag->exec(Qt::CopyAction);
+        }
+        return;
+    }
     if (m_panning) {
         if (m_textSelecting) {
             textSelectAt(toImage(event->position()), true);
@@ -1056,6 +1294,10 @@ void PinWindow::mouseReleaseEvent(QMouseEvent* event)
         return;
     }
     if (event->button() == Qt::LeftButton) {
+        if (m_ctrlPressed) {
+            m_ctrlPressed = false;
+            emit selectToggleRequested(this); // 没拖动：切换选中
+        }
         m_dragging = false;
         m_edgeDragging = false;
         m_panning = false;
@@ -1118,6 +1360,8 @@ void PinWindow::wheelEvent(QWheelEvent* event)
             emit groupAction(this, QStringLiteral("opacity"), steps * m_settings.intValue(QStringLiteral("pin.opacityStep")));
         else
             adjustOpacity(steps * m_settings.intValue(QStringLiteral("pin.opacityStep")));
+    } else if (event->modifiers() & Qt::ShiftModifier) {
+        zoomStepFine(steps, event->position()); // PIN-23：精细步长
     } else {
         zoomStep(steps, event->position());
     }
@@ -1164,6 +1408,7 @@ void PinWindow::keyPressEvent(QKeyEvent* event)
     switch (key) {
     case Qt::Key_Escape:
         if (m_textSelecting) { setTextSelectionMode(false); return; }
+        if (lockBlocks(QStringLiteral("close"))) return;
         shift ? destroyPin(true) : closePin(true);
         return;
     case Qt::Key_W: if (ctrl) { closePin(true); return; } break;
@@ -1173,6 +1418,11 @@ void PinWindow::keyPressEvent(QKeyEvent* event)
     case Qt::Key_T: if (!ctrl && !m_annotating) { setTopmost(!m_topmost); return; } break;
     case Qt::Key_5: if (!m_annotating) { setGrayscale(!m_gray); return; } break;
     case Qt::Key_6: if (!m_annotating) { setInverted(!m_invert); return; } break;
+    case Qt::Key_7: if (!m_annotating) { setBrightness(m_brightness - 10); return; } break;
+    case Qt::Key_8: if (!m_annotating) { setBrightness(m_brightness + 10); return; } break;
+    case Qt::Key_0: if (!m_annotating) { resetProcessing(); return; } break;
+    case Qt::Key_L: if (!ctrl && !m_annotating) { setLocked(!m_locked); return; } break;
+    case Qt::Key_F2: if (!m_annotating) { editTitle(); return; } break;
     case Qt::Key_Space: toggleToolbar(); return;
     case Qt::Key_C:
         if (ctrl && shift) { copyOriginal(); return; }

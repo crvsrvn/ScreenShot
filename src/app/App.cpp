@@ -4,6 +4,7 @@
 #include "app/ActionsDialog.h"
 #include "app/CommandServer.h"
 #include "app/FloatingBar.h"
+#include "app/GroupDialog.h"
 #include "app/Notification.h"
 #include "app/ResultDialogs.h"
 #include "app/Theme.h"
@@ -176,6 +177,18 @@ void App::setupTray()
     m_togglePinsAction = m_trayMenu->addAction(tr("Hide all pins\tShift+F3"), this, &App::togglePinsHidden);
     m_trayMenu->addAction(tr("Restore closed pin\tCtrl+3"), this, &App::restoreClosedPin);
     m_trayMenu->addAction(tr("Restore off-screen pins"), this, &App::restoreOffscreenPins);
+    m_trayMenu->addAction(tr("Pin files selected in Explorer"), this, [this] { m_pins->pinExplorerSelection(cursorPhysical()); });
+    QMenu* all = m_trayMenu->addMenu(tr("All pins"));
+    all->addAction(tr("Thumbnails"), this, [this] { m_pins->setAllThumbnails(true); });
+    all->addAction(tr("Full size"), this, [this] { m_pins->setAllThumbnails(false); });
+    all->addAction(tr("Save all to folder..."), this, [this] {
+        const QString dir = QFileDialog::getExistingDirectory(nullptr, tr("Save all pins"));
+        if (!dir.isEmpty())
+            m_pins->saveAllToFolder(dir);
+    });
+    all->addAction(tr("Solo selected pins"), this, [this](bool on) { m_pins->setSolo(on); })->setCheckable(true);
+    all->addAction(tr("Close all"), this, [this] { m_pins->closeAll(); });
+    all->addAction(tr("Destroy all"), this, [this] { m_pins->destroyAll(); });
     m_actionsMenu = m_trayMenu->addMenu(tr("Actions"));
     rebuildActionsMenu();
     QMenu* recognize = m_trayMenu->addMenu(tr("Recognize"));
@@ -261,10 +274,16 @@ void App::rebuildGroupMenu()
     m_groupMenu->addAction(tr("Next group\tCtrl+Shift+3"), this, [this] { m_pins->nextGroup(); });
     m_groupMenu->addAction(tr("Previous group"), this, [this] { m_pins->previousGroup(); });
     m_groupMenu->addAction(tr("Clear this group"), this, [this] { m_pins->clearCurrentGroup(); });
+    m_groupMenu->addAction(tr("Manage groups..."), this, [this] {
+        GroupDialog dialog(*m_pins);
+        dialog.exec();
+        rebuildGroupMenu();
+    });
     m_groupMenu->addSeparator();
     const QStringList names = m_pins->groupNames();
     for (int i = 0; i < names.size(); ++i) {
-        QAction* a = m_groupMenu->addAction(names[i], this, [this, i] { m_pins->switchToGroup(i); });
+        const auto [onScreen, total] = m_pins->groupCounts(i); // GRP-03：屏幕上 / 总数
+        QAction* a = m_groupMenu->addAction(QStringLiteral("%1  (%2 / %3)").arg(names[i]).arg(onScreen).arg(total), this, [this, i] { m_pins->switchToGroup(i); });
         a->setCheckable(true);
         a->setChecked(i == m_pins->currentGroupIndex());
     }
@@ -530,6 +549,10 @@ void App::runCommand(const QStringList& command, int requestId)
         else if (op == QLatin1String("destroy-all")) m_pins->destroyAll();
         else if (op == QLatin1String("restore")) restoreClosedPin();
         else if (op == QLatin1String("restore-offscreen")) restoreOffscreenPins();
+        else if (op == QLatin1String("thumbnails")) m_pins->setAllThumbnails(true);
+        else if (op == QLatin1String("full-size")) m_pins->setAllThumbnails(false);
+        else if (op == QLatin1String("save-all")) result = QString::number(m_pins->saveAllToFolder(command.mid(2).join(QLatin1Char(' '))));
+        else if (op == QLatin1String("explorer")) result = m_pins->pinExplorerSelection(cursorPhysical()) ? QStringLiteral("ok") : QStringLiteral("nothing selected");
         else result = QStringLiteral("unknown pins command");
     } else if (name == QLatin1String("group")) {
         // group new NAME | switch NAME | next | prev | clear | list

@@ -11,6 +11,7 @@ qt_add_library(platform_windows STATIC
     WinWindowTools.h WinWindowTools.cpp
     WinPipeServer.h WinPipeServer.cpp
     WinSystem.h WinSystem.cpp
+    WinShell.h WinShell.cpp
     WinInputSimulator.h WinInputSimulator.cpp
     WinCursor.h WinCursor.cpp
     WinPlatform.h WinPlatform.cpp

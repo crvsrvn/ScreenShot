@@ -61,6 +61,23 @@ public:
     void copyFilePath();
     void revealFile();
 
+    // ---- 亮度（PIN-28）：7 / 8 ±10%，0 重置全部处理 ----
+    int brightness() const { return m_brightness; }
+    void setBrightness(int percent);
+    void resetProcessing();
+    // ---- 锁定（PIN-34）：L；锁定类型见设置 pin.lockType ----
+    bool locked() const { return m_locked; }
+    void setLocked(bool on);
+    bool lockBlocks(const QString& what) const; // move / zoom / close
+    // ---- 标题（PIN-35）：F2 ----
+    QString title() const { return m_title; }
+    void setTitle(const QString& title);
+    void editTitle();
+    // ---- 拖出到其他程序（PIN-40）：Ctrl+左键拖动 ----
+    QMimeData* makeDragMimeData() const;
+    // ---- 缩放细节（PIN-23）：按设置的中心 / 步长 ----
+    QPointF zoomAnchorLogical(QPointF cursorLogical) const;
+    void zoomStepFine(int steps, QPointF anchorLogical);
     // ---- 灰度 / 反色（PIN-27）----
     bool grayscale() const { return m_gray; }
     void setGrayscale(bool on);
@@ -91,6 +108,9 @@ public:
     bool selected() const { return m_selected; }
     void setGroupIndex(int index);
     int groupIndex() const { return m_groupIndex; }
+    void setGroupColor(const QColor& c) { m_groupColor = c; update(); }
+    // 组列表（右键“移到组”菜单用，GRP-03）
+    void setGroupNames(const QStringList& names) { m_groupNames = names; }
 
     // ---- 吸附（PIN-21）：Shift 拖动时吸附到这些矩形（逻辑桌面坐标）的边 ----
     void setSnapTargets(std::function<QList<QRectF>()> targets) { m_snapTargets = std::move(targets); }
@@ -186,6 +206,7 @@ signals:
     void groupAction(ss::PinWindow* pin, const QString& action, double arg); // close / destroy / reset / opacity
     void ocrRequested(const QImage& image);    // REC-01：贴图右键识别
     void codesRequested(const QImage& image);  // REC-06：贴图右键识别二维码
+    void moveToGroupRequested(ss::PinWindow* pin, int groupIndex); // GRP-03
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -200,6 +221,7 @@ protected:
     void moveEvent(QMoveEvent* event) override;
     void showEvent(QShowEvent* event) override;
     void dragEnterEvent(QDragEnterEvent* event) override;
+    bool event(QEvent* event) override;
     void dropEvent(QDropEvent* event) override;
     void changeEvent(QEvent* event) override;
 
@@ -211,6 +233,8 @@ private:
     void rebuildTransformed();
     void refreshDisplay();
     void drawShadow(QPainter& painter, const QRectF& content);
+    void paintAlphaBackground(QPainter& painter, const QRectF& content);
+    void updateClickThroughMask();
     void finishInteraction();
     void layoutToolbar();
     QPointF toImage(QPointF logicalInWindow) const;
@@ -246,6 +270,11 @@ private:
     QString m_filePath;
     bool m_gray = false;
     bool m_invert = false;
+    int m_brightness = 0;
+    bool m_locked = false;
+    QString m_title;
+    QPoint m_ctrlPressPos;
+    bool m_ctrlPressed = false;
     bool m_thumbnail = false;
     qreal m_scaleBeforeThumbnail = 1.0;
     QRectF m_viewRect;
@@ -253,6 +282,8 @@ private:
     bool m_topmost = true;
     bool m_selected = false;
     int m_groupIndex = 0;
+    QColor m_groupColor;
+    QStringList m_groupNames;
     std::function<QList<QRectF>()> m_snapTargets;
     // 右键拖选（PIN-30 / PIN-31）与 Shift 平移
     bool m_rubberActive = false;
