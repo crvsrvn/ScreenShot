@@ -8,6 +8,7 @@ namespace ss::win {
 class WinInputSimulator : public IInputSimulator {
 public:
     void mouseWheelAt(QPoint physical, int notches, bool horizontal) override;
+    void sendKeyCombo(Qt::KeyboardModifiers modifiers, Qt::Key key) override;
 };
 
 } // namespace ss::win

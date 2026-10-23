@@ -5,6 +5,7 @@
 #include "core/capture/Magnifier.h"
 #include "core/color/ColorFormat.h"
 #include "core/config/Settings.h"
+#include "core/config/Shortcuts.h"
 #include "core/fx/Blur.h"
 #include "app/Theme.h"
 #include "core/pin/ColorPin.h"
@@ -448,8 +449,8 @@ QImage PinWindow::displayedImage() const
 
 void PinWindow::copyDisplayed()
 {
-    if (m_kind == ContentKind::Text && m_textSelecting) {
-        copyText(); // 文本选择模式下 Ctrl+C 复制选中文字（PIN-06）
+    if ((m_kind == ContentKind::Text || m_kind == ContentKind::Image) && m_textSelecting) {
+        copyText(); // 文本选择模式下 Ctrl+C 复制选中文字（PIN-06、REC-04）
         return;
     }
     QApplication::clipboard()->setImage(displayedImage());
@@ -709,7 +710,10 @@ QMimeData* PinWindow::makeDragMimeData() const
         mime->setText(QDir::toNativeSeparators(m_filePath));
         break;
     case ContentKind::Image:
-        mime->setImageData(displayedImage());
+        if (m_textSelecting && !m_ocrSelected.isEmpty())
+            mime->setText(selectedText()); // REC-04：拖出选中的文字
+        else
+            mime->setImageData(displayedImage());
         break;
     }
     return mime;
@@ -851,6 +855,12 @@ void PinWindow::dropEvent(QDropEvent* e)
 QMenu* PinWindow::buildMenu()
 {
     auto* menu = new QMenu(this);
+    if (m_kind == ContentKind::Image && m_settings.boolValue(QStringLiteral("ocr.pinSelectText"))) {
+        QAction* selectMode = menu->addAction(tr("Select text"), this, [this](bool on) { setTextSelectionMode(on); });
+        selectMode->setCheckable(true);
+        selectMode->setChecked(m_textSelecting);
+        menu->addSeparator();
+    }
     if (m_kind == ContentKind::Text) {
         menu->addAction(tr("Copy text"), this, &PinWindow::copyText);
         QAction* selectMode = menu->addAction(tr("Select text"), this, [this](bool on) { setTextSelectionMode(on); });
@@ -1089,6 +1099,8 @@ void PinWindow::paintEvent(QPaintEvent*)
         p.setBrush(QColor(40, 120, 220, 90));
         for (const QRectF& r : textSelectionRectsImage())
             p.drawRect(QRectF(content.topLeft() + r.topLeft() * k, r.size() * k));
+        for (int i : m_ocrSelected)
+            p.drawRect(QRectF(content.topLeft() + QPointF(m_ocrLines[i].bounds.topLeft()) * k, QSizeF(m_ocrLines[i].bounds.size()) * k));
     }
     // 右键拖选框（PIN-30 / PIN-31）
     if (m_rubberActive && !m_rubberRect.isEmpty()) {
@@ -1186,6 +1198,16 @@ void PinWindow::mousePressEvent(QMouseEvent* event)
         m_editor->pressAt(toImage(event->position()), event->button(), event->modifiers());
         return;
     }
+    if (m_annotating && event->button() == Qt::RightButton && !m_ocrLines.isEmpty()) {
+        // REC-04：右键自动框出光标下的文字行
+        const QPointF at = toImage(event->position());
+        for (const OcrLine& l : m_ocrLines) {
+            if (QRectF(l.bounds).contains(at) && m_editor->createFromRect(QRectF(l.bounds).adjusted(-2, -2, 2, 2))) {
+                m_suppressMenu = true;
+                return;
+            }
+        }
+    }
     if (event->button() == Qt::LeftButton) {
         if ((event->modifiers() & Qt::ControlModifier) && !m_annotating) {
             // Ctrl+单击 = 多选（PIN-60）；Ctrl+拖动 = 拖出内容（PIN-40），松开时再判断
@@ -1195,10 +1217,15 @@ void PinWindow::mousePressEvent(QMouseEvent* event)
         }
         if (lockBlocks(QStringLiteral("move")))
             return;
-        if (m_textSelecting && !m_annotating) {
-            textSelectAt(toImage(event->position()), event->modifiers() & Qt::ShiftModifier);
+        if (m_textSelecting && !m_annotating && !(event->modifiers() & Qt::AltModifier)) {
+            if (m_kind == ContentKind::Image) {
+                m_ocrMarquee = QRectF(toImage(event->position()), QSizeF(0, 0));
+                selectOcrLinesIn(QRectF(toImage(event->position()), QSizeF(1, 1)));
+            } else {
+                textSelectAt(toImage(event->position()), event->modifiers() & Qt::ShiftModifier);
+            }
             m_dragging = false;
-            m_panning = true; // 复用：拖动扩展选择
+            m_panning = true; // 复用：拖动扩展选择；Alt+拖动仍移动贴图（REC-04）
             return;
         }
         if ((event->modifiers() & Qt::ShiftModifier) && !m_viewRect.isEmpty() && !m_annotating) {
@@ -1255,7 +1282,10 @@ void PinWindow::mouseMoveEvent(QMouseEvent* event)
         return;
     }
     if (m_panning) {
-        if (m_textSelecting) {
+        if (m_textSelecting && m_kind == ContentKind::Image) {
+            m_ocrMarquee.setBottomRight(toImage(event->position()));
+            selectOcrLinesIn(m_ocrMarquee.normalized());
+        } else if (m_textSelecting) {
             textSelectAt(toImage(event->position()), true);
         } else {
             const QPointF d = (event->globalPosition() - m_panLast) * (m_dpr / m_scale);
@@ -1404,6 +1434,32 @@ void PinWindow::keyPressEvent(QKeyEvent* event)
             return;
         }
     }
+    // ACT-09：可自定义的快捷键先按映射表分发（所有贴图 / 图像贴图 / 文本贴图）
+    if (!m_annotating && key != Qt::Key_Shift && key != Qt::Key_Alt && key != Qt::Key_Control) {
+        const ShortcutMap map(m_settings.stringValue(QStringLiteral("shortcuts.map")));
+        QString action = map.actionFor(QStringLiteral("pin"), key, event->modifiers());
+        if (action.isEmpty() && m_kind == ContentKind::Image)
+            action = map.actionFor(QStringLiteral("pinImage"), key, event->modifiers());
+        if (action.isEmpty() && m_kind == ContentKind::Text)
+            action = map.actionFor(QStringLiteral("pinText"), key, event->modifiers());
+        if (action == QLatin1String("close")) { closePin(true); return; }
+        if (action == QLatin1String("destroy")) { destroyPin(true); return; }
+        if (action == QLatin1String("copy")) { copyDisplayed(); return; }
+        if (action == QLatin1String("copyOriginal")) { copyOriginal(); return; }
+        if (action == QLatin1String("save")) { saveDisplayed(); return; }
+        if (action == QLatin1String("quickSave")) { quickSave(); return; }
+        if (action == QLatin1String("toolbar")) { toggleToolbar(); return; }
+        if (action == QLatin1String("lock")) { setLocked(!m_locked); return; }
+        if (action == QLatin1String("topmost")) { setTopmost(!m_topmost); return; }
+        if (action == QLatin1String("title")) { editTitle(); return; }
+        if (action == QLatin1String("grayscale")) { setGrayscale(!m_gray); return; }
+        if (action == QLatin1String("invert")) { setInverted(!m_invert); return; }
+        if (action == QLatin1String("darker")) { setBrightness(m_brightness - 10); return; }
+        if (action == QLatin1String("brighter")) { setBrightness(m_brightness + 10); return; }
+        if (action == QLatin1String("resetProcessing")) { resetProcessing(); return; }
+        if (action == QLatin1String("copyText")) { copyText(); return; }
+        if (action == QLatin1String("selectText")) { setTextSelectionMode(!m_textSelecting); return; }
+    }
     const int opacityStep = m_settings.intValue(QStringLiteral("pin.opacityStep"));
     switch (key) {
     case Qt::Key_Escape:
@@ -1411,22 +1467,13 @@ void PinWindow::keyPressEvent(QKeyEvent* event)
         if (lockBlocks(QStringLiteral("close"))) return;
         shift ? destroyPin(true) : closePin(true);
         return;
-    case Qt::Key_W: if (ctrl) { closePin(true); return; } break;
-    case Qt::Key_D: if (ctrl) { destroyPin(true); return; } break;
+    // 关闭 / 销毁 / 复制 / 保存 / 标注 / 锁定 / 置顶 / 标题 / 图像处理等键由上面的映射表（ACT-09）分发
     case Qt::Key_V: if (ctrl) { emit replaceRequested(this, QApplication::clipboard()->mimeData()); return; } break;
     case Qt::Key_A: if (ctrl && !m_annotating) { emit selectAllRequested(); return; } break;
-    case Qt::Key_T: if (!ctrl && !m_annotating) { setTopmost(!m_topmost); return; } break;
-    case Qt::Key_5: if (!m_annotating) { setGrayscale(!m_gray); return; } break;
-    case Qt::Key_6: if (!m_annotating) { setInverted(!m_invert); return; } break;
-    case Qt::Key_7: if (!m_annotating) { setBrightness(m_brightness - 10); return; } break;
-    case Qt::Key_8: if (!m_annotating) { setBrightness(m_brightness + 10); return; } break;
-    case Qt::Key_0: if (!m_annotating) { resetProcessing(); return; } break;
-    case Qt::Key_L: if (!ctrl && !m_annotating) { setLocked(!m_locked); return; } break;
-    case Qt::Key_F2: if (!m_annotating) { editTitle(); return; } break;
-    case Qt::Key_Space: toggleToolbar(); return;
+    case Qt::Key_Space: if (m_annotating) { toggleToolbar(); return; } break;
     case Qt::Key_C:
-        if (ctrl && shift) { copyOriginal(); return; }
-        if (ctrl) { copyDisplayed(); return; }
+        if (m_annotating && ctrl && shift) { copyOriginal(); return; }
+        if (m_annotating && ctrl) { copyDisplayed(); return; }
         if (m_altHeld || !m_annotating) {
             const QString text = colorTextAt(m_cursorPhysical);
             if (!text.isEmpty())
@@ -1434,7 +1481,7 @@ void PinWindow::keyPressEvent(QKeyEvent* event)
             return;
         }
         break;
-    case Qt::Key_S: if (ctrl && shift) { quickSave(); return; } if (ctrl) { saveDisplayed(); return; } break;
+    case Qt::Key_S: if (m_annotating && ctrl && shift) { quickSave(); return; } if (m_annotating && ctrl) { saveDisplayed(); return; } break;
     case Qt::Key_Plus: case Qt::Key_Equal:
         if (ctrl && m_selected) emit groupAction(this, QStringLiteral("opacity"), opacityStep);
         else ctrl ? adjustOpacity(opacityStep) : zoomStep(1, QPointF(width() / 2.0, height() / 2.0));

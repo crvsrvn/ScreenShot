@@ -46,6 +46,27 @@ QList<CodeResult> decodeCodes(const QImage& image)
     return out;
 }
 
+QImage encodeBarcode(const QString& text, const QString& format, int module, int quietZone)
+{
+    const ZXing::BarcodeFormat f = ZXing::BarcodeFormatFromString(format.toStdString());
+    if (f == ZXing::BarcodeFormat::None)
+        return {};
+    ZXing::MultiFormatWriter writer(f);
+    writer.setMargin(quietZone);
+    const ZXing::BitMatrix matrix = writer.encode(text.toStdString(), 0, 0);
+    // 一维码的矩阵高度为 1：拉高到可读
+    const int rows = matrix.height() == 1 ? 40 : matrix.height();
+    QImage img(matrix.width() * module, rows * module, QImage::Format_RGB32);
+    img.fill(Qt::white);
+    for (int y = 0; y < rows; ++y)
+        for (int x = 0; x < matrix.width(); ++x)
+            if (matrix.get(x, matrix.height() == 1 ? 0 : y))
+                for (int dy = 0; dy < module; ++dy)
+                    for (int dx = 0; dx < module; ++dx)
+                        img.setPixel(x * module + dx, y * module + dy, qRgb(0, 0, 0));
+    return img;
+}
+
 QImage encodeQrCode(const QString& text, int module, int quietZone)
 {
     ZXing::MultiFormatWriter writer(ZXing::BarcodeFormat::QRCode);

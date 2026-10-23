@@ -120,6 +120,7 @@ signals:
     void pinsChanged();
     void groupChanged(int index);
     void ocrRequested(const QImage& image);
+    void ocrLinesRequested(PinWindow* pin, const QImage& image);
     void codesRequested(const QImage& image);
 
 private:

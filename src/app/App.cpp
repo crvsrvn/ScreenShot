@@ -4,7 +4,11 @@
 #include "app/ActionsDialog.h"
 #include "app/CommandServer.h"
 #include "app/FloatingBar.h"
+#include "app/GestureOverlay.h"
 #include "app/GroupDialog.h"
+#include "core/script/ScriptEngine.h"
+#include "core/ocr/OcrFormat.h"
+#include "core/pin/TextPin.h"
 #include "app/Notification.h"
 #include "app/ResultDialogs.h"
 #include "app/Theme.h"
@@ -18,6 +22,7 @@
 #include "core/util/Clock.h"
 
 #include <QApplication>
+#include <algorithm>
 #include <QClipboard>
 #include <QCursor>
 #include <QDir>
@@ -26,6 +31,9 @@
 #include <QGuiApplication>
 #include <QInputDialog>
 #include <QMenu>
+#include <QDateTime>
+#include <QElapsedTimer>
+#include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
@@ -38,6 +46,8 @@
 #include <QSystemTrayIcon>
 
 #if defined(Q_OS_WIN)
+#include "platform/windows/WinGlobalHotkey.h"
+#include "platform/windows/WinInputHooks.h"
 #include "platform/windows/WinSystem.h"
 #include "platform/windows/WinWindowTools.h"
 #elif defined(Q_OS_MACOS)
@@ -91,6 +101,12 @@ App::App(Platform platform, Settings& settings, QObject* parent)
     connect(m_session.get(), &CaptureSession::ocrCopyRequested, this, &App::onOcrCopyRequested);
     connect(m_session.get(), &CaptureSession::codesRequested, this, &App::onCodesRequested);
     connect(m_pins.get(), &PinManager::ocrRequested, this, &App::onOcrCopyRequested);
+    connect(m_pins.get(), &PinManager::ocrLinesRequested, this, [this](PinWindow* pin, const QImage& image) {
+        const OcrResult r = recognizeLines(image); // REC-04：图像贴图上的可选文字
+        if (r.ok)
+            pin->setOcrLines(r.lines);
+    });
+    applyOcrOptions();
     connect(m_pins.get(), &PinManager::codesRequested, this, [this](const QImage& image) {
         const QList<CodeResult> codes = decodeCodes(image);
         if (codes.isEmpty())
@@ -100,6 +116,9 @@ App::App(Platform platform, Settings& settings, QObject* parent)
     });
     theme::apply(m_settings);
     applyFloatingBar();
+    applyInputHooks();
+    connect(&m_hotCornerTimer, &QTimer::timeout, this, [this] { pollHotCorners(cursorPhysical(), QDateTime::currentMSecsSinceEpoch()); });
+    m_hotCornerTimer.start(150);
 #ifdef Q_OS_WIN
     win::setProcessPriority(m_settings.stringValue(QStringLiteral("general.processPriority")));
 #endif
@@ -202,6 +221,18 @@ void App::setupTray()
     m_hotkeysAction->setCheckable(true);
     m_hotkeysAction->setChecked(!hotkeysEnabled());
     m_trayMenu->addAction(tr("Preferences..."), this, &App::showPreferences);
+    QMenu* configMenu = m_trayMenu->addMenu(tr("Settings file"));
+    configMenu->addAction(tr("Export settings..."), this, [this] {
+        const QString path = QFileDialog::getSaveFileName(nullptr, tr("Export settings"), QStringLiteral("screenshot-settings.json"), tr("Settings (*.json)"));
+        if (!path.isEmpty())
+            m_settings.exportTo(path);
+    });
+    configMenu->addAction(tr("Import settings..."), this, [this] {
+        const QString path = QFileDialog::getOpenFileName(nullptr, tr("Import settings"), QString(), tr("Settings (*.json)"));
+        if (!path.isEmpty() && m_settings.importFrom(path))
+            m_settings.saveToFile();
+    });
+    configMenu->addAction(tr("Open settings folder"), this, &App::openSettingsFolder);
     m_trayMenu->addAction(tr("Help"), this, &App::showAbout);
     m_trayMenu->addSeparator();
     m_trayMenu->addAction(tr("Quit"), this, &App::quit);
@@ -311,6 +342,10 @@ void App::setupHotkeys()
     if (!m_platform.hotkey)
         return;
     connect(m_platform.hotkey.get(), &IGlobalHotkey::triggered, this, [this](int id, qint64 atNs) {
+        if (hotkeyIgnoredForForeground())
+            return; // ACT-07
+        if (m_settings.boolValue(QStringLiteral("hotkey.ignoreInjected")) && m_hotkeyVk.contains(id) && m_injected.shouldIgnore(m_hotkeyVk.value(id), QDateTime::currentMSecsSinceEpoch()))
+            return; // ACT-15：由模拟按键触发的热键
         switch (id) {
         case HotkeyCapture: startCapture(atNs); break;
         case HotkeyPin: pinFromClipboard(); break;
@@ -319,6 +354,13 @@ void App::setupHotkeys()
         case HotkeyPassthrough: togglePassthroughAtCursor(); break;
         case HotkeyNextGroup: m_pins->nextGroup(); break;
         case HotkeyPreviousGroup: m_pins->previousGroup(); break;
+        case HotkeyToggleWindowTopmost:
+#ifdef Q_OS_WIN
+            win::toggleWindowTopmostAt(cursorPhysical()); // ACT-14
+#endif
+            break;
+        case HotkeyPasteAsImage: pasteAs(QStringLiteral("image")); break;
+        case HotkeyPasteAsText: pasteAs(QStringLiteral("text")); break;
         default:
             if (id >= HotkeyActionBase) {
                 const QList<Action> list = actions();
@@ -343,7 +385,7 @@ void App::registerHotkeys()
     for (int id = HotkeyActionBase; id < HotkeyActionBase + m_actionHotkeys; ++id)
         m_platform.hotkey->unregisterHotkey(id);
     m_actionHotkeys = 0;
-    for (int id : {HotkeyCapture, HotkeyPin, HotkeyTogglePins, HotkeyRestorePin, HotkeyPassthrough, HotkeyNextGroup, HotkeyPreviousGroup})
+    for (int id : {HotkeyCapture, HotkeyPin, HotkeyTogglePins, HotkeyRestorePin, HotkeyPassthrough, HotkeyNextGroup, HotkeyPreviousGroup, HotkeyToggleWindowTopmost, HotkeyPasteAsImage, HotkeyPasteAsText})
         m_platform.hotkey->unregisterHotkey(id);
     m_hotkeyStatus.clear();
     if (!hotkeysEnabled())
@@ -351,10 +393,16 @@ void App::registerHotkeys()
     const QList<QPair<int, QString>> keys{{HotkeyCapture, QStringLiteral("hotkey.capture")}, {HotkeyPin, QStringLiteral("hotkey.pin")},
                                           {HotkeyTogglePins, QStringLiteral("hotkey.togglePins")}, {HotkeyRestorePin, QStringLiteral("hotkey.restorePin")},
                                           {HotkeyPassthrough, QStringLiteral("hotkey.togglePassthrough")}, {HotkeyNextGroup, QStringLiteral("hotkey.nextGroup")},
-                                          {HotkeyPreviousGroup, QStringLiteral("hotkey.previousGroup")}};
+                                          {HotkeyPreviousGroup, QStringLiteral("hotkey.previousGroup")}, {HotkeyToggleWindowTopmost, QStringLiteral("hotkey.toggleWindowTopmost")},
+                                          {HotkeyPasteAsImage, QStringLiteral("hotkey.pasteAsImage")}, {HotkeyPasteAsText, QStringLiteral("hotkey.pasteAsText")}};
     for (const auto& [id, settingKey] : keys) {
         const QKeySequence seq(m_settings.stringValue(settingKey));
-        const bool ok = !seq.isEmpty() && m_platform.hotkey->registerHotkey(id, seq);
+        const bool ok = !seq.isEmpty() && hotkeyAllowed(seq) && m_platform.hotkey->registerHotkey(id, seq);
+#ifdef Q_OS_WIN
+        unsigned mods = 0, vk = 0;
+        if (ok && win::WinGlobalHotkey::toNative(seq, mods, vk))
+            m_hotkeyVk[id] = static_cast<int>(vk);
+#endif
         m_hotkeyStatus[id] = ok;
         if (!ok && !seq.isEmpty()) {
             qWarning("hotkey %s (%s) could not be registered", qPrintable(settingKey), qPrintable(seq.toString()));
@@ -403,10 +451,14 @@ void App::applySetting(const QString& key)
         applyTrayAppearance();
     } else if (key == QStringLiteral("general.floatingBar")) {
         applyFloatingBar();
+    } else if (key.startsWith(QStringLiteral("globalMouse.")) || key.startsWith(QStringLiteral("hotkey.doubleTap")) || key == QStringLiteral("hotkey.ignoreInjected") || key.startsWith(QStringLiteral("hotCorner."))) {
+        applyInputHooks();
     } else if (key == QStringLiteral("general.processPriority")) {
 #ifdef Q_OS_WIN
         win::setProcessPriority(m_settings.stringValue(key)); // GEN-10
 #endif
+    } else if (key.startsWith(QStringLiteral("ocr."))) {
+        applyOcrOptions();
     } else if (key == QStringLiteral("capture.hdrStrategy")) {
         if (m_platform.screenCapture)
             m_platform.screenCapture->configure(QStringLiteral("hdrStrategy"), m_settings.stringValue(key));
@@ -462,7 +514,7 @@ void App::finishCommand(int requestId, const QString& text)
         m_commands->reply(requestId, text);
 }
 
-void App::runCommand(const QStringList& command, int requestId)
+QString App::runCommand(const QStringList& command, int requestId)
 {
     const QString name = command.value(0);
     const bool wait = command.contains(QStringLiteral("--wait"));
@@ -519,7 +571,7 @@ void App::runCommand(const QStringList& command, int requestId)
                 captureRegion(QRect(parts[0].toInt(), parts[1].toInt(), parts[2].toInt(), parts[3].toInt()), delay, edit);
         }
         if (wait)
-            return; // 稍后应答
+            return result; // 稍后应答
     } else if (name == QLatin1String("pin")) {
         // pin [clipboard] [--text words...] [--html words...] [--file path...] [--pos x,y]
         const QPoint at = parsePoint(optionValue(command, QStringLiteral("--pos")), cursorPhysical());
@@ -575,6 +627,21 @@ void App::runCommand(const QStringList& command, int requestId)
         togglePinsHidden();
     } else if (name == QLatin1String("prefs")) {
         showPreferences();
+    } else if (name == QLatin1String("prefs-dir")) {
+        openSettingsFolder();
+    } else if (name == QLatin1String("script")) {
+        bool ok = false;
+        result = runScript(command.mid(1).join(QLatin1Char(' ')), &ok); // ACT-13
+        if (!ok)
+            result = QStringLiteral("script error: ") + result;
+    } else if (name == QLatin1String("script-file")) {
+        QFile f(command.value(1));
+        if (!f.open(QIODevice::ReadOnly))
+            result = QStringLiteral("cannot read script");
+        else
+            result = runScript(QString::fromUtf8(f.readAll()));
+    } else if (name == QLatin1String("paste-as")) {
+        pasteAs(command.value(1));
     } else if (name == QLatin1String("quit")) {
         quit();
     } else if (!name.isEmpty()) {
@@ -582,6 +649,28 @@ void App::runCommand(const QStringList& command, int requestId)
         result = QStringLiteral("unknown command");
     }
     finishCommand(requestId, result);
+    return result;
+}
+
+QString App::runScript(const QString& source, bool* ok)
+{
+    ScriptHost host;
+    host.command = [this](const QString& line) { return runCommand(splitCommandLine(line)); };
+    host.getClipboard = [] { return QApplication::clipboard()->text(); };
+    host.setClipboard = [](const QString& t) { QApplication::clipboard()->setText(t); };
+    host.sleep = [](int ms) {
+        QElapsedTimer t;
+        t.start();
+        while (t.elapsed() < ms)
+            QApplication::processEvents(QEventLoop::AllEvents, 20);
+    };
+    ScriptEngine engine(host);
+    const ScriptResult r = engine.run(source);
+    if (ok)
+        *ok = r.ok;
+    if (!r.ok)
+        qWarning("script error: %s", qPrintable(r.error));
+    return r.ok ? (r.output.isEmpty() ? r.value : r.output) : r.error;
 }
 
 // ---- 动作（ACT-03）----
@@ -601,6 +690,12 @@ bool App::runAction(const QString& name)
             QProcess::startDetached(QStringLiteral("cmd.exe"), {QStringLiteral("/c"), a.command.mid(6).trimmed()});
         } else if (words.value(0) == QLatin1String("run")) {
             QProcess::startDetached(words.value(1), words.mid(2));
+        } else if (words.value(0) == QLatin1String("script")) {
+            runScript(a.command.mid(7)); // ACT-13：动作绑定脚本文本
+        } else if (words.value(0) == QLatin1String("script-file")) {
+            QFile f(words.value(1));
+            if (f.open(QIODevice::ReadOnly))
+                runScript(QString::fromUtf8(f.readAll()));
         } else {
             runCommand(words);
         }
@@ -633,12 +728,13 @@ void App::rebuildActionsMenu()
 
 // ---- 识别（REC-01、REC-06）----
 
-void App::showOcrResult(const QString& text)
+void App::showOcrResult(const QString& text, const QList<OcrLine>& lines)
 {
     QApplication::clipboard()->setText(text);
     if (!m_settings.boolValue(QStringLiteral("ocr.showResult")))
         return;
     auto* dialog = new OcrResultDialog(text);
+    dialog->setLines(lines);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->show();
 }
@@ -661,7 +757,7 @@ void App::recognizeTextFromFile(const QString& pathIn)
     if (path.isEmpty() || !m_platform.ocr)
         return;
     const OcrResult r = m_platform.ocr->recognize(QImage(path));
-    showOcrResult(r.ok ? r.text() : r.error);
+    showOcrResult(r.ok ? formatOcr(r) : r.error, r.lines);
 }
 
 void App::decodeCodesFromFile(const QString& pathIn)
@@ -697,13 +793,31 @@ void App::onSizeInputRequested()
         m_session->setSelectionSize(parts[0].toInt(), parts[1].toInt());
 }
 
+void App::applyOcrOptions()
+{
+    if (!m_platform.ocr)
+        return;
+    m_platform.ocr->configure(QStringLiteral("language"), m_settings.stringValue(QStringLiteral("ocr.language")));
+    m_platform.ocr->configure(QStringLiteral("mode"), m_settings.stringValue(QStringLiteral("ocr.mode")));
+}
+
+QString App::formatOcr(const OcrResult& r) const
+{
+    return formatOcrText(r.lines, ocrLayoutFromName(m_settings.stringValue(QStringLiteral("ocr.layout"))), ocrPunctuationFromName(m_settings.stringValue(QStringLiteral("ocr.punctuation"))));
+}
+
 void App::onOcrCopyRequested(const QImage& image)
 {
     if (!m_platform.ocr)
         return;
     const OcrResult r = m_platform.ocr->recognize(image);
     if (r.ok && !r.lines.isEmpty())
-        showOcrResult(r.text());
+        showOcrResult(formatOcr(r), r.lines);
+}
+
+OcrResult App::recognizeLines(const QImage& image)
+{
+    return m_platform.ocr ? m_platform.ocr->recognize(image) : OcrResult{};
 }
 
 bool App::quickCapture(const QString& kind)
@@ -882,6 +996,204 @@ void App::showAbout()
                           "WASD and arrow keys to adjust by one pixel, , and . to recall previous captures.")
                            .arg(m_settings.stringValue(QStringLiteral("hotkey.capture")), m_settings.stringValue(QStringLiteral("hotkey.pin")),
                                 m_settings.stringValue(QStringLiteral("hotkey.togglePins"))));
+}
+
+bool App::hotkeyAllowed(const QKeySequence& seq) const
+{
+    // ACT-08：单键（无修饰键、非功能键）默认不允许作为全局热键
+    if (seq.isEmpty() || m_settings.boolValue(QStringLiteral("hotkey.allowSingleKey")))
+        return true;
+    const QKeyCombination c = seq[0];
+    const bool hasModifier = c.keyboardModifiers() & (Qt::ControlModifier | Qt::ShiftModifier | Qt::AltModifier | Qt::MetaModifier);
+    const bool functionKey = c.key() >= Qt::Key_F1 && c.key() <= Qt::Key_F35;
+    const bool special = c.key() == Qt::Key_Print || c.key() == Qt::Key_Pause || c.key() == Qt::Key_ScrollLock;
+    return hasModifier || functionKey || special;
+}
+
+bool App::hotkeyIgnoredForForeground() const
+{
+    const QStringList names = m_settings.stringValue(QStringLiteral("hotkey.ignoreProcesses")).split(QLatin1Char(','), Qt::SkipEmptyParts);
+    if (names.isEmpty() || !m_platform.windowDetector)
+        return false;
+    const auto active = m_platform.windowDetector->activeWindow();
+    if (!active)
+        return false;
+    for (const QString& n : names)
+        if (!n.trimmed().isEmpty() && active->processName.compare(n.trimmed(), Qt::CaseInsensitive) == 0)
+            return true;
+    return false;
+}
+
+void App::pasteAs(const QString& kind)
+{
+    // ACT-16：剪贴板转换后模拟 Ctrl+V
+    QClipboard* cb = QApplication::clipboard();
+    const QMimeData* mime = cb->mimeData();
+    if (!mime)
+        return;
+    if (kind == QLatin1String("text")) {
+        if (!mime->hasText())
+            return;
+        cb->setText(mime->text());
+    } else {
+        QImage image;
+        if (mime->hasImage())
+            image = qvariant_cast<QImage>(mime->imageData());
+        else if (mime->hasText()) {
+            TextPinOptions o;
+            o.font = QFont(m_settings.stringValue(QStringLiteral("pin.textFont")), m_settings.intValue(QStringLiteral("pin.textSize")));
+            image = renderTextPin(mime->text(), o);
+        }
+        if (image.isNull())
+            return;
+        cb->setImage(image);
+    }
+    m_pins->markClipboardDirty();
+    if (m_platform.input)
+        m_platform.input->sendKeyCombo(Qt::ControlModifier, Qt::Key_V);
+}
+
+void App::openSettingsFolder()
+{
+    // CFG-08：一键打开配置文件所在目录
+    const QString path = m_settings.filePath().isEmpty() ? m_dataDir : m_settings.filePath();
+    if (!path.isEmpty())
+        NotificationWidget::revealHandler(path);
+}
+
+// ---- 全局输入（ACT-10 / 11 / 12 / 15）----
+
+void App::applyInputHooks()
+{
+    m_doubleTap.setThreshold(m_settings.intValue(QStringLiteral("hotkey.doubleTapMs")));
+    m_hotCorners = HotCornerDetector(3, m_settings.intValue(QStringLiteral("hotCorner.dwellMs")));
+#ifdef Q_OS_WIN
+    const bool needKeyboard = m_settings.stringValue(QStringLiteral("hotkey.doubleTap")) != QLatin1String("none") || m_settings.boolValue(QStringLiteral("hotkey.ignoreInjected"))
+        || m_settings.boolValue(QStringLiteral("globalMouse.enabled"));
+    const bool needMouse = m_settings.boolValue(QStringLiteral("globalMouse.enabled"));
+    if (!needKeyboard && !needMouse) {
+        m_hooks.reset();
+        return;
+    }
+    if (!m_hooks) {
+        m_hooks = std::make_unique<win::WinInputHooks>();
+        connect(m_hooks.get(), &win::WinInputHooks::keyDown, this, &App::onGlobalKeyDown);
+        connect(m_hooks.get(), &win::WinInputHooks::keyUp, this, [this](int vk, bool, qint64) {
+            // 修饰键松开：全局鼠标手势的修饰状态
+            static const int modifiers[] = {0x5B, 0x5C, 0x12, 0xA4, 0xA5, 0x11, 0xA2, 0xA3, 0x10, 0xA0, 0xA1}; // Win / Alt / Ctrl / Shift 的虚拟键
+            if (std::find(std::begin(modifiers), std::end(modifiers), vk) != std::end(modifiers))
+                m_gesture.setModifierHeld(false);
+        });
+        connect(m_hooks.get(), &win::WinInputHooks::mouseButton, this, &App::onGlobalMouse);
+        connect(m_hooks.get(), &win::WinInputHooks::mouseMoved, this, &App::onGlobalMouseMoved);
+    }
+    if (needKeyboard)
+        m_hooks->installKeyboard();
+    if (needMouse)
+        m_hooks->installMouse();
+#endif
+}
+
+void App::runNamedAction(const QString& action)
+{
+    if (action == QLatin1String("capture"))
+        startCapture(monotonicNs());
+    else if (action == QLatin1String("pin"))
+        pinFromClipboard();
+    else if (action == QLatin1String("togglePins"))
+        togglePinsHidden();
+    else if (action == QLatin1String("restorePin"))
+        restoreClosedPin();
+}
+
+void App::onGlobalKeyDown(int vk, bool injected, qint64 nowMs)
+{
+    m_injected.keyEvent(vk, injected, nowMs); // ACT-15
+    // 全局鼠标手势的修饰键
+    const QString mod = m_settings.stringValue(QStringLiteral("globalMouse.modifier"));
+    auto isModifier = [](const QString& name, int key) {
+        if (name == QLatin1String("win")) return key == 0x5B || key == 0x5C;
+        if (name == QLatin1String("alt")) return key == 0x12 || key == 0xA4 || key == 0xA5;
+        if (name == QLatin1String("ctrl")) return key == 0x11 || key == 0xA2 || key == 0xA3;
+        if (name == QLatin1String("shift")) return key == 0x10 || key == 0xA0 || key == 0xA1;
+        return false;
+    };
+    if (m_settings.boolValue(QStringLiteral("globalMouse.enabled")) && isModifier(mod, vk))
+        m_gesture.setModifierHeld(true);
+    // 修饰键双击（ACT-10）
+    const QString tap = m_settings.stringValue(QStringLiteral("hotkey.doubleTap"));
+    if (tap != QLatin1String("none") && !injected) {
+        if (m_doubleTap.keyDown(isModifier(tap, vk), nowMs))
+            runNamedAction(m_settings.stringValue(QStringLiteral("hotkey.doubleTapAction")));
+    }
+}
+
+bool App::globalMouseGestureActive() const
+{
+    return m_gesture.active();
+}
+
+void App::onGlobalMouse(int button, bool down, QPoint physical)
+{
+    if (!m_settings.boolValue(QStringLiteral("globalMouse.enabled")))
+        return;
+    if (down) {
+        if (m_gesture.press(button, physical)) {
+#ifdef Q_OS_WIN
+            if (m_hooks)
+                m_hooks->setSwallowMouse(true);
+#endif
+            if (!m_gestureOverlay)
+                m_gestureOverlay = std::make_unique<GestureOverlay>();
+            m_gestureOverlay->showRegion(m_gesture.currentRegion());
+        }
+        return;
+    }
+    const auto result = m_gesture.release(button, physical);
+    if (!m_gesture.active()) {
+#ifdef Q_OS_WIN
+        if (m_hooks)
+            m_hooks->setSwallowMouse(false);
+#endif
+        if (m_gestureOverlay)
+            m_gestureOverlay->hideRegion();
+    }
+    if (result)
+        finishGlobalMouse(result->region, result->button);
+}
+
+void App::onGlobalMouseMoved(QPoint physical)
+{
+    if (m_gesture.move(physical) && m_gestureOverlay)
+        m_gestureOverlay->showRegion(m_gesture.currentRegion());
+}
+
+void App::finishGlobalMouse(const QRect& region, int button)
+{
+    // ACT-11：按键决定输出
+    const QString key = button == 1 ? QStringLiteral("globalMouse.left") : button == 2 ? QStringLiteral("globalMouse.middle") : QStringLiteral("globalMouse.right");
+    const QString action = m_settings.stringValue(key);
+    if (action == QLatin1String("none") || m_session->isActive())
+        return;
+    m_session->setEnterActionsOverride({action});
+    captureRegion(region, 0, false);
+}
+
+void App::pollHotCorners(QPoint physical, qint64 nowMs)
+{
+    QRect screen;
+    for (QScreen* s : QGuiApplication::screens()) {
+        const QRect g = s->geometry();
+        const QRect phys(g.topLeft(), QSize(qRound(g.width() * s->devicePixelRatio()), qRound(g.height() * s->devicePixelRatio())));
+        if (phys.contains(physical))
+            screen = phys;
+    }
+    if (screen.isNull())
+        return;
+    const auto corner = m_hotCorners.feed(physical, screen, nowMs);
+    if (corner == HotCornerDetector::Corner::None)
+        return;
+    runNamedAction(m_settings.stringValue(QStringLiteral("hotCorner.") + HotCornerDetector::cornerName(corner))); // ACT-12
 }
 
 void App::loadHistoryDir()

@@ -32,6 +32,8 @@ public:
     virtual ~IOcrEngine() = default;
     virtual bool available() const = 0;
     virtual OcrResult recognize(const QImage& image) = 0;
+    // 识别选项（REC-02）："language" = auto | 语言标签；"mode" = fast | accurate
+    virtual void configure(const QString& key, const QString& value) { Q_UNUSED(key); Q_UNUSED(value); }
 };
 
 } // namespace ss

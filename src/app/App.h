@@ -2,6 +2,14 @@
 
 #include "core/capture/CaptureHistory.h"
 #include "core/code/CodeDecoder.h"
+#include "core/input/Gestures.h"
+#include "core/ports/IOcrEngine.h"
+
+#include <QTimer>
+
+#ifdef Q_OS_WIN
+namespace ss::win { class WinInputHooks; }
+#endif
 #include "core/config/Actions.h"
 #include "core/ports/Platform.h"
 
@@ -33,7 +41,7 @@ public:
     App(Platform platform, Settings& settings, QObject* parent = nullptr);
     ~App() override;
 
-    enum HotkeyId { HotkeyCapture = 1, HotkeyPin = 2, HotkeyTogglePins = 3, HotkeyRestorePin = 4, HotkeyPassthrough = 5, HotkeyNextGroup = 6, HotkeyPreviousGroup = 7, HotkeyActionBase = 1000 };
+    enum HotkeyId { HotkeyCapture = 1, HotkeyPin = 2, HotkeyTogglePins = 3, HotkeyRestorePin = 4, HotkeyPassthrough = 5, HotkeyNextGroup = 6, HotkeyPreviousGroup = 7, HotkeyToggleWindowTopmost = 8, HotkeyPasteAsImage = 9, HotkeyPasteAsText = 10, HotkeyActionBase = 1000 };
 
     Platform& platform() { return m_platform; }
     Settings& settings() { return m_settings; }
@@ -53,13 +61,27 @@ public:
     void useScreenCapture(std::unique_ptr<IScreenCapture> capture);
     void startCommandServer(const QString& channelName);
     // 命令行接口（ACT-06）；requestId 非 0 时完成后经 CommandServer::reply 应答
-    void runCommand(const QStringList& command, int requestId = 0);
+    QString runCommand(const QStringList& command, int requestId = 0);
+    // 脚本（ACT-13）：执行脚本文本，返回输出 / 错误
+    QString runScript(const QString& source, bool* ok = nullptr);
+    // 全局输入事件（钩子或测试喂入）：ACT-10 双击修饰键、ACT-11 全局鼠标、ACT-15 过滤模拟按键
+    void onGlobalKeyDown(int virtualKey, bool injected, qint64 nowMs);
+    void onGlobalMouse(int button, bool down, QPoint physical);
+    void onGlobalMouseMoved(QPoint physical);
+    // 热角（ACT-12）：按当前光标位置检查一次（定时器调用；测试可直接调用）
+    void pollHotCorners(QPoint physical, qint64 nowMs);
+    bool globalMouseGestureActive() const;
     // 动作（ACT-03）
     QList<Action> actions() const;
     bool runAction(const QString& name);
     void showActionsDialog();
     // 识别（REC-01、REC-06）
-    void showOcrResult(const QString& text);
+    void showOcrResult(const QString& text, const QList<OcrLine>& lines = {});
+    QString formatOcr(const OcrResult& r) const;
+    OcrResult recognizeLines(const QImage& image);
+    void applyOcrOptions();
+    // ACT-16：把剪贴板转为图像 / 纯文本后模拟粘贴
+    void pasteAs(const QString& kind);
     void showCodeResult(const QList<CodeResult>& codes);
     void recognizeTextFromFile(const QString& path = QString());
     void decodeCodesFromFile(const QString& path = QString());
@@ -93,6 +115,7 @@ public slots:
     void closeAllPins();
     void setHotkeysEnabled(bool enabled);
     void showPreferences();
+    void openSettingsFolder();
     void showAbout();
     void quit();
 
@@ -108,6 +131,11 @@ private:
     void applyTrayAppearance();
     void applyFloatingBar();
     void loadHistoryDir();
+    bool hotkeyAllowed(const QKeySequence& seq) const;
+    bool hotkeyIgnoredForForeground() const;
+    void applyInputHooks();
+    void runNamedAction(const QString& action);
+    void finishGlobalMouse(const QRect& region, int button);
     void finishCommand(int requestId, const QString& text);
     void applySetting(const QString& key);
 
@@ -137,6 +165,17 @@ private:
     int m_pendingReply = 0; // 等待截图完成后应答的命令
     int m_actionHotkeys = 0;
     QString m_dataDir;
+    // 全局输入（ACT-10 / 11 / 12 / 15）
+    DoubleTapDetector m_doubleTap;
+    InjectedFilter m_injected;
+    GlobalMouseGesture m_gesture;
+    HotCornerDetector m_hotCorners;
+    QTimer m_hotCornerTimer;
+    std::unique_ptr<class GestureOverlay> m_gestureOverlay;
+    QHash<int, int> m_hotkeyVk; // 热键 id → 虚拟键（ACT-15）
+#ifdef Q_OS_WIN
+    std::unique_ptr<win::WinInputHooks> m_hooks;
+#endif
     std::unique_ptr<FloatingBar> m_floatingBar;
     QRect quickRegion(const QString& kind);
     void rebuildGroupMenu();

@@ -22,10 +22,13 @@ public:
             m_onWheel(physical, notches, horizontal);
     }
     const QList<Wheel>& wheels() const { return m_wheels; }
+    void sendKeyCombo(Qt::KeyboardModifiers modifiers, Qt::Key key) override { m_keys.append({modifiers, key}); }
+    const QList<QPair<Qt::KeyboardModifiers, Qt::Key>>& keyCombos() const { return m_keys; }
     void setOnWheel(std::function<void(QPoint, int, bool)> fn) { m_onWheel = std::move(fn); }
 
 private:
     QList<Wheel> m_wheels;
+    QList<QPair<Qt::KeyboardModifiers, Qt::Key>> m_keys;
     std::function<void(QPoint, int, bool)> m_onWheel;
 };
 

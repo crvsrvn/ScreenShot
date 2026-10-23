@@ -2,7 +2,11 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include "core/ocr/TableExtract.h"
+#include "core/output/XlsxWriter.h"
+
 #include <QDesktopServices>
+#include <QFileDialog>
 #include <QDialogButtonBox>
 #include <QListWidget>
 #include <QPlainTextEdit>
@@ -24,9 +28,29 @@ OcrResultDialog::OcrResultDialog(const QString& text, QWidget* parent)
     auto* buttons = new QDialogButtonBox(this);
     QPushButton* copy = buttons->addButton(tr("Copy"), QDialogButtonBox::ActionRole);
     connect(copy, &QPushButton::clicked, this, &OcrResultDialog::copyAll);
+    QPushButton* table = buttons->addButton(tr("Export table (Excel)..."), QDialogButtonBox::ActionRole);
+    table->setObjectName(QStringLiteral("exportTable"));
+    table->setEnabled(false);
+    connect(table, &QPushButton::clicked, this, [this] {
+        const QString path = QFileDialog::getSaveFileName(this, tr("Export table"), QStringLiteral("table.xlsx"), tr("Excel workbook (*.xlsx)"));
+        if (!path.isEmpty())
+            exportTable(path);
+    });
     buttons->addButton(QDialogButtonBox::Close);
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::accept);
     layout->addWidget(buttons);
+}
+
+void OcrResultDialog::setLines(const QList<OcrLine>& lines)
+{
+    m_lines = lines;
+    if (auto* b = findChild<QPushButton*>(QStringLiteral("exportTable")))
+        b->setEnabled(!lines.isEmpty());
+}
+
+bool OcrResultDialog::exportTable(const QString& path) const
+{
+    return writeXlsx(path, extractTable(m_lines));
 }
 
 QString OcrResultDialog::text() const

@@ -5,6 +5,7 @@
 #include "app/OutputActions.h"
 #include "app/OverlayWindow.h"
 #include "core/config/Settings.h"
+#include "core/config/Shortcuts.h"
 #include "core/output/Decorate.h"
 #include "core/util/Clock.h"
 
@@ -904,6 +905,20 @@ bool CaptureSession::handleKeyPress(QKeyEvent* e)
     }
     if (m_state == State::Annotating && handleAnnotationKey(e))
         return true;
+    // ACT-09：可自定义的快捷键先按映射表分发；没有匹配再走固定键
+    if (key != Qt::Key_Shift && key != Qt::Key_Alt && key != Qt::Key_Control && (m_state == State::Selected || m_state == State::History || m_state == State::Annotating)) {
+        const ShortcutMap map(m_settings.stringValue(QStringLiteral("shortcuts.map")));
+        const QString action = map.actionFor(QStringLiteral("capture"), key, mods);
+        if (action == QLatin1String("copy")) { accept(); return true; }
+        if (action == QLatin1String("save")) { save(); return true; }
+        if (action == QLatin1String("quickSave")) { quickSave(); return true; }
+        if (action == QLatin1String("pin")) { pin(); return true; }
+        if (action == QLatin1String("print")) { print(); return true; }
+        if (action == QLatin1String("ocrCopy")) { ocrCopy(); return true; }
+        if (action == QLatin1String("scroll")) { startScroll(); return true; }
+        if (action == QLatin1String("refresh")) { refresh(); return true; }
+        if (action == QLatin1String("previewSave")) { previewAndSave(); return true; }
+    }
     if (key == Qt::Key_F5) {
         refresh();
         return true;
@@ -959,49 +974,16 @@ bool CaptureSession::handleKeyPress(QKeyEvent* e)
             return true;
         }
         return false;
+    // 复制 / 保存 / 贴图 / 打印 / OCR / 滚动 / 刷新由映射表（ACT-09）分发；这里只剩取色
     case Qt::Key_C:
-        if (ctrl)
-            accept();
-        else if (shift)
-            ocrCopy(); // REC-01
-        else
+        if (!ctrl && !shift) {
             copyColor();
-        return true;
-    case Qt::Key_S:
-        if (ctrl && alt) {
-            previewAndSave(); // OUT-07
-            return true;
-        }
-        if (ctrl && shift) {
-            quickSave();
-            return true;
-        }
-        if (ctrl) {
-            save();
-            return true;
-        }
-        break;
-    case Qt::Key_T:
-        if (ctrl) {
-            pin();
-            return true;
-        }
-        break;
-    case Qt::Key_P:
-        if (ctrl) {
-            print();
             return true;
         }
         break;
     case Qt::Key_A:
         if (ctrl) {
             selectFullScreen();
-            return true;
-        }
-        break;
-    case Qt::Key_L:
-        if (ctrl && (m_state == State::Selected || m_state == State::History)) {
-            startScroll();
             return true;
         }
         break;

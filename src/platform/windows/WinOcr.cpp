@@ -82,8 +82,19 @@ bool WinOcr::available() const
     return !availableLanguages().isEmpty();
 }
 
-OcrResult WinOcr::recognize(const QImage& image)
+void WinOcr::configure(const QString& key, const QString& value)
 {
+    if (key == QLatin1String("language"))
+        m_language = value.isEmpty() ? QStringLiteral("auto") : value;
+    else if (key == QLatin1String("mode"))
+        m_accurate = value == QLatin1String("accurate");
+}
+
+OcrResult WinOcr::recognize(const QImage& imageIn)
+{
+    // 精准模式（REC-02）：放大后识别，小字更稳；结果坐标换算回原图
+    const int upscale = m_accurate && imageIn.width() * 2 <= 10000 && imageIn.height() * 2 <= 10000 ? 2 : 1;
+    const QImage image = upscale > 1 ? imageIn.scaled(imageIn.size() * 2, Qt::IgnoreAspectRatio, Qt::SmoothTransformation) : imageIn;
     if (image.isNull())
         return OcrResult{false, QStringLiteral("空图像"), {}};
     // Windows OCR 对图像尺寸有上限（单边 ≤ 10000 像素）
@@ -93,7 +104,16 @@ OcrResult WinOcr::recognize(const QImage& image)
     return runInMta([&]() -> OcrResult {
         OcrResult result;
         try {
-            OcrEngine engine = OcrEngine::TryCreateFromUserProfileLanguages();
+            OcrEngine engine{nullptr};
+            if (m_language != QLatin1String("auto")) {
+                try {
+                    engine = OcrEngine::TryCreateFromLanguage(::winrt::Windows::Globalization::Language(m_language.toStdWString()));
+                } catch (...) {
+                    engine = nullptr;
+                }
+            }
+            if (!engine)
+                engine = OcrEngine::TryCreateFromUserProfileLanguages();
             if (!engine) {
                 // 用户语言没有 OCR 包时，退而取第一个可用语言
                 auto langs = OcrEngine::AvailableRecognizerLanguages();
@@ -118,7 +138,7 @@ OcrResult WinOcr::recognize(const QImage& image)
                     const QRect wr(static_cast<int>(r.X), static_cast<int>(r.Y), static_cast<int>(r.Width), static_cast<int>(r.Height));
                     bounds = bounds.isNull() ? wr : bounds.united(wr);
                 }
-                l.bounds = bounds;
+                l.bounds = upscale > 1 ? QRect(bounds.x() / upscale, bounds.y() / upscale, bounds.width() / upscale, bounds.height() / upscale) : bounds;
                 result.lines.append(l);
             }
             result.ok = true;

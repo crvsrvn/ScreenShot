@@ -59,6 +59,17 @@ QString PinWindow::textHtml() const
 
 void PinWindow::copyText()
 {
+    if (m_kind == ContentKind::Image) {
+        const QString text = m_ocrSelected.isEmpty() ? [this] {
+            QStringList all;
+            for (const OcrLine& l : m_ocrLines)
+                all.append(l.text);
+            return all.join(QLatin1Char('\n'));
+        }() : selectedText();
+        if (!text.isEmpty())
+            QApplication::clipboard()->setText(text);
+        return;
+    }
     if (!m_textDoc)
         return;
     auto* mime = new QMimeData;
@@ -75,6 +86,18 @@ void PinWindow::copyText()
 
 void PinWindow::setTextSelectionMode(bool on)
 {
+    if (m_kind == ContentKind::Image) {
+        // REC-04：图像贴图先识别文字行
+        if (!m_settings.boolValue(QStringLiteral("ocr.pinSelectText")))
+            return;
+        m_textSelecting = on;
+        m_ocrSelected.clear();
+        if (on && m_ocrLines.isEmpty())
+            emit ocrLinesRequested(this, displayedImage());
+        setCursor(on ? Qt::IBeamCursor : Qt::ArrowCursor);
+        update();
+        return;
+    }
     if (m_kind != ContentKind::Text)
         return;
     m_textSelecting = on;
@@ -83,8 +106,30 @@ void PinWindow::setTextSelectionMode(bool on)
     update();
 }
 
+void PinWindow::setOcrLines(const QList<OcrLine>& lines)
+{
+    m_ocrLines = lines;
+    m_ocrSelected.clear();
+    update();
+}
+
+void PinWindow::selectOcrLinesIn(const QRectF& imageRect)
+{
+    m_ocrSelected.clear();
+    for (int i = 0; i < m_ocrLines.size(); ++i)
+        if (imageRect.intersects(QRectF(m_ocrLines[i].bounds)))
+            m_ocrSelected.append(i);
+    update();
+}
+
 QString PinWindow::selectedText() const
 {
+    if (m_kind == ContentKind::Image) {
+        QStringList parts;
+        for (int i : m_ocrSelected)
+            parts.append(m_ocrLines[i].text);
+        return parts.join(QLatin1Char('\n'));
+    }
     const auto [from, to] = m_textSelection;
     return m_textDoc && from != to ? m_textDoc->selectedText(from, to) : QString();
 }

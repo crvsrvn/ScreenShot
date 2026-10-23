@@ -4,6 +4,7 @@
 #include "app/ToolbarTarget.h"
 #include "core/geometry/VirtualDesktop.h"
 #include "core/pin/TextPin.h"
+#include "core/ports/IOcrEngine.h"
 #include "core/util/Mipmap.h"
 
 #include <QImage>
@@ -44,7 +45,11 @@ public:
     QString textPlain() const;
     QString textHtml() const;
     void copyText();                       // 全文或选中部分（纯文本 + HTML）
-    void setTextSelectionMode(bool on);    // 文本选择模式：拖动只选部分文字
+    void setTextSelectionMode(bool on);    // 文本选择模式：拖动只选部分文字；图像贴图按 OCR 行选（REC-04）
+    void setOcrLines(const QList<OcrLine>& lines);
+    QList<OcrLine> ocrLines() const { return m_ocrLines; }
+    QList<int> selectedOcrLines() const { return m_ocrSelected; }
+    void selectOcrLinesIn(const QRectF& imageRect);
     bool textSelectionMode() const { return m_textSelecting; }
     void selectTextRange(int from, int to);
     QString selectedText() const;
@@ -207,6 +212,7 @@ signals:
     void ocrRequested(const QImage& image);    // REC-01：贴图右键识别
     void codesRequested(const QImage& image);  // REC-06：贴图右键识别二维码
     void moveToGroupRequested(ss::PinWindow* pin, int groupIndex); // GRP-03
+    void ocrLinesRequested(ss::PinWindow* pin, const QImage& image);  // REC-04：请求识别图像贴图上的文字行
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -266,6 +272,9 @@ private:
     std::unique_ptr<TextPinDocument> m_textDoc;
     bool m_textSelecting = false;
     std::pair<int, int> m_textSelection{0, 0};
+    QList<OcrLine> m_ocrLines;
+    QList<int> m_ocrSelected;
+    QRectF m_ocrMarquee;
     QColor m_color;
     QString m_filePath;
     bool m_gray = false;

@@ -26,7 +26,7 @@ void TestPreferences::pagesMatchSettingsTable()
     QVERIFY(tabs);
     QStringList pages;
     for (const auto& spec : settingSpecs())
-        if (!pages.contains(spec.page))
+        if (!pages.contains(spec.page) && spec.page != QLatin1String("hidden")) // CFG-06：高级配置不进设置窗口
             pages.append(spec.page);
     QCOMPARE(tabs->count(), pages.size());
     for (int i = 0; i < pages.size(); ++i)
@@ -38,6 +38,8 @@ void TestPreferences::everyEditorHasTooltip()
     Settings s;
     PreferencesDialog d(s);
     for (const auto& spec : settingSpecs()) {
+        if (spec.page == QLatin1String("hidden"))
+            continue;
         QWidget* editor = d.findChild<QWidget*>(spec.key);
         QVERIFY2(editor, qPrintable(spec.key));
         QVERIFY2(!editor->toolTip().isEmpty(), qPrintable(spec.key));

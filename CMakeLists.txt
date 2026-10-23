@@ -41,6 +41,18 @@ FetchContent_Declare(zxing
     GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(zxing)
 
+# ---- 第三方：QuickJS-ng（脚本，ACT-13；不编译标准库模块，没有文件与网络接口）----
+set(QJS_BUILD_LIBC OFF CACHE BOOL "" FORCE)
+set(QJS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(QJS_BUILD_CLI_STATIC OFF CACHE BOOL "" FORCE)
+set(QJS_BUILD_CLI_WITH_MIMALLOC OFF CACHE BOOL "" FORCE)
+set(QJS_DISABLE_PARSER OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(quickjs
+    GIT_REPOSITORY https://github.com/quickjs-ng/quickjs.git
+    GIT_TAG v0.9.0
+    GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(quickjs)
+
 # ---- 目标 ------------------------------------------------------------------
 add_subdirectory(src/core)
 add_subdirectory(src/platform)

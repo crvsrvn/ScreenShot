@@ -35,6 +35,12 @@ qt_add_library(screenshot_core STATIC
     code/CodeDecoder.h code/CodeDecoder.cpp
     fx/HdrToneMap.h fx/HdrToneMap.cpp
     config/Actions.h config/Actions.cpp
+    config/Shortcuts.h config/Shortcuts.cpp
+    ocr/OcrFormat.h ocr/OcrFormat.cpp
+    ocr/TableExtract.h ocr/TableExtract.cpp
+    output/XlsxWriter.h output/XlsxWriter.cpp
+    input/Gestures.h input/Gestures.cpp
+    script/ScriptEngine.h script/ScriptEngine.cpp
 )
 target_include_directories(screenshot_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(screenshot_core PUBLIC Qt6::Core Qt6::Gui Qt6::Concurrent PRIVATE ZXing::ZXing)
+target_link_libraries(screenshot_core PUBLIC Qt6::Core Qt6::Gui Qt6::Concurrent PRIVATE ZXing::ZXing qjs)

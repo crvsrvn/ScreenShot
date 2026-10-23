@@ -60,6 +60,7 @@ void PreferencesDialog::buildPages()
     for (const auto& spec : settingSpecs())
         if (!pages.contains(spec.page))
             pages.append(spec.page);
+    pages.removeAll(QStringLiteral("hidden")); // CFG-06：高级配置只在配置文件里
     for (const QString& page : pages) {
         auto* scroll = new QScrollArea(tabs);
         scroll->setWidgetResizable(true);

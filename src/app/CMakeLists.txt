@@ -11,6 +11,7 @@ set(APPLIB_SOURCES
     Notification.h Notification.cpp
     FloatingBar.h FloatingBar.cpp
     GroupDialog.h GroupDialog.cpp
+    GestureOverlay.h GestureOverlay.cpp
     EncodePreviewDialog.h EncodePreviewDialog.cpp
     ResultDialogs.h ResultDialogs.cpp
     ActionsDialog.h ActionsDialog.cpp

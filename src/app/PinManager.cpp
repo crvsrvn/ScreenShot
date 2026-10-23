@@ -102,6 +102,7 @@ PinWindow* PinManager::attach(PinWindow* pin, QPoint physicalTopLeft, const QDat
     connect(pin, &PinWindow::groupAction, this, &PinManager::onGroupAction);
     connect(pin, &PinWindow::ocrRequested, this, &PinManager::ocrRequested);
     connect(pin, &PinWindow::codesRequested, this, &PinManager::codesRequested);
+    connect(pin, &PinWindow::ocrLinesRequested, this, &PinManager::ocrLinesRequested);
     connect(pin, &PinWindow::moveToGroupRequested, this, [this](PinWindow* p, int index) { movePinToGroup(p, index); });
     pin->setGroupColor(current().color);
     pin->setGroupNames(groupNames());
