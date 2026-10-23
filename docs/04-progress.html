@@ -485,9 +485,9 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <body>
 <main class="hs-doc" data-toc-levels="2,3">
 <h1 id="top">ScreenShot 实现进度与交付报告（M0 ~ M8）</h1>
-<p class="hs-meta">v1.0 · 2026-10-24 · 输入：<a href="01-requirements.md">需求</a>、<a href="02-architecture.md">架构</a>、<a href="03-m0-report.md">M0 报告</a></p>
+<p class="hs-meta">v1.1 · 2026-10-24 · 输入：<a href="01-requirements.md">需求</a>、<a href="02-architecture.md">架构</a>、<a href="03-m0-report.md">M0 报告</a></p>
 <h2 id="summary"><span class="hs-num">1.</span>结论<a class="hs-anchor" href="#summary" aria-label="本节链接">#</a></h2>
-<p><mark>八个里程碑全部实现并逐里程碑本地提交；246 条需求中 244 条已进入交付范围且每条都有自动用例（覆盖矩阵无空项），余下 2 条（LaTeX 公式贴图、公式识别）需要离线公式引擎，按 <span class="hs-mark" data-kind="muted" title="需要额外组件或设备，本次交付未实现">延后</span> 处理。Debug 与 Release 两套自动测试全部通过，程序零网络导入。需要真实桌面的端到端场景与 macOS 用例已写好，等解锁桌面 / Mac 设备后执行。</mark></p>
+<p><mark>八个里程碑全部实现并逐里程碑本地提交；需求文档 v0.5 删除了公式贴图与公式识别后，现行 244 条需求全部进入交付范围且每条都有自动用例（覆盖矩阵无空项）。Debug 与 Release 两套自动测试全部通过，程序零网络导入。需要真实桌面的端到端场景与 macOS 用例已写好，等解锁桌面 / Mac 设备后执行。</mark></p>
 <div class="hs-table lead"><table>
 <caption>里程碑结果</caption>
 <thead>
@@ -595,7 +595,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 </tbody>
 </table></div>
-<p>需求覆盖矩阵（<code>build/&lt;preset&gt;/test-results/coverage.md</code>）由 <code>tools/coverage/gen_matrix.py</code> 在每次测试运行时生成：扫描所有用例文件开头的 <code>// REQ:</code> 标签，对 <code>tests/delivered_scope.txt</code> 里的每一条需求检查至少有一个用例，否则测试失败（<code>TST-01</code>）。矩阵统计到 253 个编号，其中 7 个只出现在需求文档的修订记录里（v0.2 删除或改名的 <code>LNG-*</code>、<code>REC-05</code>、<code>PIN-10</code>、<code>GEN-11</code>、<code>GEN-12</code>、<code>OUT-15</code>），不是现行需求；现行需求 246 条，244 条在范围内且全部有用例。</p>
+<p>需求覆盖矩阵（<code>build/&lt;preset&gt;/test-results/coverage.md</code>）由 <code>tools/coverage/gen_matrix.py</code> 在每次测试运行时生成：扫描所有用例文件开头的 <code>// REQ:</code> 标签，对 <code>tests/delivered_scope.txt</code> 里的每一条需求检查至少有一个用例，否则测试失败（<code>TST-01</code>）。矩阵统计到 253 个编号，其中 9 个只出现在需求文档的修订记录里（v0.2 / v0.5 删除或改名的 <code>LNG-*</code>、<code>REC-05</code>、<code>PIN-10</code>、<code>GEN-11</code>、<code>GEN-12</code>、<code>OUT-15</code>、<code>PIN-09</code>、<code>REC-09</code>），不是现行需求；现行需求 244 条，全部在范围内且有用例。</p>
 <blockquote class="hs-callout" data-kind="info">
 <p class="hs-callout-title">覆盖的含义</p>
 <p>“有用例”指该需求的核心行为有自动用例在无显示器（offscreen）或真实桌面上验证；需要真实输入的验收场景（<code>AC-01</code> ~ <code>AC-12</code>）由端到端驱动在解锁桌面后执行，当前只验证了不依赖输入的部分，见 <a href="#pending">5</a>。</p>
@@ -629,6 +629,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <ul>
 <li>验收与非功能需求的用例：30 步撤销重做无残影（<code>AC-04</code>）、输入法事件输入中文并旋转导出一致（<code>AC-03</code>）、命令行 <code>--wait</code> 场景（<code>AC-12</code>）、启动耗时场景（<code>NFR-03</code>）、系统版本门槛（<code>NFR-11</code>，低于 19041 启动即提示退出）、设置项可访问名称与说明（<code>NFR-14</code>）。</li>
 <li>打包（<code>NFR-12</code>）：<code>tests/package/check_package.py</code> 生成绿色版 zip 与 Inno Setup 安装包并检查 ≤ 50 MB、包内无 Qt Network；只在非 Debug 配置下运行。</li>
+<li>公式贴图 <code>PIN-09</code> 与公式识别 <code>REC-09</code> 按决定从需求中删除（需求文档 v0.5）。</li>
 <li>已实现但此前未纳入范围的需求（各工具记住颜色、形状旋转、工具快捷键、一键禁用热键、选项说明、贴图尺寸限制、屏幕外贴图恢复）补入交付范围并核对用例。</li>
 </ul>
 <h2 id="pending"><span class="hs-num">5.</span>未完成与待测<a class="hs-anchor" href="#pending" aria-label="本节链接">#</a></h2>
@@ -644,16 +645,10 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </thead>
 <tbody>
 <tr>
-<td><code>PIN-09</code></td>
-<td>LaTeX 公式贴图</td>
-<td>需要离线公式渲染引擎（如 KaTeX 经 QuickJS 运行 + 字体，或 MicroTeX）；体积与许可需单独评估</td>
-<td><span class="hs-tag" data-kind="muted">延后</span></td>
-</tr>
-<tr>
-<td><code>REC-09</code></td>
-<td>公式识别</td>
-<td>没有系统自带的离线公式识别模型，需引入独立模型包（需求允许放在离线组件包中）</td>
-<td><span class="hs-tag" data-kind="muted">延后</span></td>
+<td><code>PIN-09</code> <code>REC-09</code></td>
+<td>LaTeX 公式贴图、公式识别</td>
+<td>需求文档 v0.5 已删除（需要离线公式引擎与模型）</td>
+<td><span class="hs-tag" data-kind="danger">删除</span></td>
 </tr>
 <tr>
 <td><code>OUT-05</code> 的 AVIF</td>

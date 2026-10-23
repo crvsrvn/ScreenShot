@@ -485,7 +485,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <body>
 <main class="hs-doc" data-toc-levels="2,3">
 <h1 id="top">ScreenShot 需求文档</h1>
-<p class="hs-meta">v0.4 草案 · 2026-10-23 · 依据 Snipaste 2.11.3 与 PixPin 3.5 的公开文档整理</p>
+<p class="hs-meta">v0.5 草案 · 2026-10-24 · 依据 Snipaste 2.11.3 与 PixPin 3.5 的公开文档整理</p>
 <h2 id="s1"><span class="hs-num">1.</span>概述<a class="hs-anchor" href="#s1" aria-label="本节链接">#</a></h2>
 <h3 id="s1-1"><span class="hs-num">1.1</span>背景<a class="hs-anchor" href="#s1-1" aria-label="本节链接">#</a></h3>
 <p>本项目用正向开发的方式，在 Windows 和 macOS 上做一款截图 + 贴图工具：逐项复刻 Snipaste 的功能，补上 PixPin 比 Snipaste 多出的功能，并在截图中加入滚动截图。</p>
@@ -1518,12 +1518,6 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <td><span class="hs-tag" data-kind="warn">P1</span></td>
 </tr>
 <tr>
-<td><code>PIN-09</code></td>
-<td>LaTeX 公式贴图：渲染公式，导出 SVG，复制 MathML / LaTeX / 图片</td>
-<td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
-<tr>
 <td><code>PIN-11</code></td>
 <td>在贴图上 Ctrl+V 或拖入本地内容替换当前贴图；替换策略：保留原图 / 关闭原图 / 销毁原图</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
@@ -1885,12 +1879,6 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <tr>
 <td><code>REC-08</code></td>
 <td>表格识别，导出为 Excel 文件</td>
-<td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
-<tr>
-<td><code>REC-09</code></td>
-<td>公式识别：识别窗口含公式列表、LaTeX 编辑、渲染预览、原图对照；导出 SVG / 图片，复制 LaTeX / MathML / 图片</td>
 <td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
 <td><span class="hs-tag" data-kind="muted">P2</span></td>
 </tr>
@@ -2563,6 +2551,10 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>v0.5</td>
+<td>删除公式相关需求：LaTeX 公式贴图 <code>PIN-09</code>、公式识别 <code>REC-09</code>（需要离线公式引擎与模型，不再要求）</td>
+</tr>
 <tr>
 <td>v0.4</td>
 <td>语言标准改为 C++20；目前没有 Mac 设备：macOS 部分只编写、不编译、不测试，相应调整 <code>A-01</code>、完成标准、里程碑、<code>TST-08</code>、<code>AC-13</code>、<code>AC-14</code>、<code>Q-09</code></td>
