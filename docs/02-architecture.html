@@ -1,0 +1,1987 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="generator" content="Markdown-2-HTML/2.3.0">
+<meta name="m2h-source" content="02-architecture.md">
+<title>ScreenShot 技术架构与选型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style id="hs-style">
+:root {
+  --hs-bg: #FCFCFB;
+  --hs-side: #EDF0F3;
+  --hs-surface: #FFFFFF;
+  --hs-text: #1C2430;
+  --hs-muted: #5A6475;
+  --hs-faint: #8A93A1;
+  --hs-line: #D8DDE4;
+  --hs-line-soft: #E6E9EE;
+  --hs-accent: #1E6A86;
+  --hs-accent-soft: #E1EDF2;
+  --hs-code-bg: #EEF1F5;
+  --hs-code-text: #243041;
+  --hs-quote-bg: #EEF2F5;
+  --hs-row-alt: #F9FAFB;
+  --hs-plate: #FFFFFF;
+  /* ID 色板：同前缀的编号同色，按出现顺序循环取色 */
+  --hs-c1: #DC2626;
+  --hs-c2: #C2410C;
+  --hs-c3: #A16207;
+  --hs-c4: #15803D;
+  --hs-c5: #0E7490;
+  --hs-c6: #2563EB;
+  --hs-c7: #7C3AED;
+  /* 语义色：说明 / 通过 / 注意 / 风险 / 要点 / 备注 */
+  --hs-info: #2563EB;
+  --hs-ok: #15803D;
+  --hs-warn: #B45309;
+  --hs-danger: #DC2626;
+  --hs-key: #7C3AED;
+  --hs-mute: #6B7686;
+  --hs-syn-kw: #9B2F7A;
+  --hs-syn-type: #1E6A86;
+  --hs-syn-str: #2F7D4A;
+  --hs-syn-com: #6B7686;
+  --hs-syn-num: #B45309;
+  --hs-syn-fn: #0B5CAD;
+  --hs-shadow: 0 12px 32px rgba(28, 36, 48, .16);
+  --hs-font: "Comic Sans MS", "Comic Neue", "Chalkboard SE", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --hs-mono: "IBM Plex Mono", "Cascadia Mono", Consolas, "Microsoft YaHei", monospace;
+  --hs-measure: 988px;
+  --hs-toc-w: 300px;
+  /* 图标：24×24 线性图标，用作 mask，颜色取 currentColor 或 --c */
+  --hs-i-info: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M12 11v5M12 7.5v.01'/></svg>");
+  --hs-i-tip: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.6 1 2.5h6c0-.9.2-1.7 1-2.5A6 6 0 0 0 12 3z'/></svg>");
+  --hs-i-ok: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M8 12.5l2.8 2.8L16.5 9.5'/></svg>");
+  --hs-i-warn: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3.5L22 20H2z'/><path d='M12 10v4.5M12 17.5v.01'/></svg>");
+  --hs-i-danger: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M9 9l6 6M15 9l-6 6'/></svg>");
+  --hs-i-flag: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 21V4M5 4h12l-2.5 4.5L17 13H5'/></svg>");
+  --hs-i-note: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 20h4L19 9l-4-4L4 16z'/><path d='M13.5 6.5l4 4'/></svg>");
+  --hs-i-question: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4v.3M12 17v.01'/></svg>");
+  --hs-i-book: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M3 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3z'/><path d='M21 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z'/></svg>");
+  --hs-i-target: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><circle cx='12' cy='12' r='5'/><circle cx='12' cy='12' r='1'/></svg>");
+  --hs-i-compare: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3v18M7 21h10M4 7h16M6 7l-3 7a3 3 0 0 0 6 0zM18 7l-3 7a3 3 0 0 0 6 0z'/></svg>");
+  --hs-i-database: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><ellipse cx='12' cy='5.5' rx='8' ry='3'/><path d='M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3'/></svg>");
+  --hs-i-flow: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='7' height='6' rx='1.5'/><rect x='14' y='15' width='7' height='6' rx='1.5'/><path d='M6.5 9v4a2 2 0 0 0 2 2H14M11.5 12.5L14 15l-2.5 2.5'/></svg>");
+  --hs-i-code: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16'/></svg>");
+  --hs-i-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='16' rx='2'/><circle cx='8.5' cy='9.5' r='1.5'/><path d='M21 16l-5-5-9 9'/></svg>");
+  --hs-i-list: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 6h11M9 12h11M9 18h11M4.5 6v.01M4.5 12v.01M4.5 18v.01'/></svg>");
+  --hs-i-calendar: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='5' width='18' height='16' rx='2'/><path d='M3 10h18M8 3v4M16 3v4'/></svg>");
+  --hs-i-flask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 3h6M10 3v6l-5.5 9.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3M7.5 15h9'/></svg>");
+  --hs-i-layers: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l9 5-9 5-9-5z'/><path d='M3 13l9 5 9-5'/></svg>");
+  --hs-i-branch: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='6' cy='5' r='2'/><circle cx='6' cy='19' r='2'/><circle cx='18' cy='7' r='2'/><path d='M6 7v10M18 9c0 5-6 4-11 8.5'/></svg>");
+  --hs-i-clock: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 2'/></svg>");
+  --hs-i-link: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1'/></svg>");
+  --hs-i-zap: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M13 2L4 14h7l-1 8 9-12h-7z'/></svg>");
+  --hs-i-box: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l8 4.5v9L12 21l-8-4.5v-9z'/><path d='M4 7.5l8 4.5 8-4.5M12 12v9'/></svg>");
+  --hs-i-shield: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z'/></svg>");
+  --hs-i-migrate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 8h15M15 4l4 4-4 4M20 16H5M9 12l-4 4 4 4'/></svg>");
+  --hs-i-search: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='7'/><path d='M20 20l-4-4'/></svg>");
+  --hs-i-arrow-up: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 19V5M5 12l7-7 7 7'/></svg>");
+  --hs-i-expand: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5'/></svg>");
+  --hs-i-shrink: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5'/></svg>");
+  --hs-i-reset: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 12a8 8 0 1 0 2.3-5.7'/><path d='M4 4v4.5h4.5'/></svg>");
+  --hs-i-unfold: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M7 15l5 5 5-5M7 9l5-5 5 5'/></svg>");
+  --hs-i-fold: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M7 20l5-5 5 5M7 4l5 5 5-5'/></svg>");
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --hs-bg: #151515;
+    --hs-side: #151B23;
+    --hs-surface: #171E27;
+    --hs-text: #DCE3EC;
+    --hs-muted: #9AA5B4;
+    --hs-faint: #6F7A8A;
+    --hs-line: #2A3441;
+    --hs-line-soft: #222B36;
+    --hs-accent: #6CB8D4;
+    --hs-accent-soft: #1A2E39;
+    --hs-code-bg: #18202A;
+    --hs-code-text: #D3DBE6;
+    --hs-quote-bg: #162029;
+    --hs-row-alt: #19212B;
+    --hs-c1: #F87171;
+    --hs-c2: #FB923C;
+    --hs-c3: #FACC15;
+    --hs-c4: #4ADE80;
+    --hs-c5: #22D3EE;
+    --hs-c6: #60A5FA;
+    --hs-c7: #A78BFA;
+    --hs-info: #7AA7FF;
+    --hs-ok: #6FD08C;
+    --hs-warn: #F2B25C;
+    --hs-danger: #F87171;
+    --hs-key: #B79CFF;
+    --hs-mute: #8A95A5;
+    --hs-syn-kw: #E08AC6;
+    --hs-syn-type: #6CB8D4;
+    --hs-syn-str: #8CCB9E;
+    --hs-syn-com: #7F8A9A;
+    --hs-syn-num: #E4A55C;
+    --hs-syn-fn: #82B6F0;
+    --hs-shadow: 0 12px 32px rgba(0, 0, 0, .5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --hs-bg: #151515;
+  --hs-side: #151B23;
+  --hs-surface: #171E27;
+  --hs-text: #DCE3EC;
+  --hs-muted: #9AA5B4;
+  --hs-faint: #6F7A8A;
+  --hs-line: #2A3441;
+  --hs-line-soft: #222B36;
+  --hs-accent: #6CB8D4;
+  --hs-accent-soft: #1A2E39;
+  --hs-code-bg: #18202A;
+  --hs-code-text: #D3DBE6;
+  --hs-quote-bg: #162029;
+  --hs-row-alt: #19212B;
+  --hs-c1: #F87171;
+  --hs-c2: #FB923C;
+  --hs-c3: #FACC15;
+  --hs-c4: #4ADE80;
+  --hs-c5: #22D3EE;
+  --hs-c6: #60A5FA;
+  --hs-c7: #A78BFA;
+  --hs-info: #7AA7FF;
+  --hs-ok: #6FD08C;
+  --hs-warn: #F2B25C;
+  --hs-danger: #F87171;
+  --hs-key: #B79CFF;
+  --hs-mute: #8A95A5;
+  --hs-syn-kw: #E08AC6;
+  --hs-syn-type: #6CB8D4;
+  --hs-syn-str: #8CCB9E;
+  --hs-syn-com: #7F8A9A;
+  --hs-syn-num: #E4A55C;
+  --hs-syn-fn: #82B6F0;
+  --hs-shadow: 0 12px 32px rgba(0, 0, 0, .5);
+  color-scheme: dark;
+}
+
+/* 色与图标的映射：ID 色 data-hue，语义 data-kind，图标 data-icon */
+:where(.hs-callout) { --c: var(--hs-info); --icon: var(--hs-i-info); }
+:where(.hs-tag, .hs-mark) { --c: var(--hs-mute); }
+[data-hue="1"] { --hue: var(--hs-c1); }
+[data-hue="2"] { --hue: var(--hs-c2); }
+[data-hue="3"] { --hue: var(--hs-c3); }
+[data-hue="4"] { --hue: var(--hs-c4); }
+[data-hue="5"] { --hue: var(--hs-c5); }
+[data-hue="6"] { --hue: var(--hs-c6); }
+[data-hue="7"] { --hue: var(--hs-c7); }
+[data-kind="info"] { --c: var(--hs-info); --icon: var(--hs-i-info); }
+[data-kind="tip"] { --c: var(--hs-ok); --icon: var(--hs-i-tip); }
+[data-kind="ok"] { --c: var(--hs-ok); --icon: var(--hs-i-ok); }
+[data-kind="warn"] { --c: var(--hs-warn); --icon: var(--hs-i-warn); }
+[data-kind="danger"] { --c: var(--hs-danger); --icon: var(--hs-i-danger); }
+[data-kind="key"] { --c: var(--hs-key); --icon: var(--hs-i-flag); }
+[data-kind="muted"] { --c: var(--hs-mute); --icon: var(--hs-i-note); }
+[data-icon="info"] { --icon: var(--hs-i-info); }
+[data-icon="tip"] { --icon: var(--hs-i-tip); }
+[data-icon="ok"] { --icon: var(--hs-i-ok); }
+[data-icon="warn"] { --icon: var(--hs-i-warn); }
+[data-icon="danger"] { --icon: var(--hs-i-danger); }
+[data-icon="flag"] { --icon: var(--hs-i-flag); }
+[data-icon="note"] { --icon: var(--hs-i-note); }
+[data-icon="question"] { --icon: var(--hs-i-question); }
+[data-icon="book"] { --icon: var(--hs-i-book); }
+[data-icon="target"] { --icon: var(--hs-i-target); }
+[data-icon="compare"] { --icon: var(--hs-i-compare); }
+[data-icon="database"] { --icon: var(--hs-i-database); }
+[data-icon="flow"] { --icon: var(--hs-i-flow); }
+[data-icon="code"] { --icon: var(--hs-i-code); }
+[data-icon="image"] { --icon: var(--hs-i-image); }
+[data-icon="list"] { --icon: var(--hs-i-list); }
+[data-icon="calendar"] { --icon: var(--hs-i-calendar); }
+[data-icon="flask"] { --icon: var(--hs-i-flask); }
+[data-icon="layers"] { --icon: var(--hs-i-layers); }
+[data-icon="branch"] { --icon: var(--hs-i-branch); }
+[data-icon="clock"] { --icon: var(--hs-i-clock); }
+[data-icon="link"] { --icon: var(--hs-i-link); }
+[data-icon="zap"] { --icon: var(--hs-i-zap); }
+[data-icon="box"] { --icon: var(--hs-i-box); }
+[data-icon="shield"] { --icon: var(--hs-i-shield); }
+[data-icon="migrate"] { --icon: var(--hs-i-migrate); }
+[data-icon="search"] { --icon: var(--hs-i-search); }
+[data-icon="arrow-up"] { --icon: var(--hs-i-arrow-up); }
+[data-icon="expand"] { --icon: var(--hs-i-expand); }
+[data-icon="shrink"] { --icon: var(--hs-i-shrink); }
+[data-icon="reset"] { --icon: var(--hs-i-reset); }
+[data-icon="unfold"] { --icon: var(--hs-i-unfold); }
+[data-icon="fold"] { --icon: var(--hs-i-fold); }
+.hs-ico { display: inline-block; width: 1.1em; height: 1.1em; vertical-align: -.18em; background: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+
+/* 所有页内跳转（链接点击、回到顶部、浏览器前进后退）都直接跳转：不设 scroll-behavior: smooth */
+body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.75 var(--hs-font); -webkit-text-size-adjust: 100%; }
+:focus-visible { outline: 2px solid var(--hs-accent); outline-offset: 2px; }
+
+/* 版心：在大纲左侧区域内居中、固定宽度 */
+@media (min-width: 900px) { body.hs-with-toc { padding-right: var(--hs-toc-w); } }
+.hs-doc { box-sizing: content-box; max-width: var(--hs-measure); margin-inline: auto; padding-inline: clamp(16px, 4vw, 56px); padding-block: 40px 120px; overflow-wrap: break-word; }
+
+/* 标题：h1 色条；h2 色条；h3 竖条；序号与标题同色，不带图标 */
+.hs-doc :is(h1, h2, h3, h4, h5, h6) { position: relative; font-weight: 700; line-height: 1.4; text-wrap: balance; scroll-margin-top: 24px; }
+.hs-doc h1 { font-size: 30px; letter-spacing: -.01em; margin: 0 0 16px; }
+.hs-doc h1::after { content: ""; display: block; width: 120px; height: 4px; margin-top: 12px; border-radius: 2px; background: var(--hs-accent); }
+.hs-doc h2 { font-size: 24px; margin: 64px 0 18px; padding-top: 24px; border-top: 1px solid var(--hs-line); background: linear-gradient(var(--hs-accent), var(--hs-accent)) 0 0 / 88px 3px no-repeat border-box; }
+.hs-doc h3 { font-size: 20px; margin: 44px 0 14px; padding-left: 14px; }
+.hs-doc h3::before { content: ""; position: absolute; left: 0; top: .3em; bottom: .3em; width: 4px; border-radius: 2px; background: var(--hs-accent); }
+.hs-doc h4 { font-size: 17.5px; margin: 32px 0 10px; }
+.hs-doc h5 { font-size: 16px; margin: 26px 0 8px; }
+.hs-doc h6 { font-size: 15px; margin: 22px 0 8px; color: var(--hs-muted); }
+.hs-meta { margin: -8px 0 28px; font-size: 13.5px; color: var(--hs-muted); }
+.hs-num { margin-right: .4em; font-variant-numeric: tabular-nums; }
+.hs-anchor { margin-left: .4em; color: var(--hs-faint); font-weight: 400; text-decoration: none; opacity: 0; }
+.hs-doc :is(h2, h3, h4, h5, h6):hover .hs-anchor, .hs-anchor:focus-visible { opacity: 1; }
+
+.hs-doc p { margin: 0 0 14px; }
+.hs-doc :is(ul, ol) { margin: 0 0 14px; padding-left: 1.6em; }
+.hs-doc li { margin: 4px 0; }
+.hs-doc li::marker { color: var(--hs-accent); }
+.hs-doc ol > li::marker { font-weight: 700; }
+.hs-doc li > :is(ul, ol) { margin: 4px 0; }
+.hs-doc strong { font-weight: 700; }
+.hs-doc a { color: var(--hs-accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.hs-doc hr { border: 0; border-top: 1px solid var(--hs-line); margin: 32px 0; }
+.hs-doc :is(blockquote, aside) { margin: 16px 0 22px; padding: 12px 18px; background: var(--hs-quote-bg); border-left: 3px solid var(--hs-accent); }
+.hs-doc :is(blockquote, aside) > :last-child { margin-bottom: 0; }
+
+/* 标记：提示块、状态标签、图例记号、ID 标记 */
+.hs-doc .hs-callout { padding: 12px 18px 12px 16px; background: color-mix(in srgb, var(--c) 7%, var(--hs-surface)); border: 1px solid color-mix(in srgb, var(--c) 24%, transparent); border-left: 4px solid var(--c); border-radius: 6px; }
+.hs-doc .hs-callout-title { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 14.5px; font-weight: 700; color: var(--c); }
+.hs-callout-title::before { content: ""; flex: none; width: 18px; height: 18px; background: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+.hs-tag { display: inline-flex; align-items: center; gap: .4em; padding: 0 .65em; font-size: .86em; font-weight: 700; line-height: 1.7; white-space: nowrap; color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); border: 1px solid color-mix(in srgb, var(--c) 32%, transparent); border-radius: 999px; }
+.hs-tag::before { content: ""; width: .5em; height: .5em; border-radius: 50%; background: currentColor; }
+.hs-mark { display: inline-grid; place-items: center; min-width: 1.6em; height: 1.6em; padding: 0 .25em; font: 700 .88em/1 var(--hs-mono); color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); border: 1px solid color-mix(in srgb, var(--c) 36%, transparent); border-radius: 5px; vertical-align: .08em; cursor: help; }
+.hs-doc code.hs-id { color: var(--hue); background: color-mix(in srgb, var(--hue) 11%, transparent); border: 1px solid color-mix(in srgb, var(--hue) 28%, transparent); font-weight: 500; white-space: nowrap; }
+.hs-doc dl.hs-kv { grid-template-columns: fit-content(12em) minmax(0, 1fr); gap: 8px 18px; }
+.hs-doc .hs-callout dl.hs-kv dt { color: var(--c); }
+
+/* 原生增强：术语表、按键、高亮、缩写、折叠、脚注弹层 */
+.hs-doc dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 18px; margin: 0 0 14px; }
+.hs-doc dt { font-weight: 700; }
+.hs-doc dd { margin: 0; }
+.hs-doc kbd { font: 500 .82em var(--hs-mono); padding: .1em .45em; background: var(--hs-surface); border: 1px solid var(--hs-line); border-bottom-width: 2px; border-radius: 4px; }
+.hs-doc mark { background: color-mix(in srgb, #F5C542 45%, transparent); color: inherit; padding: 0 .15em; border-radius: 3px; }
+.hs-doc abbr[title] { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+.hs-doc details:not(.hs-code) { margin: 16px 0 22px; background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 6px; }
+.hs-doc details:not(.hs-code) > summary { padding: 10px 16px; font-weight: 700; cursor: pointer; }
+.hs-doc details:not(.hs-code) > summary::marker { color: var(--hs-accent); }
+.hs-doc details:not(.hs-code)[open] > summary { border-bottom: 1px solid var(--hs-line-soft); }
+.hs-doc details:not(.hs-code) > :not(summary) { margin-inline: 16px; }
+.hs-doc details:not(.hs-code) > summary + * { margin-top: 12px; }
+.hs-doc details:not(.hs-code) > :last-child { margin-bottom: 14px; }
+.hs-ref { vertical-align: super; padding: 0 .35em; font: 700 11px/1.4 var(--hs-font); color: var(--hs-accent); background: var(--hs-accent-soft); border: 0; border-radius: 4px; cursor: pointer; }
+.hs-pop { max-width: min(440px, 90vw); padding: 14px 18px; color: var(--hs-text); background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 8px; box-shadow: var(--hs-shadow); font: 14.5px/1.7 var(--hs-font); }
+.hs-pop::backdrop { background: rgba(0, 0, 0, .12); }
+
+/* 代码 */
+.hs-doc code { font-family: var(--hs-mono); font-size: .86em; color: var(--hs-code-text); background: var(--hs-code-bg); padding: .12em .38em; border-radius: 4px; overflow-wrap: break-word; }
+.hs-doc pre { margin: 16px 0 22px; padding: 14px 16px; overflow-x: auto; font: 13.5px/1.6 var(--hs-mono); tab-size: 4; background: var(--hs-code-bg); border: 1px solid var(--hs-line); border-radius: 6px; }
+.hs-doc pre code { background: none; padding: 0; font-size: inherit; border-radius: 0; }
+.hs-doc pre.mermaid { padding: 0; background: none; border: 0; overflow: visible; }
+.hs-code { margin: 16px 0 22px; background: var(--hs-code-bg); border: 1px solid var(--hs-line); border-radius: 6px; overflow: hidden; }
+.hs-code pre { margin: 0; border: 0; border-radius: 0; }
+.hs-code > summary { display: flex; align-items: center; gap: 8px; padding: 9px 16px; font: 500 11px/1 var(--hs-mono); letter-spacing: .08em; color: var(--hs-muted); border-bottom: 1px solid var(--hs-line); cursor: pointer; list-style: none; user-select: none; }
+.hs-code > summary::-webkit-details-marker { display: none; }
+.hs-code > summary::before { content: ""; border-left: 5px solid currentColor; border-block: 4px solid transparent; transition: transform .15s; }
+.hs-code[open] > summary::before { transform: rotate(90deg); }
+.hs-code:not([open]) > summary { border-bottom: 0; }
+.hs-code > summary:hover { color: var(--hs-accent); }
+.hs-code-lang { display: inline-flex; align-items: center; gap: 6px; color: var(--hs-accent); font-weight: 500; }
+.hs-code-lang::before { content: ""; width: 14px; height: 14px; background: currentColor; -webkit-mask: var(--hs-i-code) center / contain no-repeat; mask: var(--hs-i-code) center / contain no-repeat; }
+.hs-code-meta { margin-left: auto; color: var(--hs-faint); letter-spacing: 0; }
+.hs-code:not([open]) .hs-code-meta::after { content: " · 点击展开"; }
+.hs-doc pre :is(.k, .kc, .kd, .kn, .kp, .kr) { color: var(--hs-syn-kw); }
+.hs-doc pre :is(.kt, .nc, .nn) { color: var(--hs-syn-type); }
+.hs-doc pre :is(.s, .s1, .s2, .sc, .sd, .se, .sh, .si, .sx, .sr, .ss, .dl, .sa) { color: var(--hs-syn-str); }
+.hs-doc pre :is(.c, .c1, .cm, .cs, .cp, .ch, .cpf) { color: var(--hs-syn-com); font-style: italic; }
+.hs-doc pre :is(.m, .mi, .mf, .mh, .mo, .il, .mb) { color: var(--hs-syn-num); }
+.hs-doc pre .nf { color: var(--hs-syn-fn); }
+
+/* 表格 */
+.hs-table { overflow-x: auto; margin: 16px 0 24px; background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 6px; }
+.hs-doc table { width: 100%; border-collapse: collapse; font-size: 14.5px; line-height: 1.6; }
+.hs-table table { min-width: 560px; }
+.hs-doc caption { padding: 10px 12px 6px; text-align: left; font-weight: 700; color: var(--hs-accent); }
+.hs-doc :is(th, td) { padding: 8px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--hs-line-soft); overflow-wrap: break-word; }
+.hs-doc :is(th + th, td + td) { border-left: 1px solid var(--hs-line-soft); }
+.hs-doc th { font-weight: 700; background: color-mix(in srgb, var(--hs-accent) 10%, var(--hs-surface)); border-bottom: 2px solid color-mix(in srgb, var(--hs-accent) 45%, transparent); }
+.hs-doc tbody tr:nth-child(even) { background: var(--hs-row-alt); }
+.hs-doc tbody tr:hover { background: color-mix(in srgb, var(--hs-accent) 7%, transparent); }
+.hs-doc tbody tr:last-child td { border-bottom: 0; }
+.hs-doc td:first-child > code:only-child { white-space: nowrap; }
+/* 网页全屏（图表与表格共用）：用 fixed 浮层铺满当前窗口，不调用浏览器全屏，视口不变，页面其余部分不重排。
+   浮层强制去掉外边距，不受所在上下文（如 details 子元素的边距）影响 */
+:is(.hs-zoom, .hs-table-box).is-full { margin: 0 !important; }
+/* 表格全屏：右上角图标按钮（悬停或聚焦时出现），全屏内横纵滚动、表头吸顶 */
+.hs-table-box { position: relative; margin: 16px 0 24px; }
+.hs-table-full { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; color: var(--hs-accent); background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 5px; cursor: pointer; opacity: 0; transition: opacity .15s; }
+.hs-table-full::before { content: ""; width: 15px; height: 15px; background: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+.hs-table-full:hover { background: color-mix(in srgb, var(--hs-accent) 12%, var(--hs-surface)); }
+.hs-table-box:is(:hover, :focus-within, .is-full) .hs-table-full { opacity: 1; }
+@media (hover: none) { .hs-table-full { opacity: 1; } }
+.hs-table-box.is-full { position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column; box-sizing: border-box; padding: calc(env(safe-area-inset-top, 0px) + 52px) 24px calc(env(safe-area-inset-bottom, 0px) + 24px); background: var(--hs-bg); }
+.hs-table-box.is-full .hs-table-full { top: calc(env(safe-area-inset-top, 0px) + 12px); right: 24px; }
+.hs-table-box.is-full > .hs-table { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+/* 表头压住表体；首格再高一层，页面若把首列设为横向吸顶，角格不被其他表头盖住 */
+.hs-table-box.is-full thead th { position: sticky; top: 0; z-index: 2; }
+.hs-table-box.is-full thead th:first-child { z-index: 3; }
+.hs-table-box > .hs-table { margin: 0; }
+
+/* 图表：左/右键拖动平移，滚轮以指针为中心缩放，双击全屏 */
+.hs-doc figure { margin: 22px 0 28px; }
+.hs-doc figcaption { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-top: 8px; font-size: 13px; color: var(--hs-muted); }
+.hs-doc figcaption > :first-child::before { content: ""; display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; background: var(--hs-accent); -webkit-mask: var(--hs-i-image) center / contain no-repeat; mask: var(--hs-i-image) center / contain no-repeat; }
+.hs-zoom { position: relative; box-sizing: border-box; max-width: 100%; min-width: 200px; min-height: 120px; height: var(--hs-zoom-h, 320px); overflow: hidden; background: var(--hs-plate); border: 1px solid var(--hs-line); border-radius: 6px; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: contain; }
+.hs-zoom[data-plate="none"] { background: var(--hs-surface); }
+.hs-zoom.is-dragging { cursor: grabbing; }
+/* 图保持原始尺寸，只用 transform 缩放：缩放和切换全屏都不重排大图 */
+.hs-zoom > :is(img, svg, canvas) { position: absolute; left: 0; top: 0; max-width: none; transform-origin: 0 0; -webkit-user-drag: none; }
+.hs-zoom.is-full { position: fixed; inset: 0; z-index: 1000; width: auto !important; height: auto !important; max-width: none; border: 0; border-radius: 0; }
+/* 右下角的尺寸手柄（图表视窗、图片、视频共用）；全屏时隐藏 */
+.hs-resize { position: absolute; right: 0; bottom: 0; z-index: 2; width: 14px; height: 14px; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, transparent 50%, var(--hs-faint) 50% 58%, transparent 58% 70%, var(--hs-faint) 70% 78%, transparent 78%); }
+.is-full > .hs-resize { display: none; }
+.hs-zoom-bar { position: absolute; top: 8px; right: 8px; display: flex; align-items: center; gap: 6px; }
+.hs-zoom.is-full .hs-zoom-bar { top: calc(env(safe-area-inset-top, 0px) + 12px); right: 12px; }
+.hs-zoom-pct { padding: 5px 8px; font: 500 12px/1 var(--hs-mono); color: var(--hs-muted); background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 4px; font-variant-numeric: tabular-nums; }
+.hs-zoom-bar button { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; font: 700 12.5px/1 var(--hs-font); color: var(--hs-accent); background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 4px; cursor: pointer; }
+.hs-zoom-bar button::before { content: ""; width: 13px; height: 13px; background: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+.hs-zoom-bar button:hover { background: color-mix(in srgb, var(--hs-accent) 12%, var(--hs-surface)); }
+.hs-zoom-hint { position: absolute; left: 8px; bottom: 8px; padding: 3px 8px; font-size: 12px; line-height: 1.4; color: var(--hs-muted); background: var(--hs-surface); border: 1px solid var(--hs-line-soft); border-radius: 4px; pointer-events: none; }
+.hs-zoom.is-full .hs-zoom-hint { bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); left: 12px; }
+
+/* 右侧大纲：无底色；当前位置用强调色文字 + 左侧细条 */
+.hs-toc { position: fixed; z-index: 20; top: 0; right: 0; bottom: 0; box-sizing: border-box; width: var(--hs-toc-w); display: flex; flex-direction: column; padding-block: env(safe-area-inset-top, 0px) env(safe-area-inset-bottom, 0px); background: var(--hs-bg); border-left: 1px solid var(--hs-line); }
+.hs-toc-head { display: flex; align-items: center; gap: 8px; padding: 22px 20px 10px; }
+.hs-toc-title { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; color: var(--hs-text); font-weight: 700; font-size: 15px; line-height: 1.4; text-decoration: none; }
+.hs-toc-fold { flex: none; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; color: var(--hs-muted); background: transparent; border: 1px solid var(--hs-line); border-radius: 5px; cursor: pointer; }
+.hs-toc-fold::before { content: ""; width: 16px; height: 16px; background: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+.hs-toc-fold:hover { color: var(--hs-accent); border-color: var(--hs-accent); }
+.hs-toc-title::before { content: ""; flex: none; width: 16px; height: 16px; background: var(--hs-accent); -webkit-mask: var(--hs-i-list) center / contain no-repeat; mask: var(--hs-i-list) center / contain no-repeat; }
+.hs-toc-filter { box-sizing: border-box; width: calc(100% - 24px); margin: 4px 12px 10px; padding: 7px 10px; font: 13px/1.4 var(--hs-font); color: var(--hs-text); background: transparent; border: 1px solid var(--hs-line); border-radius: 5px; }
+.hs-toc-filter::placeholder { color: var(--hs-faint); }
+.hs-toc-panel { flex: 1; min-height: 0; overflow-y: auto; padding: 0 12px 28px; overscroll-behavior: contain; }
+.hs-toc ol { list-style: none; margin: 0; padding: 0; }
+.hs-toc a { display: block; padding: 4px 8px; border-left: 2px solid transparent; color: var(--hs-muted); text-decoration: none; font-size: 13.5px; line-height: 1.45; }
+.hs-toc .hs-l2 > a { color: var(--hs-text); font-weight: 700; margin-top: 10px; }
+.hs-toc .hs-l3 > a { padding-left: 18px; }
+.hs-toc .hs-l4 > a { padding-left: 32px; font-size: 12.5px; }
+.hs-toc a:hover { color: var(--hs-text); }
+.hs-toc a:is([aria-current], .is-within) { color: var(--hs-accent); border-left-color: var(--hs-accent); }
+.hs-toc code { font-size: .92em; background: none; padding: 0; color: inherit; }
+.hs-toc-empty { margin: 8px; font-size: 13px; color: var(--hs-faint); }
+.hs-toc-toggle { display: none; }
+
+/* 回到顶部、跳转高亮：纯 CSS */
+.hs-top { position: fixed; z-index: 15; right: 24px; bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); display: grid; place-items: center; width: 40px; height: 40px; font-size: 18px; color: var(--hs-accent); text-decoration: none; background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 50%; box-shadow: 0 2px 8px rgba(28, 36, 48, .08); }
+@media (min-width: 900px) { body.hs-with-toc .hs-top { right: calc(var(--hs-toc-w) + 24px); } }
+@supports (animation-timeline: scroll()) {
+  .hs-top { animation: hs-appear linear both; animation-timeline: scroll(root); animation-range: 0 480px; }
+  @keyframes hs-appear { from { opacity: 0; visibility: hidden; } to { opacity: 1; visibility: visible; } }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hs-doc :target { animation: hs-flash 1.8s ease-out; }
+  @keyframes hs-flash { from { background-color: color-mix(in srgb, var(--hs-accent) 16%, transparent); } to { background-color: transparent; } }
+}
+
+@media (max-width: 899.98px) {
+  .hs-doc { padding-block: 28px 96px; }
+  .hs-doc :is(h1, h2, h3, h4, h5, h6) { scroll-margin-top: 64px; }
+  .hs-doc h1 { font-size: 25px; }
+  .hs-doc h2 { font-size: 21px; }
+  .hs-doc :is(dl, dl.hs-kv) { grid-template-columns: minmax(0, 1fr); }
+  .hs-doc dd { margin: 0 0 8px 1em; }
+  .hs-toc { width: min(320px, 88vw); box-shadow: var(--hs-shadow); transform: translateX(100%); visibility: hidden; transition: transform .25s ease, visibility .25s; }
+  .hs-toc.is-open { transform: none; visibility: visible; }
+  .hs-toc-head { padding-right: 84px; }
+  .hs-toc-toggle { display: block; position: fixed; z-index: 21; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 16px; padding: 8px 12px; font: 700 13px/1 var(--hs-font); color: var(--hs-accent); background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 5px; box-shadow: 0 2px 8px rgba(28, 36, 48, .08); cursor: pointer; }
+  .hs-scrim { position: fixed; inset: 0; z-index: 19; background: rgba(0, 0, 0, .28); }
+}
+@media (min-width: 900px) { .hs-scrim { display: none; } }
+@media (prefers-reduced-motion: reduce) { .hs-toc, .hs-code > summary::before { transition: none; } }
+</style>
+<style id="m2h-presets">
+/* Markdown-2-HTML 组件样式：只用 --hs-* 令牌，补充 template.html 没有的组件（卡片、热力表、条目卡片、链接胶囊等） */
+
+/* 语法高亮（导出时由 highlight.js 生成） */
+.hs-doc pre :is(.hljs-keyword, .hljs-meta .hljs-keyword, .hljs-selector-tag) { color: var(--hs-syn-kw); }
+.hs-doc pre :is(.hljs-type, .hljs-built_in, .hljs-title.class_, .hljs-section) { color: var(--hs-syn-type); }
+.hs-doc pre :is(.hljs-string, .hljs-regexp, .hljs-attr) { color: var(--hs-syn-str); }
+.hs-doc pre :is(.hljs-comment, .hljs-quote) { color: var(--hs-syn-com); font-style: italic; }
+.hs-doc pre :is(.hljs-number, .hljs-literal, .hljs-symbol) { color: var(--hs-syn-num); }
+.hs-doc pre :is(.hljs-title.function_, .hljs-meta) { color: var(--hs-syn-fn); }
+
+/* 标签字、灰色说明、来源小字 */
+.hs-k { margin-right: .45em; font-size: 12.5px; color: var(--hs-faint); }
+.hs-doc .hs-muted { color: var(--hs-muted); }
+.hs-doc .src { font-size: 13px; color: var(--hs-muted); }
+
+/* 问答式定义列表 */
+.hs-doc .qa { display: grid; grid-template-columns: fit-content(7em) minmax(0, 1fr); gap: 6px 14px; margin: 0 0 14px; }
+.hs-doc .qa > dt { color: var(--hs-accent); }
+@media (max-width: 899.98px) { .hs-doc .qa { grid-template-columns: minmax(0, 1fr); } }
+
+/* 表格变体：首列加粗不换行 */
+.hs-doc .lead td:first-child { font-weight: 700; white-space: nowrap; }
+.hs-doc .lead td { min-width: 120px; }
+
+/* 卡片网格 */
+.hs-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 16px 0 22px; }
+.hs-card { min-width: 0; padding: 12px 14px; background: var(--hs-surface); border: 1px solid var(--hs-line); border-radius: 6px; }
+.hs-doc .hs-card .hs-card-t { margin: 0 0 6px; font-weight: 700; color: var(--hs-text); }
+.hs-doc .hs-card p:not(.hs-card-t) { margin: 0; font-size: 14.5px; color: var(--hs-muted); }
+
+/* 图片与视频：按导出时测得的默认宽高显示，不超出所在内容栏，高度随宽度等比变化 */
+.hs-doc :not(.hs-zoom) > :is(img, video) { max-width: 100%; height: auto; }
+/* 独占一段的图片、视频：.hs-media 只用来定位手柄，没有边框和底色；手柄在悬停或拖动时显示，压在右下角外侧以免遮住播放器控件 */
+.hs-media { position: relative; display: block; width: fit-content; max-width: 100%; }
+.hs-media > :is(img, video) { display: block; }
+.hs-media > .hs-resize { right: -7px; bottom: -7px; opacity: 0; transition: opacity .15s; }
+.hs-media:is(:hover, .is-resizing) > .hs-resize { opacity: 1; }
+@media (hover: none) { .hs-media > .hs-resize { opacity: 1; } }
+
+/* 链接胶囊（data-kind 取语义色） */
+:where(.hs-pill) { --c: var(--hs-accent); }
+.hs-doc a.hs-pill { display: inline-block; margin: 0 6px 6px 0; padding: 0 10px; font-size: 13px; line-height: 1.8; white-space: nowrap; color: var(--c); text-decoration: none; background: color-mix(in srgb, var(--c) 9%, transparent); border: 1px solid color-mix(in srgb, var(--c) 30%, transparent); border-radius: 999px; }
+.hs-doc a.hs-pill:hover { background: color-mix(in srgb, var(--c) 18%, transparent); }
+
+/* 条目卡片 ```records */
+.hs-rec { padding-bottom: 18px; border-bottom: 1px dashed var(--hs-line); }
+.hs-doc .hs-rec :is(h3, h4, h5) { margin: 28px 0 4px; }
+.hs-doc .hs-rec-sub { margin: 0 0 8px; }
+.hs-doc .hs-rec-facts { display: flex; flex-wrap: wrap; gap: 2px 18px; margin: 0 0 8px; font-size: 14px; line-height: 1.7; color: var(--hs-muted); }
+.hs-doc .hs-rec-links { margin: 0 0 4px; }
+.hs-doc .hs-rec-desc { margin: 0; }
+.hs-doc .hs-rec-desc.is-none { color: var(--hs-faint); }
+
+/* 热力表 ```heatmap */
+.hs-heat table { width: auto; min-width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+.hs-doc .hs-heat :is(th, td) { padding: 4px 7px; text-align: center; vertical-align: middle; }
+.hs-doc .hs-heat th.hs-v { vertical-align: bottom; padding: 8px 4px; }
+.hs-heat th.hs-v > span { display: inline-block; max-height: 12em; writing-mode: vertical-rl; text-align: start; line-height: 1.3; font-size: 12.5px; }
+.hs-heat :is(th, td):first-child { position: sticky; left: 0; z-index: 1; }
+.hs-heat td:first-child { background: var(--hs-surface); }
+.hs-heat tbody tr:nth-child(even) td:first-child { background: var(--hs-row-alt); }
+.hs-doc .hs-heat td a { display: block; color: inherit; text-decoration: none; }
+.hs-doc .hs-heat td a:hover { color: var(--hs-accent); text-decoration: underline; }
+.hs-heat td[data-heat] { font-weight: 700; }
+.hs-heat .hs-total td { font-weight: 700; border-top: 2px solid color-mix(in srgb, var(--hs-accent) 45%, transparent); }
+[data-heat="1"] { background: color-mix(in srgb, var(--hs-accent) 8%, transparent); }
+[data-heat="2"] { background: color-mix(in srgb, var(--hs-accent) 17%, transparent); }
+[data-heat="3"] { background: color-mix(in srgb, var(--hs-accent) 27%, transparent); }
+[data-heat="4"] { background: color-mix(in srgb, var(--hs-accent) 38%, transparent); }
+[data-heat="5"] { background: color-mix(in srgb, var(--hs-accent) 50%, transparent); }
+.hs-doc .hs-heat-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 13px; }
+.hs-sw { padding: 0 8px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<main class="hs-doc" data-toc-levels="2,3">
+<h1 id="top">ScreenShot 技术架构与选型</h1>
+<p class="hs-meta">v0.6 · 2026-10-23 · 输入：<a href="01-requirements.md">需求文档</a></p>
+<h2 id="decision"><span class="hs-num">1.</span>结论<a class="hs-anchor" href="#decision" aria-label="本节链接">#</a></h2>
+<div class="hs-table lead"><table>
+<caption>技术选型（已定）</caption>
+<thead>
+<tr>
+<th>项目</th>
+<th>选择</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>框架</td>
+<td>Qt 6.12 系列，不升级次版本 <span class="hs-mark" data-kind="info" title="你已确认的决定">已定</span></td>
+<td>为继续支持 Windows 10；用开源版能拿到的最新 6.12.x 补丁；只用 LGPLv3 模块，动态链接</td>
+</tr>
+<tr>
+<td>界面技术</td>
+<td>Qt Widgets <span class="hs-mark" data-kind="info" title="你已确认的决定">已定</span></td>
+<td>不用 Qt Quick / QML；界面代码怎么组织见 <a href="#ui">6.1</a></td>
+</tr>
+<tr>
+<td>绘制</td>
+<td>全部 CPU：QPainter 光栅绘制 <span class="hs-mark" data-kind="info" title="你已确认的决定">已定</span></td>
+<td>屏幕显示和导出图片用同一套绘制代码；系统截屏接口内部是否用 GPU 不在此列</td>
+</tr>
+<tr>
+<td>语言</td>
+<td>C++20 <span class="hs-mark" data-kind="info" title="你已确认的决定">已定</span></td>
+<td>与 UE 5.8 的默认标准一致；MSVC 和 Apple Clang 都已稳定支持</td>
+</tr>
+<tr>
+<td>macOS 系统接口</td>
+<td>只在 macOS 平台层用少量 Objective-C++（.mm） <span class="hs-mark" data-kind="info" title="你已确认的决定">已定</span></td>
+<td>对外只暴露纯 C++ 接口</td>
+</tr>
+<tr>
+<td>macOS 交付方式</td>
+<td>只编写，不构建、不测试 <span class="hs-mark" data-kind="info" title="你已确认的决定">已定</span></td>
+<td>目前没有 Mac 设备；macOS 代码标为未验证，有设备后再补做</td>
+</tr>
+<tr>
+<td>编译器</td>
+<td>Windows：Visual Studio 2026（MSVC 14.5x）；macOS：Xcode 26（暂不使用）</td>
+<td>Qt 6.12 官方 Windows 二进制用 MSVC 2022 构建，与 MSVC 2026 二进制兼容；macOS 构建需要 Xcode 16 或更高</td>
+</tr>
+<tr>
+<td>构建</td>
+<td>CMake + Ninja</td>
+<td>全部命令行，适合 AI 操作</td>
+</tr>
+<tr>
+<td>IDE</td>
+<td>Rider <span class="hs-mark" data-kind="info" title="你已确认的决定">已定</span></td>
+<td>Rider 对 CMake 的 C++ 工程还是测试版支持，遇到问题再换 CLion 或 Qt Creator</td>
+</tr>
+<tr>
+<td>macOS 编译检查</td>
+<td>不做 <span class="hs-mark" data-kind="info" title="你已确认的决定">已定</span></td>
+<td>不使用云构建机；macOS 代码首次构建时错误会集中出现，届时集中修复</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote class="hs-callout" data-kind="warn">
+<p class="hs-callout-title">锁定 Qt 6.12 的原因与代价</p>
+<p>Qt 官方文档写明 6.12 是最后一个支持 Windows 10 的版本。为了继续支持 Windows 10（包括你的 Windows 10 LTSC 2021 开发机），锁定 6.12 系列，不跟随之后的次版本。代价是开源版只能拿到 6.12 最初的几个补丁版本，此后 Qt 的修复（包括安全修复）不再有开源版本。等不再需要支持 Windows 10 时，再升级到当时最新的 Qt。</p>
+</blockquote>
+<p>两个衍生影响已同步到需求文档：macOS 最低版本从 14 调整为 Qt 6.12 要求的 14.4；“GPU 加速开关”一项删除。</p>
+<h2 id="drivers"><span class="hs-num">2.</span>架构驱动因素<a class="hs-anchor" href="#drivers" aria-label="本节链接">#</a></h2>
+<div class="hs-table lead"><table>
+<caption>架构驱动因素</caption>
+<thead>
+<tr>
+<th>需求</th>
+<th>对架构的要求</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NFR-11</code> Windows + macOS</td>
+<td>核心逻辑与界面跨平台共用；系统相关能力收敛到平台层，两个平台各实现一份</td>
+</tr>
+<tr>
+<td><code>NFR-01</code> 热键到可框选 ≤ 150 ms</td>
+<td>覆盖窗口常驻并预先创建，触发时只换背景图</td>
+</tr>
+<tr>
+<td><code>CAP-02</code> <code>NFR-07</code> 多屏、混合缩放</td>
+<td>全程使用物理像素坐标；每台显示器一个覆盖窗口，不让一个窗口横跨多屏</td>
+</tr>
+<tr>
+<td><code>PIN-*</code> <code>NFR-04</code> 大量透明置顶贴图</td>
+<td>CPU 绘制下，拖动不重绘、缩放走缓存，只重画可见部分</td>
+</tr>
+<tr>
+<td><code>NFR-05</code> CPU 上 4K 马赛克 / 模糊 ≤ 100 ms</td>
+<td>模糊用与半径无关的线性时间算法，按块多线程处理</td>
+</tr>
+<tr>
+<td><code>NFR-08</code> 标注显示与导出一致</td>
+<td>屏幕显示和导出位图用同一个 QPainter 绘制函数、同一份标注数据</td>
+</tr>
+<tr>
+<td><code>NFR-09</code> 界面不卡</td>
+<td>UI 元素检测、剪贴板大数据读取、编码、识别全部放到工作线程，并设超时</td>
+</tr>
+<tr>
+<td><code>CAP-72</code> 自身界面不入镜</td>
+<td>滚动截图的边框、工具栏、预览窗口不参与屏幕捕获</td>
+</tr>
+<tr>
+<td><code>CAP-74</code> 超长图</td>
+<td>超长图分块存储和处理，避免单张图像和绘制坐标的上限</td>
+</tr>
+<tr>
+<td><code>NFR-10</code> 零网络</td>
+<td>不链接 Qt Network 及任何网络库；依赖检查和运行时监控双重保证</td>
+</tr>
+<tr>
+<td><code>TST-*</code> 100% 脚本化测试</td>
+<td>平台能力全部经接口访问，测试时可替换；程序内置测试接口，可注入画面、驱动操作、读取状态</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="refs"><span class="hs-num">3.</span>两款参考产品的技术栈<a class="hs-anchor" href="#refs" aria-label="本节链接">#</a></h2>
+<div class="hs-table lead"><table>
+<caption>参考产品技术栈对比</caption>
+<thead>
+<tr>
+<th>维度</th>
+<th>Snipaste 2.11.3</th>
+<th>PixPin 3.5</th>
+<th>本项目</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>语言 / 界面框架</td>
+<td>C++ / Qt 6 Widgets <span class="hs-mark" data-kind="ok" title="一手资料或本机可验证">事实</span></td>
+<td>C++ / Qt <span class="hs-mark" data-kind="warn" title="社区说法或间接证据，未经官方确认">推断</span></td>
+<td>C++20 / Qt 6.12 Widgets</td>
+</tr>
+<tr>
+<td>证据</td>
+<td>安装目录里有 <code>Qt6Core</code> <code>Qt6Gui</code> <code>Qt6Widgets</code> <code>Qt6OpenGL</code> <code>Qt6Svg</code> <code>Qt6Network</code> <code>Qt6Concurrent</code> <code>Qt6Core5Compat</code> 等 DLL，没有 <code>Qt6Qml</code> <code>Qt6Quick</code>，可确定不用 QML</td>
+<td>社区评测和论坛帖称其用 Qt 开发；有用户反馈安装后缺少 Qt5 相关 DLL；官方未公开</td>
+<td>—</td>
+</tr>
+<tr>
+<td>平台</td>
+<td>Windows、macOS、Linux；2.11 起支持 Windows ARM64 <span class="hs-mark" data-kind="ok" title="一手资料或本机可验证">事实</span></td>
+<td>Windows 10+、macOS 10.15+ <span class="hs-mark" data-kind="ok" title="一手资料或本机可验证">事实</span></td>
+<td>Windows 10 1809+（受 Qt 限制，需求要求 2004+）、macOS 14.4+</td>
+</tr>
+<tr>
+<td>绘制</td>
+<td>CPU 为主，OpenGL 加速马赛克、模糊、阴影；Intel / AMD 显卡默认关闭 GPU 加速 <span class="hs-mark" data-kind="ok" title="一手资料或本机可验证">事实</span></td>
+<td>未公开</td>
+<td>全部 CPU</td>
+</tr>
+<tr>
+<td>随附组件</td>
+<td>OpenSSL 3、QuaZip（压缩）、hoedown（Markdown 解析）、D3DCompiler、Qt 图像插件（含 WebP） <span class="hs-mark" data-kind="ok" title="一手资料或本机可验证">事实</span></td>
+<td>未公开</td>
+<td>见 <a href="#deps">12</a>；不含任何网络库</td>
+</tr>
+<tr>
+<td>UI 元素检测</td>
+<td>有“容易崩溃的进程”名单，对这些进程改用保守算法 <span class="hs-mark" data-kind="ok" title="一手资料或本机可验证">事实</span></td>
+<td>依赖系统 UI 自动化接口 <span class="hs-mark" data-kind="ok" title="一手资料或本机可验证">事实</span></td>
+<td>工作线程 + 短超时 + 黑名单</td>
+</tr>
+<tr>
+<td>OCR</td>
+<td>2.11 起 PRO 支持，含在线接口 <span class="hs-mark" data-kind="ok" title="一手资料或本机可验证">事实</span></td>
+<td>本地离线模型，分轻量和标准两档 <span class="hs-mark" data-kind="ok" title="一手资料或本机可验证">事实</span></td>
+<td>只做本地：系统自带 OCR 为默认，离线组件包提供增强模型</td>
+</tr>
+<tr>
+<td>脚本 / 自动化</td>
+<td>命令行 <span class="hs-mark" data-kind="ok" title="一手资料或本机可验证">事实</span></td>
+<td>命令行 + JavaScript 语法的脚本引擎 <span class="hs-mark" data-kind="ok" title="一手资料或本机可验证">事实</span></td>
+<td>命令行 + 嵌入式 JavaScript 引擎 + 内置测试接口</td>
+</tr>
+<tr>
+<td>发行体积</td>
+<td>约 47 MB（本机统计，不含历史与崩溃目录） <span class="hs-mark" data-kind="ok" title="一手资料或本机可验证">事实</span></td>
+<td>未统计</td>
+<td>≤ 50 MB（不含模型）</td>
+</tr>
+<tr>
+<td>内存</td>
+<td>本机运行中约 130 MB 私有内存（是否开着贴图未知） <span class="hs-mark" data-kind="ok" title="一手资料或本机可验证">事实</span></td>
+<td>未统计</td>
+<td>不高于同条件下的 Snipaste</td>
+</tr>
+</tbody>
+</table></div>
+<p>从参考产品学到的几点：</p>
+<ol>
+<li>Snipaste 用 Qt Widgets 覆盖三个桌面平台，与本项目的选择一致，可行性有现成证明。</li>
+<li>Snipaste 只在马赛克、模糊、阴影上用 GPU 加速，并且对部分显卡默认关闭：本项目全部用 CPU，这三项要靠算法优化达标（见 <a href="#cpu">6.5</a>）。</li>
+<li>Snipaste 专门维护了“检测容易崩溃的进程”名单：UI 元素检测必须隔离，带超时和黑名单。</li>
+<li>PixPin 贴图后自动 OCR 会导致拖动卡顿：识别类任务一律放后台，低优先级，可取消。</li>
+<li>PixPin 长截图只支持手动滚动，并列出了动态内容、固定栏、滚动过快等失败场景：本项目的拼接算法逐一处理，并增加自动滚动（见 <a href="#stitch">8.2</a>）。</li>
+</ol>
+<blockquote class="hs-callout" data-kind="info">
+<p class="hs-callout-title">证据边界</p>
+<p>Snipaste 的信息来自它的公开文档和本机安装目录的文件名，没有分析二进制内容。PixPin 本机未安装，技术栈只能依据社区说法，标为推断。</p>
+</blockquote>
+<h2 id="history"><span class="hs-num">4.</span>选型过程记录<a class="hs-anchor" href="#history" aria-label="本节链接">#</a></h2>
+<h3 id="s4-1"><span class="hs-num">4.1</span>跨框架比较<a class="hs-anchor" href="#s4-1" aria-label="本节链接">#</a></h3>
+<div class="hs-table lead"><table>
+<caption>被比较过的方案</caption>
+<thead>
+<tr>
+<th>方案</th>
+<th>结论</th>
+<th>主要理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C++ / Qt 6</td>
+<td><span class="hs-tag" data-kind="ok">采用</span></td>
+<td>两款参考产品都用它覆盖 Windows + macOS；macOS 系统接口可直接混编</td>
+</tr>
+<tr>
+<td>C# / .NET 10 / Avalonia 12</td>
+<td><span class="hs-tag" data-kind="muted">未采用</span></td>
+<td>开发效率高，但贴图、覆盖窗口、macOS 都需要原型验证；你选择了 Qt</td>
+</tr>
+<tr>
+<td>C# / WPF、C# / WinUI 3</td>
+<td><span class="hs-tag" data-kind="danger">排除</span></td>
+<td>只支持 Windows；透明窗口有结构性短板</td>
+</tr>
+<tr>
+<td>Electron、Tauri、Flutter</td>
+<td><span class="hs-tag" data-kind="danger">排除</span></td>
+<td>每个贴图窗口要一个网页视图或渲染引擎实例，内存开销过大</td>
+</tr>
+<tr>
+<td>Qt + Dear ImGui 画界面</td>
+<td><span class="hs-tag" data-kind="danger">排除</span></td>
+<td>空闲时持续重绘、控件不被系统辅助功能接口识别、输入法和透明窗口支持弱、需要自写 Qt 集成；ImGui 只可用于调试版的内部面板</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="s4-2"><span class="hs-num">4.2</span>Qt 内部方案<a class="hs-anchor" href="#s4-2" aria-label="本节链接">#</a></h3>
+<div class="hs-table lead"><table>
+<caption>Qt 内部的三个选择维度</caption>
+<thead>
+<tr>
+<th>维度</th>
+<th>候选</th>
+<th>选择与理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>界面技术</td>
+<td>Widgets / Qt Quick（QML）/ 混合</td>
+<td><strong>Widgets</strong>：托盘、菜单、设置窗口是原生控件；QPainter 让显示与导出天然一致；内存最轻；无障碍成熟。Qt Quick 每个窗口一套 GPU 渲染循环，导出与显示不是同一个渲染器，完整的 QML 编译器只在商业版里</td>
+</tr>
+<tr>
+<td>绘制路径</td>
+<td>全部 CPU / CPU + GPU 加速 / 全部 GPU</td>
+<td><strong>全部 CPU</strong>：最简单，不受显卡驱动影响，显示与导出一致；性能靠 <a href="#cpu">6.5</a> 的算法设计达标</td>
+</tr>
+<tr>
+<td>语言</td>
+<td>C++ / Python（PySide6）/ Rust（CXX-Qt）</td>
+<td><strong>C++</strong>：性能、完整的 Qt 接口、参考产品同款；PySide6 内存和体积不达标；CXX-Qt 主要面向 QML</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="ai"><span class="hs-num">5.</span>AI 接入与全流程 AI 操控<a class="hs-anchor" href="#ai" aria-label="本节链接">#</a></h2>
+<div class="hs-table lead"><table>
+<caption>开发各环节的 AI 操控方式</caption>
+<thead>
+<tr>
+<th>环节</th>
+<th>方式</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>写代码、重构</td>
+<td>AI 直接编辑源码；Rider 2026.1 起以测试版形式支持 CMake 的 C++ 工程，可继续用 Rider MCP；Qt Creator 19 起内置 MCP 服务器</td>
+<td><span class="hs-tag" data-kind="ok">可以</span></td>
+</tr>
+<tr>
+<td>构建、单元测试</td>
+<td><code>cmake --build</code>、<code>ctest</code>，全部命令行</td>
+<td><span class="hs-tag" data-kind="ok">可以</span></td>
+</tr>
+<tr>
+<td>运行与调试</td>
+<td>Qt Creator MCP（构建、运行、调试）或命令行调试器</td>
+<td><span class="hs-tag" data-kind="ok">可以</span></td>
+</tr>
+<tr>
+<td>检查运行中的界面</td>
+<td>Widgets 控件能被系统辅助功能接口（Windows UI Automation、macOS Accessibility）识别；内部状态经内置测试接口读取</td>
+<td><span class="hs-tag" data-kind="ok">可以</span></td>
+</tr>
+<tr>
+<td>系统级场景</td>
+<td>热键、多屏、其他程序窗口、权限：内置测试接口 + MCP 适配器（见 <a href="#tests">11</a>）</td>
+<td><span class="hs-tag" data-kind="ok">可以</span></td>
+</tr>
+<tr>
+<td>macOS</td>
+<td>只编写代码，不构建、不测试；有 Mac 设备后再补做构建、测试、签名和公证</td>
+<td><span class="hs-tag" data-kind="muted">暂不</span></td>
+</tr>
+<tr>
+<td>必须由人完成</td>
+<td>主观的视觉判断；将来做 macOS 测试时，还有权限授予和每月确认、签名证书配置</td>
+<td><span class="hs-tag" data-kind="muted">人工</span></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="tech"><span class="hs-num">6.</span>关键技术点<a class="hs-anchor" href="#tech" aria-label="本节链接">#</a></h2>
+<h3 id="ui"><span class="hs-num">6.1</span>界面代码组织<a class="hs-anchor" href="#ui" aria-label="本节链接">#</a></h3>
+<p>Qt Widgets 项目通常混用几种做法，并不要求界面全部用 C++ 写：</p>
+<div class="hs-table lead"><table>
+<caption>Qt Widgets 项目的常见做法</caption>
+<thead>
+<tr>
+<th>做法</th>
+<th>适合</th>
+<th>优点</th>
+<th>缺点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Designer 的 .ui 文件（构建时由 uic 生成 C++）</td>
+<td>布局固定的对话框、表单</td>
+<td>可视化拖拽布局，布局和逻辑分开</td>
+<td>XML 差异不好审阅；不适合动态生成的界面</td>
+</tr>
+<tr>
+<td>C++ 代码搭建</td>
+<td>动态生成的界面、自绘控件</td>
+<td>灵活，便于审阅和批量生成</td>
+<td>复杂表单代码较长</td>
+</tr>
+<tr>
+<td>Qt 样式表（类似 CSS）</td>
+<td>换肤、局部定制外观</td>
+<td>写法简单</td>
+<td>被样式表接管的控件会失去原生外观，macOS 上尤其明显；大量使用影响性能</td>
+</tr>
+<tr>
+<td>调色板 + 代理样式</td>
+<td>浅色 / 深色、主题色</td>
+<td>保持原生外观</td>
+<td>写法比样式表繁琐</td>
+</tr>
+<tr>
+<td>资源文件 .qrc、翻译文件 .ts</td>
+<td>图标、界面文字</td>
+<td>Qt 标准做法</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p>本项目的分工：</p>
+<div class="hs-table lead"><table>
+<caption>本项目的界面代码分工</caption>
+<thead>
+<tr>
+<th>部分</th>
+<th>做法</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>覆盖窗口、贴图、标注工具栏、放大镜</td>
+<td>C++ 自绘</td>
+<td>全部是自绘内容，没有可拖拽的标准控件</td>
+</tr>
+<tr>
+<td>设置窗口（一百多个选项）</td>
+<td>由 C++ 中声明的设置表自动生成各页</td>
+<td>设置项、默认值、说明文字（<code>CFG-04</code>）只写一处；自动测试可以遍历设置表逐项覆盖</td>
+</tr>
+<tr>
+<td>其他对话框：自定义截图、贴图组管理、OCR 结果、公式识别、录屏回放、关于</td>
+<td>Designer 的 .ui 文件</td>
+<td>布局固定，可视化编辑更快</td>
+</tr>
+<tr>
+<td>主题</td>
+<td>调色板 + 代理样式；样式表只用于少量自定义控件</td>
+<td>保持系统原生外观，对应 <code>CFG-05</code></td>
+</tr>
+<tr>
+<td>图标</td>
+<td>SVG，放在 .qrc 资源里</td>
+<td>任意缩放比例下都清晰</td>
+</tr>
+<tr>
+<td>界面文字</td>
+<td>tr() + Qt Linguist</td>
+<td><code>GEN-13</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="s6-2"><span class="hs-num">6.2</span>Windows<a class="hs-anchor" href="#s6-2" aria-label="本节链接">#</a></h3>
+<div class="hs-table lead"><table>
+<caption>Windows 平台层</caption>
+<thead>
+<tr>
+<th>领域</th>
+<th>选择</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>屏幕捕获</td>
+<td>DXGI 桌面复制为主，GDI 截屏兜底</td>
+<td>桌面复制可取 16 位浮点画面做 HDR；每台显示器要用其所在显卡创建的设备；每会话最多 4 个进程同时使用；远程桌面、虚拟机下失败时走 GDI</td>
+</tr>
+<tr>
+<td>自身不入镜</td>
+<td>SetWindowDisplayAffinity 设为“不参与捕获”</td>
+<td>Windows 10 2004 起可用，<code>CAP-72</code></td>
+</tr>
+<tr>
+<td>窗口检测</td>
+<td>顶层窗口 Z 序 + DWM 真实边框，过滤隐藏和被遮蔽的窗口</td>
+<td><code>CAP-11</code></td>
+</tr>
+<tr>
+<td>元素检测</td>
+<td>UI Automation（C++ 直接用 COM），在不拥有窗口的 MTA 线程调用；连接和事务超时从默认的 2 s / 20 s 调到几百毫秒</td>
+<td><code>CAP-12</code> <code>CAP-13</code></td>
+</tr>
+<tr>
+<td>全局热键</td>
+<td>RegisterHotKey，经 Qt 的原生事件过滤器接收</td>
+<td><code>ACT-01</code></td>
+</tr>
+<tr>
+<td>全局鼠标 / 键盘监听</td>
+<td>低级钩子，专用线程，回调只投递</td>
+<td><code>ACT-11</code> <code>ACT-12</code></td>
+</tr>
+<tr>
+<td>输入模拟</td>
+<td>SendInput</td>
+<td>自动滚动 <code>CAP-62</code></td>
+</tr>
+<tr>
+<td>透明贴图窗口</td>
+<td>无边框、置顶、透明背景的工具窗口，Qt 在 Windows 上以分层窗口实现</td>
+<td>穿透用 Qt 的“不接收输入”窗口标志</td>
+</tr>
+<tr>
+<td>虚拟桌面</td>
+<td>公开接口只能查询和移动；“所有桌面”需未公开接口，做成可失效的可选功能</td>
+<td><code>PIN-56</code></td>
+</tr>
+<tr>
+<td>OCR</td>
+<td>Windows.Media.Ocr（经 C++/WinRT 调用；未打包程序能否使用说法冲突，M0 实测）</td>
+<td>增强模型见 <a href="#shared">6.4</a></td>
+</tr>
+<tr>
+<td>录屏</td>
+<td>Media Foundation 编码 MP4，WASAPI 采集声音</td>
+<td>系统自带，无需 FFmpeg</td>
+</tr>
+<tr>
+<td>开机自启</td>
+<td>用户启动项</td>
+<td><code>GEN-04</code></td>
+</tr>
+<tr>
+<td>单实例与命令行</td>
+<td>命名互斥体 + 命名管道</td>
+<td>不用 Qt Network 的本机套接字</td>
+</tr>
+<tr>
+<td>崩溃转储</td>
+<td>MiniDumpWriteDump</td>
+<td><code>GEN-09</code></td>
+</tr>
+<tr>
+<td>打包</td>
+<td>windeployqt + 绿色 zip + 安装包</td>
+<td><code>NFR-12</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="s6-3"><span class="hs-num">6.3</span>macOS<a class="hs-anchor" href="#s6-3" aria-label="本节链接">#</a></h3>
+<blockquote class="hs-callout" data-kind="info">
+<p class="hs-callout-title">只编写，不验证</p>
+<p>目前没有 Mac 设备，本节的代码只编写、不构建、不测试。为了降低将来首次构建时的返工量：macOS 专有代码全部收在 <code>platform_macos</code> 里，并保持尽量薄；其余代码与 Windows 共用，在 Windows 上测试。</p>
+</blockquote>
+<div class="hs-table lead"><table>
+<caption>macOS 平台层（系统接口在 .mm 文件中调用）</caption>
+<thead>
+<tr>
+<th>领域</th>
+<th>选择</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>屏幕捕获</td>
+<td>ScreenCaptureKit：单帧用截图管理器，连续帧用视频流</td>
+<td>需屏幕录制权限</td>
+</tr>
+<tr>
+<td>自身不入镜</td>
+<td>捕获时用内容过滤器排除本程序的窗口</td>
+<td><code>CAP-72</code></td>
+</tr>
+<tr>
+<td>权限</td>
+<td>检测和申请屏幕录制、辅助功能权限（系统的 C 接口）</td>
+<td><code>GEN-14</code></td>
+</tr>
+<tr>
+<td>窗口检测</td>
+<td>系统窗口列表（C 接口；读取标题需屏幕录制权限）</td>
+<td><code>CAP-11</code></td>
+</tr>
+<tr>
+<td>元素检测</td>
+<td>Accessibility 接口（C 接口），工作线程 + 超时</td>
+<td>需辅助功能权限</td>
+</tr>
+<tr>
+<td>全局热键</td>
+<td>系统热键接口（C 接口），无需额外权限</td>
+<td><code>ACT-01</code></td>
+</tr>
+<tr>
+<td>全局鼠标 / 键盘监听</td>
+<td>事件监听（C 接口）</td>
+<td>需辅助功能权限</td>
+</tr>
+<tr>
+<td>输入模拟</td>
+<td>系统事件投递（C 接口）</td>
+<td>需辅助功能权限</td>
+</tr>
+<tr>
+<td>贴图窗口</td>
+<td>由 Qt 创建，再经 .mm 设置浮动层级、加入所有空间；穿透用 Qt 的“不接收输入”窗口标志</td>
+<td><code>PIN-56</code> 在 macOS 上用公开接口即可实现</td>
+</tr>
+<tr>
+<td>OCR</td>
+<td>Vision 文字识别，系统自带、离线</td>
+<td><code>REC-01</code></td>
+</tr>
+<tr>
+<td>录屏</td>
+<td>ScreenCaptureKit + AVFoundation，系统声音由 ScreenCaptureKit 采集</td>
+<td><code>VID-*</code></td>
+</tr>
+<tr>
+<td>开机自启</td>
+<td>登录项</td>
+<td><code>GEN-04</code></td>
+</tr>
+<tr>
+<td>单实例与命令行</td>
+<td>文件锁 + Unix 域套接字（POSIX 接口）</td>
+<td>不用 Qt Network</td>
+</tr>
+<tr>
+<td>崩溃报告</td>
+<td>系统崩溃报告</td>
+<td><code>GEN-09</code></td>
+</tr>
+<tr>
+<td>打包</td>
+<td>macdeployqt + 签名 + 公证 + 磁盘映像</td>
+<td><code>NFR-12</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="shared"><span class="hs-num">6.4</span>两平台共用<a class="hs-anchor" href="#shared" aria-label="本节链接">#</a></h3>
+<div class="hs-table lead"><table>
+<caption>两平台共用（纯 C++）</caption>
+<thead>
+<tr>
+<th>领域</th>
+<th>选择</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>界面</td>
+<td>Qt Widgets，组织方式见 <a href="#ui">6.1</a></td>
+<td>设置窗口、菜单、对话框用原生风格</td>
+</tr>
+<tr>
+<td>覆盖窗口</td>
+<td>每台显示器一个无边框置顶窗口，启动时创建并隐藏</td>
+<td>背景直接用捕获到的图像</td>
+</tr>
+<tr>
+<td>绘制</td>
+<td>QPainter 光栅绘制</td>
+<td>同一个绘制函数既画到窗口，也画到导出用的 QImage</td>
+</tr>
+<tr>
+<td>剪贴板</td>
+<td>QClipboard：图像、PNG、文件列表、文本、HTML</td>
+<td>平台缺的格式由平台层补充</td>
+</tr>
+<tr>
+<td>图像读写</td>
+<td>Qt 图像插件：PNG、JPEG、BMP、WebP；PDF 用 Qt 自带的 PDF 写入</td>
+<td>AVIF 为 P2，另找插件</td>
+</tr>
+<tr>
+<td>HTML 文本贴图</td>
+<td>QTextDocument</td>
+<td>不加载任何远程资源</td>
+</tr>
+<tr>
+<td>二维码 / 条码</td>
+<td>ZXing-C++</td>
+<td>—</td>
+</tr>
+<tr>
+<td>表格 / 公式识别、智能擦除、增强 OCR</td>
+<td>ONNX Runtime（C++ 接口）+ 开源模型，放在离线组件包</td>
+<td>M6 前选定模型并核对模型权重的许可证</td>
+</tr>
+<tr>
+<td>LaTeX 公式渲染</td>
+<td>选一个 C++ 渲染库</td>
+<td>M6 前选定</td>
+</tr>
+<tr>
+<td>脚本</td>
+<td>QuickJS-ng（C 语言的轻量 JavaScript 引擎）</td>
+<td>Qt 自带的 JS 引擎在 Qt Qml 模块里，该模块可能依赖 Qt Network（待验证），为了零网络检查不用</td>
+</tr>
+<tr>
+<td>配置</td>
+<td>JSON，用 Qt Core 的 JSON 类读写</td>
+<td>程序目录可写时自动进入便携模式</td>
+</tr>
+<tr>
+<td>界面文字翻译</td>
+<td>Qt Linguist（代码中用 tr()）</td>
+<td><code>GEN-13</code></td>
+</tr>
+<tr>
+<td>并行</td>
+<td>线程池按块并行（模糊、编码、拼接哈希）</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="cpu"><span class="hs-num">6.5</span>CPU 绘制的性能设计<a class="hs-anchor" href="#cpu" aria-label="本节链接">#</a></h3>
+<div class="hs-table lead"><table>
+<caption>CPU 绘制下的性能手段</caption>
+<thead>
+<tr>
+<th>场景</th>
+<th>做法</th>
+<th>对应指标</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>高斯模糊</td>
+<td>用三次盒式模糊近似高斯，每像素耗时与模糊半径无关；按块分给线程池；半径很大时先缩小、模糊、再放大</td>
+<td><code>NFR-05</code></td>
+</tr>
+<tr>
+<td>马赛克</td>
+<td>按块求平均色，计算量很小</td>
+<td><code>NFR-05</code></td>
+</tr>
+<tr>
+<td>贴图阴影</td>
+<td>阴影按窗口尺寸预先算好并缓存，只在尺寸变化时重算</td>
+<td><code>NFR-04</code></td>
+</tr>
+<tr>
+<td>拖动贴图</td>
+<td>只移动窗口，不重绘内容</td>
+<td><code>NFR-04</code></td>
+</tr>
+<tr>
+<td>缩放贴图</td>
+<td>交互过程中用快速缩放，停下后再做一次平滑缩放；大图预先生成多级缩小图，只画可见区域</td>
+<td><code>NFR-04</code></td>
+</tr>
+<tr>
+<td>覆盖窗口</td>
+<td>背景直接用捕获结果，不做格式转换；只重画选区和工具栏变化的区域</td>
+<td><code>NFR-01</code></td>
+</tr>
+<tr>
+<td>标注</td>
+<td>已完成的标注缓存成一层位图，只重画正在编辑的那个</td>
+<td><code>NFR-05</code></td>
+</tr>
+<tr>
+<td>超长图</td>
+<td>按 4096 行分块存储，显示时只取可见的块</td>
+<td><code>CAP-74</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="arch"><span class="hs-num">7.</span>总体架构<a class="hs-anchor" href="#arch" aria-label="本节链接">#</a></h2>
+<figure><div class="hs-zoom" data-plate="light"><svg role="img" aria-label="CMake 目标与依赖方向（箭头 = 依赖方向）" height="629" width="1463" viewBox="0 0 1463 629" version="1.1" xmlns="http://www.w3.org/2000/svg"><defs /><g><g data-source-line="3" id="f1-ent0001" data-qualified-name="screenshot_app.......Qt Widgets." class="cluster"><path stroke-width="1.50" stroke="#000000" fill="#E8F0FB" d="M241.50,6 L535.75,6 A3.75,3.75 0 0 1 538.25,8.50 L545.25,27.64 L886.50,27.64 A2.50,2.50 0 0 1 889,30.14 L889,383.88 A2.50,2.50 0 0 1 886.50,386.38 L241.50,386.38 A2.50,2.50 0 0 1 239,383.88 L239,8.50 A2.50,2.50 0 0 1 241.50,6" /><line stroke-width="1.50" stroke="#000000" y2="27.64" x2="545.25" y1="27.64" x1="239" /><text font-family="sans-serif" font-weight="bold" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="20.67" x="243">screenshot_app（可执行程序，Qt Widgets）</text></g><g data-source-line="13" id="f1-ent0010" data-qualified-name="screenshot_core........ Qt Core . Gui." class="cluster"><path stroke-width="1.50" stroke="#000000" fill="#E9F5EC" d="M8.50,418.20 L337.78,418.20 A3.75,3.75 0 0 1 340.28,420.70 L347.28,439.84 L1057.50,439.84 A2.50,2.50 0 0 1 1060,442.34 L1060,617.34 A2.50,2.50 0 0 1 1057.50,619.84 L8.50,619.84 A2.50,2.50 0 0 1 6,617.34 L6,420.70 A2.50,2.50 0 0 1 8.50,418.20" /><line stroke-width="1.50" stroke="#000000" y2="439.84" x2="347.28" y1="439.84" x1="6" /><text font-family="sans-serif" font-weight="bold" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="432.87" x="10">screenshot_core（静态库，只依赖 Qt Core / Gui）</text></g><g data-source-line="23" id="f1-ent0019" data-qualified-name="........" class="cluster"><path stroke-width="1.50" stroke="#000000" fill="#FDF1DC" d="M1005.50,292.92 L1118.50,292.92 A3.75,3.75 0 0 1 1121,295.42 L1128,314.56 L1451.50,314.56 A2.50,2.50 0 0 1 1454,317.06 L1454,391.70 A2.50,2.50 0 0 1 1451.50,394.20 L1005.50,394.20 A2.50,2.50 0 0 1 1003,391.70 L1003,295.42 A2.50,2.50 0 0 1 1005.50,292.92" /><line stroke-width="1.50" stroke="#000000" y2="314.56" x2="1128" y1="314.56" x1="1003" /><text font-family="sans-serif" font-weight="bold" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="307.59" x="1007">平台层（静态库）</text></g><g data-source-line="4" id="f1-ent0002" data-qualified-name="screenshot_app.......Qt Widgets..Tray" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="118" y="135.64" x="340" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="158.31" x="350">托盘与命令路由</text></g><g data-source-line="5" id="f1-ent0003" data-qualified-name="screenshot_app.......Qt Widgets..Snip" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="174" y="231.28" x="312" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="253.95" x="322">截图会话（含滚动截图）</text></g><g data-source-line="6" id="f1-ent0004" data-qualified-name="screenshot_app.......Qt Widgets..Editor" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="90" y="334.74" x="255" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="357.41" x="265">标注编辑器</text></g><g data-source-line="7" id="f1-ent0005" data-qualified-name="screenshot_app.......Qt Widgets..Pins" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="76" y="40" x="492" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="62.67" x="502">贴图管理</text></g><g data-source-line="8" id="f1-ent0006" data-qualified-name="screenshot_app.......Qt Widgets..Rec" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="48" y="40" x="603" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="62.67" x="613">录屏</text></g><g data-source-line="9" id="f1-ent0007" data-qualified-name="screenshot_app.......Qt Widgets..Ocr" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="76" y="40" x="686" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="62.67" x="696">本地识别</text></g><g data-source-line="10" id="f1-ent0008" data-qualified-name="screenshot_app.......Qt Widgets..Prefs" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="76" y="40" x="797" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="62.67" x="807">偏好设置</text></g><g data-source-line="11" id="f1-ent0009" data-qualified-name="screenshot_app.......Qt Widgets..TestApi" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="202" y="40" x="255" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="62.67" x="265">内置测试接口（仅测试构建）</text></g><g data-source-line="14" id="f1-ent0011" data-qualified-name="screenshot_core........ Qt Core . Gui..Geo" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="90" y="462.38" x="471" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="485.05" x="481">几何与缩放</text></g><g data-source-line="15" id="f1-ent0012" data-qualified-name="screenshot_core........ Qt Core . Gui..Doc" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="146" y="462.38" x="22" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="485.05" x="32">标注数据模型与撤销</text></g><g data-source-line="16" id="f1-ent0013" data-qualified-name="screenshot_core........ Qt Core . Gui..Render" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="121.14" y="462.38" x="203.43" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="485.05" x="213.43">QPainter 渲染器</text></g><g data-source-line="17" id="f1-ent0014" data-qualified-name="screenshot_core........ Qt Core . Gui..Stitch" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="76" y="462.38" x="360" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="485.05" x="370">拼接算法</text></g><g data-source-line="18" id="f1-ent0015" data-qualified-name="screenshot_core........ Qt Core . Gui..Fx" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="101.67" y="568.20" x="213.17" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="590.87" x="223.17">模糊 / 马赛克</text></g><g data-source-line="19" id="f1-ent0016" data-qualified-name="screenshot_core........ Qt Core . Gui..Parse" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="160" y="462.38" x="596" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="485.05" x="606">路径变量与命令行解析</text></g><g data-source-line="20" id="f1-ent0017" data-qualified-name="screenshot_core........ Qt Core . Gui..Cfg" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="76" y="462.38" x="968" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="485.05" x="978">设置模型</text></g><g data-source-line="21" id="f1-ent0018" data-qualified-name="screenshot_core........ Qt Core . Gui..Ports" class="entity"><circle stroke-width="0.50" stroke="#181818" fill="#F1F1F1" r="8" cy="480.20" cx="862" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="509.87" x="799">平台接口（纯虚类）</text></g><g data-source-line="24" id="f1-ent0020" data-qualified-name=".........Win" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="51.28" width="200.87" y="326.92" x="1018.56" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="349.59" x="1028.56">platform_windows</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="365.23" x="1028.56">C++ + Win32 / COM / WinRT</text></g><g data-source-line="25" id="f1-ent0021" data-qualified-name=".........Mac" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="51.28" width="183.79" y="326.92" x="1254.11" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="349.59" x="1264.11">platform_macos</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="365.23" x="1264.11">C++ + 少量 Objective-C++</text></g><g data-link-type="dependency" data-source-line="27" id="f1-lnk22" data-entity-2="ent0003" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M399,171.63 C399,188.53 399,209.17 399,226.03" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="399,231.03 403,222.03 399,226.03 395,222.03 399,231.03" /></g><g data-link-type="dependency" data-source-line="28" id="f1-lnk23" data-entity-2="ent0004" data-entity-1="ent0003" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M382.21,267.31 C364,285.97 338.6012,311.9907 320.3712,330.6807" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="316.88,334.26 326.03,330.61 320.37,330.68 320.30,325.02 316.88,334.26" /></g><g data-link-type="dependency" data-source-line="29" id="f1-lnk24" data-entity-2="ent0014" data-entity-1="ent0003" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M398.92,267.32 C398.74,309.88 398.2824,414.6501 398.0924,457.0901" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="398.07,462.09 402.11,453.11 398.09,457.09 394.11,453.07 398.07,462.09" /></g><g data-link-type="dependency" data-source-line="30" id="f1-lnk25" data-entity-2="ent0012" data-entity-1="ent0004" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M260.77,370.82 C238.32,381.25 209.95,395.35 186,410.2 C160.39,426.08 136.9754,444.2584 119.0354,458.9784" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="115.17,462.15 124.66,459.53 119.04,458.98 119.59,453.35 115.17,462.15" /></g><g data-link-type="dependency" data-source-line="31" id="f1-lnk26" data-entity-2="ent0013" data-entity-1="ent0004" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M295.07,370.77 C288.18,394.83 277.1068,433.4433 270.2468,457.3933" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="268.87,462.20 275.19,454.65 270.25,457.39 267.50,452.45 268.87,462.20" /></g><g data-link-type="dependency" data-source-line="32" id="f1-lnk27" data-entity-2="ent0015" data-entity-1="ent0013" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M264,498.34 C264,517.58 264,543.6 264,562.85" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="264,567.85 268,558.85 264,562.85 260,558.85 264,567.85" /></g><g data-link-type="dependency" data-source-line="33" id="f1-lnk28" data-entity-2="ent0013" data-entity-1="ent0005" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M531.58,76.1 C534.21,113.24 536.34,202.49 504,266.92 C465.04,344.53 436.38,355.75 363,402.2 C354.56,407.54 350.55,405.03 342,410.2 C318.18,424.61 298.2747,443.0644 283.4247,458.3444" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="279.94,461.93 289.08,458.26 283.42,458.34 283.34,452.69 279.94,461.93" /></g><g data-link-type="dependency" data-source-line="34" id="f1-lnk29" data-entity-2="ent0011" data-entity-1="ent0003" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M412.95,267.33 C417.07,272.79 421.43,278.96 425,284.92 C462.32,347.22 493.7476,422.6918 507.4776,457.3318" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="509.32,461.98 509.72,452.14 507.48,457.33 502.29,455.09 509.32,461.98" /></g><g data-link-type="dependency" data-source-line="35" id="f1-lnk30" data-entity-2="ent0017" data-entity-1="ent0008" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M847.46,75.85 C858.15,91 873.44,114.03 884,135.64 C942.63,255.63 986.1697,406.3975 1000.1297,457.3875" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="1001.45,462.21 1002.93,452.47 1000.13,457.39 995.22,454.59 1001.45,462.21" /></g><g data-link-type="dependency" data-source-line="36" id="f1-lnk31" data-entity-2="ent0016" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M427.75,171.74 C450.06,186 480.98,207.67 504,231.28 C578.61,307.79 641.1198,415.4092 664.4198,457.7592" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="666.83,462.14 666.00,452.33 664.42,457.76 658.99,456.18 666.83,462.14" /></g><g data-link-type="dependency" data-source-line="37" id="f1-lnk32" data-entity-2="ent0002" data-entity-1="ent0009" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M363.89,75.99 C371.65,92.89 381.3339,113.986 389.0739,130.846" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="391.16,135.39 391.04,125.54 389.07,130.85 383.77,128.88 391.16,135.39" /></g><g data-link-type="dependency" data-source-line="38" id="f1-lnk33" data-entity-2="ent0018" data-entity-1="ent0003" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M439.92,267.34 C452.79,272.85 467.03,279.05 480,284.92 C590.73,334.99 611.19,365.39 727,402.2 C746.78,408.49 754.02,401.82 773,410.2 C807.34,425.36 836.7399,453.0096 851.0399,467.6796" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="854.53,471.26 851.11,462.02 851.04,467.68 845.38,467.61 854.53,471.26" /></g><g data-link-type="dependency" data-source-line="39" id="f1-lnk34" data-entity-2="ent0018" data-entity-1="ent0005" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M543.63,76.08 C600.37,147.92 813.551,417.8562 852.781,467.5262" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="855.88,471.45 853.44,461.91 852.78,467.53 847.16,466.87 855.88,471.45" /></g><g data-link-type="dependency" data-source-line="40" id="f1-lnk35" data-entity-2="ent0018" data-entity-1="ent0006" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M651.33,69.74 C692.03,88.23 770.35,124.71 779,135.64 C865.68,245.06 864.0344,426.3334 862.5544,466.4434" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="862.37,471.44 866.70,462.59 862.55,466.44 858.70,462.30 862.37,471.44" /></g><g data-link-type="dependency" data-source-line="41" id="f1-lnk36" data-entity-2="ent0018" data-entity-1="ent0007" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M762.44,70.94 C792,82.48 830.93,103.01 850,135.64 C918.23,252.33 876.4361,426.6563 865.5961,466.3863" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="864.28,471.21 870.51,463.58 865.60,466.39 862.79,461.47 864.28,471.21" /></g><g data-link-type="extension" data-source-line="42" id="f1-lnk37" data-entity-2="ent0018" data-entity-1="ent0020" class="link"><path stroke-dasharray="7,7" stroke-width="1" stroke="#181818" fill="none" d="M1025.4,378.62 C1000.19,387.04 973.43,397.58 950,410.2 C917.53,427.7 897.7964,444.7972 883.0764,458.8572" /><polygon stroke-width="1" stroke="#181818" fill="#00000000" points="870.06,471.29 887.22,463.20 878.93,454.52 870.06,471.29" /></g><g data-link-type="extension" data-source-line="43" id="f1-lnk38" data-entity-2="ent0018" data-entity-1="ent0021" class="link"><path stroke-dasharray="7,7" stroke-width="1" stroke="#181818" fill="none" d="M1300.45,378.68 C1281.42,387.89 1258.72,397.26 1237,402.2 C1205.89,409.28 980.01,399.37 950,410.2 C914.57,422.99 894.2558,442.5642 880.7058,457.8142" /><polygon stroke-width="1" stroke="#181818" fill="#00000000" points="868.75,471.27 885.19,461.80 876.22,453.83 868.75,471.27" /></g></g></svg></div><figcaption><span>CMake 目标与依赖方向（箭头 = 依赖方向）</span></figcaption></figure>
+<p>依赖规则：</p>
+<ul>
+<li><code>screenshot_core</code> 只依赖 Qt Core 和 Qt Gui（用到 QImage、QPainter），不依赖 Widgets，也不调用任何系统接口；平台接口在这里以纯虚类定义。</li>
+<li>两个平台层各自实现平台接口；Objective-C++ 只出现在 <code>platform_macos</code> 的 .mm 文件里。</li>
+<li>应用层只通过平台接口使用系统能力；测试构建可以把平台接口换成测试替身，例如用合成画面代替真实屏幕捕获。</li>
+<li>CMake 目标：<code>screenshot_app</code>、<code>screenshot_core</code>、<code>platform_windows</code>、<code>platform_macos</code>、<code>screenshot_tests</code>、<code>screenshot_testdriver</code>（端到端测试驱动与 MCP 适配器）。</li>
+</ul>
+<h2 id="flows"><span class="hs-num">8.</span>关键流程<a class="hs-anchor" href="#flows" aria-label="本节链接">#</a></h2>
+<h3 id="s8-1"><span class="hs-num">8.1</span>截图<a class="hs-anchor" href="#s8-1" aria-label="本节链接">#</a></h3>
+<figure><div class="hs-zoom" data-plate="light"><svg role="img" aria-label="截图流程（数据单向流动）" height="627" width="989" viewBox="0 0 989 627" version="1.1" xmlns="http://www.w3.org/2000/svg"><defs /><g><rect stroke-width="1.50" stroke="#000000" fill="#00000000" height="146.62" width="289.85" y="149.69" x="218.66" /><g><title>..</title><rect stroke-width="0" stroke="#00000000" fill="#00000000" height="465.33" width="8" y="80.64" x="18.50" /><line stroke-dasharray="5,5" stroke-width="0.50" stroke="#181818" y2="545.97" x2="22" y1="80.64" x1="22" /></g><g><title>....</title><rect stroke-width="0" stroke="#00000000" fill="#00000000" height="465.33" width="8" y="80.64" x="120.50" /><line stroke-dasharray="5,5" stroke-width="0.50" stroke="#181818" y2="545.97" x2="124" y1="80.64" x1="124" /></g><g><title>....</title><rect stroke-width="0" stroke="#00000000" fill="#00000000" height="465.33" width="8" y="80.64" x="231.16" /><line stroke-dasharray="5,5" stroke-width="0.50" stroke="#181818" y2="545.97" x2="234.66" y1="80.64" x1="234.66" /></g><g><title>....</title><rect stroke-width="0" stroke="#00000000" fill="#00000000" height="465.33" width="8" y="80.64" x="409.01" /><line stroke-dasharray="5,5" stroke-width="0.50" stroke="#181818" y2="545.97" x2="412.51" y1="80.64" x1="412.51" /></g><g><title>....</title><rect stroke-width="0" stroke="#00000000" fill="#00000000" height="465.33" width="8" y="80.64" x="489.01" /><line stroke-dasharray="5,5" stroke-width="0.50" stroke="#181818" y2="545.97" x2="492.51" y1="80.64" x1="492.51" /></g><g><title>...............</title><rect stroke-width="0" stroke="#00000000" fill="#00000000" height="465.33" width="8" y="80.64" x="646.01" /><line stroke-dasharray="5,5" stroke-width="0.50" stroke="#181818" y2="545.97" x2="649.51" y1="80.64" x1="649.51" /></g><g><title>....</title><rect stroke-width="0" stroke="#00000000" fill="#00000000" height="465.33" width="8" y="80.64" x="803.01" /><line stroke-dasharray="5,5" stroke-width="0.50" stroke="#181818" y2="545.97" x2="806.51" y1="80.64" x1="806.51" /></g><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="77.67" x="5">用户</text><circle stroke-width="0.50" stroke="#181818" fill="#E2E2F0" r="8" cy="13.50" cx="22" /><path stroke-width="0.50" stroke="#181818" fill="#00000000" d="M22,21.50 L22,48.50 M9,29.50 L35,29.50 M22,48.50 L9,63.50 M22,48.50 L35,63.50" /><rect stroke-width="0.50" stroke="#181818" fill="#E2E2F0" ry="2.50" rx="2.50" height="29.64" width="70" y="50" x="89" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="69.67" x="96">热键线程</text><rect stroke-width="0.50" stroke="#181818" fill="#E2E2F0" ry="2.50" rx="2.50" height="29.64" width="70" y="50" x="199.66" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="69.67" x="206.66">截图会话</text><rect stroke-width="0.50" stroke="#181818" fill="#E2E2F0" ry="2.50" rx="2.50" height="29.64" width="70" y="50" x="377.51" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="69.67" x="384.51">屏幕捕获</text><rect stroke-width="0.50" stroke="#181818" fill="#E2E2F0" ry="2.50" rx="2.50" height="29.64" width="70" y="50" x="457.51" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="69.67" x="464.51">窗口检测</text><rect stroke-width="0.50" stroke="#181818" fill="#E2E2F0" ry="2.50" rx="2.50" height="29.64" width="224" y="50" x="537.51" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="69.67" x="544.51">覆盖窗口（每屏一个，已预创建）</text><rect stroke-width="0.50" stroke="#181818" fill="#E2E2F0" ry="2.50" rx="2.50" height="29.64" width="70" y="50" x="771.51" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="69.67" x="778.51">输出管线</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="558.64" x="5">用户</text><circle stroke-width="0.50" stroke="#181818" fill="#E2E2F0" r="8" cy="570.11" cx="22" /><path stroke-width="0.50" stroke="#181818" fill="#00000000" d="M22,578.11 L22,605.11 M9,586.11 L35,586.11 M22,605.11 L9,620.11 M22,605.11 L35,620.11" /><rect stroke-width="0.50" stroke="#181818" fill="#E2E2F0" ry="2.50" rx="2.50" height="29.64" width="70" y="545.97" x="89" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="565.64" x="96">热键线程</text><rect stroke-width="0.50" stroke="#181818" fill="#E2E2F0" ry="2.50" rx="2.50" height="29.64" width="70" y="545.97" x="199.66" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="565.64" x="206.66">截图会话</text><rect stroke-width="0.50" stroke="#181818" fill="#E2E2F0" ry="2.50" rx="2.50" height="29.64" width="70" y="545.97" x="377.51" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="565.64" x="384.51">屏幕捕获</text><rect stroke-width="0.50" stroke="#181818" fill="#E2E2F0" ry="2.50" rx="2.50" height="29.64" width="70" y="545.97" x="457.51" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="565.64" x="464.51">窗口检测</text><rect stroke-width="0.50" stroke="#181818" fill="#E2E2F0" ry="2.50" rx="2.50" height="29.64" width="224" y="545.97" x="537.51" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="565.64" x="544.51">覆盖窗口（每屏一个，已预创建）</text><rect stroke-width="0.50" stroke="#181818" fill="#E2E2F0" ry="2.50" rx="2.50" height="29.64" width="70" y="545.97" x="771.51" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="565.64" x="778.51">输出管线</text><polygon stroke-width="1" stroke="#181818" fill="#181818" points="112,105.16 122,109.16 112,113.16 116,109.16" /><line stroke-width="1" stroke="#181818" y2="109.16" x2="118" y1="109.16" x1="22" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="104.41" x="29">按下截图热键</text><polygon stroke-width="1" stroke="#181818" fill="#181818" points="222.66,133.69 232.66,137.69 222.66,141.69 226.66,137.69" /><line stroke-width="1" stroke="#181818" y2="137.69" x2="228.66" y1="137.69" x1="124" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="132.93" x="131">投递“开始截图”</text><path stroke-width="1.50" stroke="#000000" fill="#EEEEEE" d="M218.66,149.69 L283.89,149.69 L283.89,156.21 L273.89,166.21 L218.66,166.21 L218.66,149.69" /><rect stroke-width="1.50" stroke="#000000" fill="#00000000" height="146.62" width="289.85" y="149.69" x="218.66" /><text font-family="sans-serif" font-weight="bold" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="162.46" x="233.66">par</text><text font-family="sans-serif" font-weight="bold" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="161.65" x="298.89">[并行]</text><polygon stroke-width="1" stroke="#181818" fill="#181818" points="400.51,192.73 410.51,196.73 400.51,200.73 404.51,196.73" /><line stroke-width="1" stroke="#181818" y2="196.73" x2="406.51" y1="196.73" x1="234.66" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="191.98" x="241.66">抓取所有显示器</text><polygon stroke-width="1" stroke="#181818" fill="#181818" points="245.66,221.26 235.66,225.26 245.66,229.26 241.66,225.26" /><line stroke-dasharray="2,2" stroke-width="1" stroke="#181818" y2="225.26" x2="411.51" y1="225.26" x1="239.66" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="220.50" x="251.66">屏幕快照（只读 QImage）</text><line stroke-dasharray="2,2" stroke-width="1" stroke="#000000" y2="234.26" x2="508.51" y1="234.26" x1="218.66" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="480.51,255.78 490.51,259.78 480.51,263.78 484.51,259.78" /><line stroke-width="1" stroke="#181818" y2="259.78" x2="486.51" y1="259.78" x1="234.66" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="255.03" x="241.66">快照顶层窗口 Z 序与边框</text><polygon stroke-width="1" stroke="#181818" fill="#181818" points="245.66,284.30 235.66,288.30 245.66,292.30 241.66,288.30" /><line stroke-dasharray="2,2" stroke-width="1" stroke="#181818" y2="288.30" x2="491.51" y1="288.30" x1="239.66" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="283.55" x="251.66">窗口列表（只读）</text><polygon stroke-width="1" stroke="#181818" fill="#181818" points="637.51,326.83 647.51,330.83 637.51,334.83 641.51,330.83" /><line stroke-width="1" stroke="#181818" y2="330.83" x2="643.51" y1="330.83" x1="234.66" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="326.07" x="241.66">替换背景并显示</text><polygon stroke-width="1" stroke="#181818" fill="#181818" points="637.51,355.35 647.51,359.35 637.51,363.35 641.51,359.35" /><line stroke-width="1" stroke="#181818" y2="359.35" x2="643.51" y1="359.35" x1="22" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="354.60" x="29">框选、标注</text><polygon stroke-width="1" stroke="#181818" fill="#181818" points="245.66,383.88 235.66,387.88 245.66,391.88 241.66,387.88" /><line stroke-width="1" stroke="#181818" y2="387.88" x2="648.51" y1="387.88" x1="239.66" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="383.12" x="251.66">选区 + 标注文档</text><polygon stroke-width="1" stroke="#181818" fill="#181818" points="794.51,412.40 804.51,416.40 794.51,420.40 798.51,416.40" /><line stroke-width="1" stroke="#181818" y2="416.40" x2="800.51" y1="416.40" x1="234.66" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="411.64" x="241.66">用 QPainter 渲染为位图</text><line stroke-width="1" stroke="#181818" y2="444.92" x2="848.51" y1="444.92" x1="806.51" /><line stroke-width="1" stroke="#181818" y2="457.92" x2="848.51" y1="444.92" x1="848.51" /><line stroke-width="1" stroke="#181818" y2="457.92" x2="848.51" y1="457.92" x1="807.51" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="817.51,453.92 807.51,457.92 817.51,461.92 813.51,457.92" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="440.17" x="813.51">复制 / 保存 / 贴图 / 快速保存</text><polygon stroke-width="1" stroke="#181818" fill="#181818" points="245.66,482.45 235.66,486.45 245.66,490.45 241.66,486.45" /><line stroke-dasharray="2,2" stroke-width="1" stroke="#181818" y2="486.45" x2="805.51" y1="486.45" x1="239.66" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="481.69" x="251.66">完成，写入历史</text><line stroke-width="1" stroke="#181818" y2="514.97" x2="276.66" y1="514.97" x1="234.66" /><line stroke-width="1" stroke="#181818" y2="527.97" x2="276.66" y1="514.97" x1="276.66" /><line stroke-width="1" stroke="#181818" y2="527.97" x2="276.66" y1="527.97" x1="235.66" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="245.66,523.97 235.66,527.97 245.66,531.97 241.66,527.97" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="510.21" x="241.66">释放屏幕快照</text></g></svg></div><figcaption><span>截图流程（数据单向流动）</span></figcaption></figure>
+<p>内存单向流动：屏幕快照创建后只读 → 按选区裁出底图 → 标注文档引用底图 → 渲染出结果位图 → 交给各个输出目标。下游不回写上游，会话结束时整份快照一次释放。</p>
+<h3 id="stitch"><span class="hs-num">8.2</span>滚动截图拼接<a class="hs-anchor" href="#stitch" aria-label="本节链接">#</a></h3>
+<figure><div class="hs-zoom" data-plate="light"><svg role="img" aria-label="滚动截图管线（有界队列，满了就丢最旧的帧）" height="194" width="821" viewBox="0 0 821 194" version="1.1" xmlns="http://www.w3.org/2000/svg"><defs /><g><g data-source-line="2" id="f3-ent0001" data-qualified-name="A" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#FDF1DC" ry="2.50" rx="2.50" height="51.28" width="90" y="7" x="7" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="29.67" x="17">捕获线程</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="45.31" x="17">按区域取帧</text></g><g data-source-line="3" id="f3-ent0002" data-qualified-name="B" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#E9F5EC" ry="2.50" rx="2.50" height="51.28" width="146" y="7" x="147" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="29.67" x="157">稳定判断</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="45.31" x="157">连续两帧相同或超时</text></g><g data-source-line="4" id="f3-ent0003" data-qualified-name="M" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#E9F5EC" ry="2.50" rx="2.50" height="51.28" width="205.91" y="7" x="368.04" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="29.67" x="378.04">匹配</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="45.31" x="378.04">固定区识别 + 位移估计 + 校验</text></g><g data-source-line="5" id="f3-ent0004" data-qualified-name="T" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#E9F5EC" ry="2.50" rx="2.50" height="51.28" width="118" y="7" x="688" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="29.67" x="698">拼接</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="45.31" x="698">追加到分块存储</text></g><g data-source-line="6" id="f3-ent0005" data-qualified-name="V" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#E8F0FB" ry="2.50" rx="2.50" height="51.28" width="132" y="134.28" x="681" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="156.95" x="691">预览</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="172.59" x="691">缩略图与匹配状态</text></g><g data-link-type="dependency" data-source-line="7" id="f3-lnk6" data-entity-2="ent0002" data-entity-1="ent0001" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M97.46,32.64 C112.62,32.64 124.92,32.64 141.64,32.64" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="146.64,32.64 137.64,28.64 141.64,32.64 137.64,36.64 146.64,32.64" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="26.41" x="115.50">帧</text></g><g data-link-type="dependency" data-source-line="8" id="f3-lnk7" data-entity-2="ent0003" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M293.27,32.64 C316.57,32.64 337.79,32.64 362.79,32.64" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="367.79,32.64 358.79,28.64 362.79,32.64 358.79,36.64 367.79,32.64" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="26.41" x="311.02">稳定帧</text></g><g data-link-type="dependency" data-source-line="9" id="f3-lnk8" data-entity-2="ent0004" data-entity-1="ent0003" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M574.16,32.64 C612.44,32.64 649.55,32.64 682.61,32.64" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="687.61,32.64 678.61,28.64 682.61,32.64 678.61,36.64 687.61,32.64" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="26.41" x="591.98">位移与可信度</text></g><g data-link-type="dependency" data-source-line="10" id="f3-lnk9" data-entity-2="ent0005" data-entity-1="ent0004" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M747,58.69 C747,80.54 747,107.07 747,128.91" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="747,133.91 751,124.91 747,128.91 743,124.91 747,133.91" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="101.05" x="748">缩略图</text></g></g></svg></div><figcaption><span>滚动截图管线（有界队列，满了就丢最旧的帧）</span></figcaption></figure>
+<p>算法要点（全部在 <code>screenshot_core</code> 中实现，与平台无关，可单元测试）：</p>
+<ol>
+<li><strong>固定区识别</strong>：比较相邻两帧同一行位置的像素，从顶部和底部向内统计完全相同的连续行数，多帧取稳定值，得到固定头、尾高度。对应 <code>CAP-65</code>。</li>
+<li><strong>位移估计</strong>：对中间滚动区逐行计算 64 位哈希，只用在上一帧中只出现一次的行作为锚点，对候选位移投票。逐行哈希一帧约 8 MB 数据，耗时在 1 ms 量级。</li>
+<li><strong>校验</strong>：对得票最高的位移，在整个重叠区做像素比对（允许少量抗锯齿差异）。重叠比例或锚点数量低于阈值时判为不可信，不追加并提示原因。对应 <code>CAP-66</code>。</li>
+<li><strong>低纹理兜底</strong>：锚点太少时，改用缩小后灰度图的行投影做相关性匹配；仍不可信则拒绝。</li>
+<li><strong>追加与存储</strong>：只追加位移量对应的新增行；长图按 4096 行分块存放，超长模式下分块落盘，支持 <code>CAP-74</code> 的百万像素长度。</li>
+<li><strong>自动滚动</strong>：在区域边缘位置模拟滚轮；连续若干次位移为 0 判定到底。对应 <code>CAP-62</code> <code>CAP-69</code>。</li>
+<li><strong>横向拼接</strong>：同一套算法作用在列上。对应 <code>CAP-63</code>。</li>
+<li><strong>悬浮元素</strong>（P2）：识别“内容在动、它不动”的像素块，从哈希中排除，并把接缝放在不含这些像素的行上。对应 <code>CAP-67</code>。</li>
+</ol>
+<h2 id="model"><span class="hs-num">9.</span>数据模型<a class="hs-anchor" href="#model" aria-label="本节链接">#</a></h2>
+<figure><div class="hs-zoom" data-plate="light"><svg role="img" aria-label="核心数据模型（节选）" height="560" width="1057" viewBox="0 0 1057 560" version="1.1" xmlns="http://www.w3.org/2000/svg"><defs /><g><g data-source-line="3" id="f4-ent0001" data-qualified-name="AnnotationDocument" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="86.92" width="176.18" y="200.85" x="379.78" /><circle stroke-width="1" stroke="#181818" fill="#ADD1B2" r="11" cy="216.85" cx="400.82" /><text dominant-baseline="central" text-anchor="middle" fill="#000000" font-size="17" font-family="monospace" y="216.85" x="400.82">C</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="221.70" x="416.17">AnnotationDocument</text><line stroke-width="0.50" stroke="#181818" y2="232.85" x2="554.96" y1="232.85" x1="380.78" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="249.52" x="385.78">BaseImage : 只读 QImage</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="265.16" x="385.78">Items : 标注列表</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="280.81" x="385.78">UndoStack : 命令栈</text></g><g data-source-line="8" id="f4-ent0002" data-qualified-name="Annotation" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="110.56" width="116.27" y="347.77" x="345.73" /><circle stroke-width="1" stroke="#181818" fill="#A9DCDF" r="11" cy="363.77" cx="368.53" /><text dominant-baseline="central" text-anchor="middle" fill="#000000" font-size="17" font-family="monospace" y="363.77" x="368.53">A</text><text font-family="sans-serif" font-style="italic" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="368.62" x="384.26">Annotation</text><line stroke-width="0.50" stroke="#181818" y2="379.77" x2="461.00" y1="379.77" x1="346.73" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="396.44" x="351.73">Bounds</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="412.08" x="351.73">Rotation</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="427.73" x="351.73">Style</text><line stroke-width="0.50" stroke="#181818" y2="434.69" x2="461.00" y1="434.69" x1="346.73" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="451.37" x="351.73">paint(QPainter&amp;)</text></g><g data-source-line="14" id="f4-ent0003" data-qualified-name="RectAnnotation" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="32" width="127.73" y="518.33" x="7" /><circle stroke-width="1" stroke="#181818" fill="#ADD1B2" r="11" cy="534.33" cx="22" /><text dominant-baseline="central" text-anchor="middle" fill="#000000" font-size="17" font-family="monospace" y="534.33" x="22">C</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="539.18" x="36">RectAnnotation</text></g><g data-source-line="15" id="f4-ent0004" data-qualified-name="ArrowAnnotation" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="32" width="135.50" y="518.33" x="170.11" /><circle stroke-width="1" stroke="#181818" fill="#ADD1B2" r="11" cy="534.33" cx="185.11" /><text dominant-baseline="central" text-anchor="middle" fill="#000000" font-size="17" font-family="monospace" y="534.33" x="185.11">C</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="539.18" x="199.11">ArrowAnnotation</text></g><g data-source-line="16" id="f4-ent0005" data-qualified-name="TextAnnotation" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="32" width="126.17" y="518.33" x="340.78" /><circle stroke-width="1" stroke="#181818" fill="#ADD1B2" r="11" cy="534.33" cx="355.78" /><text dominant-baseline="central" text-anchor="middle" fill="#000000" font-size="17" font-family="monospace" y="534.33" x="355.78">C</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="539.18" x="369.78">TextAnnotation</text></g><g data-source-line="17" id="f4-ent0006" data-qualified-name="MosaicAnnotation" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="32" width="143.29" y="518.33" x="502.22" /><circle stroke-width="1" stroke="#181818" fill="#ADD1B2" r="11" cy="534.33" cx="517.22" /><text dominant-baseline="central" text-anchor="middle" fill="#000000" font-size="17" font-family="monospace" y="534.33" x="517.22">C</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="539.18" x="531.22">MosaicAnnotation</text></g><g data-source-line="18" id="f4-ent0007" data-qualified-name="StepNumberAnnotation" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="32" width="177.54" y="518.33" x="680.10" /><circle stroke-width="1" stroke="#181818" fill="#ADD1B2" r="11" cy="534.33" cx="695.10" /><text dominant-baseline="central" text-anchor="middle" fill="#000000" font-size="17" font-family="monospace" y="534.33" x="695.10">C</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="539.18" x="709.10">StepNumberAnnotation</text></g><g data-source-line="19" id="f4-ent0008" data-qualified-name="PinState" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="133.84" width="221.23" y="7" x="444.25" /><circle stroke-width="1" stroke="#181818" fill="#ADD1B2" r="11" cy="23" cx="524.15" /><text dominant-baseline="central" text-anchor="middle" fill="#000000" font-size="17" font-family="monospace" y="23" x="524.15">C</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="27.85" x="544.65">PinState</text><line stroke-width="0.50" stroke="#181818" y2="39" x2="664.48" y1="39" x1="445.25" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="55.67" x="450.25">Id</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="71.31" x="450.25">GroupId</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="86.96" x="450.25">Content</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="102.60" x="450.25">Position / Scale / Rotation / Flip</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="118.24" x="450.25">Opacity</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="133.88" x="450.25">Flags : 置顶 · 穿透 · 锁定 · 缩略图</text></g><g data-source-line="27" id="f4-ent0009" data-qualified-name="PinContent" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="32" width="101.27" y="228.31" x="655.23" /><circle stroke-width="1" stroke="#181818" fill="#A9DCDF" r="11" cy="244.31" cx="670.23" /><text dominant-baseline="central" text-anchor="middle" fill="#000000" font-size="17" font-family="monospace" y="244.31" x="670.23">A</text><text font-family="sans-serif" font-style="italic" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="249.16" x="684.23">PinContent</text></g><g data-source-line="28" id="f4-ent0010" data-qualified-name="ImageContent" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="32" width="119.94" y="387.05" x="496.89" /><circle stroke-width="1" stroke="#181818" fill="#ADD1B2" r="11" cy="403.05" cx="511.89" /><text dominant-baseline="central" text-anchor="middle" fill="#000000" font-size="17" font-family="monospace" y="403.05" x="511.89">C</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="407.90" x="525.89">ImageContent</text></g><g data-source-line="29" id="f4-ent0011" data-qualified-name="TextContent" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="32" width="108.26" y="387.05" x="651.73" /><circle stroke-width="1" stroke="#181818" fill="#ADD1B2" r="11" cy="403.05" cx="666.73" /><text dominant-baseline="central" text-anchor="middle" fill="#000000" font-size="17" font-family="monospace" y="403.05" x="666.73">C</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="407.90" x="680.73">TextContent</text></g><g data-source-line="30" id="f4-ent0012" data-qualified-name="ColorContent" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="32" width="114.49" y="387.05" x="794.62" /><circle stroke-width="1" stroke="#181818" fill="#ADD1B2" r="11" cy="403.05" cx="809.62" /><text dominant-baseline="central" text-anchor="middle" fill="#000000" font-size="17" font-family="monospace" y="403.05" x="809.62">C</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="407.90" x="823.62">ColorContent</text></g><g data-source-line="31" id="f4-ent0013" data-qualified-name="FileContent" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="32" width="103.59" y="387.05" x="944.07" /><circle stroke-width="1" stroke="#181818" fill="#ADD1B2" r="11" cy="403.05" cx="959.07" /><text dominant-baseline="central" text-anchor="middle" fill="#000000" font-size="17" font-family="monospace" y="403.05" x="959.07">C</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="407.90" x="973.07">FileContent</text></g><g data-link-type="composition" data-source-line="32" id="f4-lnk14" data-entity-2="ent0002" data-entity-1="ent0001" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M445.8418,299.2488 C438.3618,317.5588 434.08,328.04 426.15,347.48" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="450.38,288.14 444.41,292.18 445.84,299.25 451.81,295.21 450.38,288.14" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="307.41" x="440.31">1</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="336.88" x="423.81">*</text></g><g data-link-type="extension" data-source-line="33" id="f4-lnk15" data-entity-2="ent0003" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M328.6999,433.2337 C261.1799,459.4437 168.64,495.37 110.38,517.99" /><polygon stroke-width="1" stroke="#181818" fill="#00000000" points="345.48,426.72 326.53,427.64 330.87,438.83 345.48,426.72" /></g><g data-link-type="extension" data-source-line="34" id="f4-lnk16" data-entity-2="ent0004" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M331.1372,460.688 C300.5172,484.528 279.23,501.12 257.67,517.91" /><polygon stroke-width="1" stroke="#181818" fill="#00000000" points="345.34,449.63 327.45,455.95 334.82,465.42 345.34,449.63" /></g><g data-link-type="extension" data-source-line="35" id="f4-lnk17" data-entity-2="ent0005" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M403.87,476.5 C403.87,498.03 403.87,503.11 403.87,517.85" /><polygon stroke-width="1" stroke="#181818" fill="#00000000" points="403.87,458.50 397.87,476.50 409.87,476.50 403.87,458.50" /></g><g data-link-type="extension" data-source-line="36" id="f4-lnk18" data-entity-2="ent0006" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M476.6975,459.436 C508.3875,483.536 531.22,500.9 553.63,517.94" /><polygon stroke-width="1" stroke="#181818" fill="#00000000" points="462.37,448.54 473.07,464.21 480.33,454.66 462.37,448.54" /></g><g data-link-type="extension" data-source-line="37" id="f4-lnk19" data-entity-2="ent0007" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M477.7601,458.1788 C483.5201,461.6388 473.99,455.58 479.87,458.33 C543.62,488.11 621.02,507.4 679.67,518.95" /><polygon stroke-width="1" stroke="#181818" fill="#00000000" points="462.33,448.91 474.67,463.32 480.85,453.04 462.33,448.91" /></g><g data-link-type="composition" data-source-line="38" id="f4-lnk20" data-entity-2="ent0009" data-entity-1="ent0008" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M622.1218,149.9237 C650.7118,181.8037 674.55,208.39 692.2,228.07" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="614.11,140.99 615.14,148.13 622.12,149.92 621.09,142.79 614.11,140.99" /></g><g data-link-type="aggregation" data-source-line="39" id="f4-lnk21" data-entity-2="ent0001" data-entity-1="ent0008" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M515.2217,151.6511 C504.8417,171.7411 499.23,182.61 489.87,200.71" /><polygon stroke-width="1" stroke="#181818" fill="#00000000" points="520.73,140.99 514.42,144.48 515.22,151.65 521.53,148.16 520.73,140.99" /></g><g data-link-type="extension" data-source-line="40" id="f4-lnk22" data-entity-2="ent0010" data-entity-1="ent0009" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M678.9075,273.6652 C650.3475,303.7052 599.69,357 571.26,386.9" /><polygon stroke-width="1" stroke="#181818" fill="#00000000" points="691.31,260.62 674.56,269.53 683.26,277.80 691.31,260.62" /></g><g data-link-type="extension" data-source-line="41" id="f4-lnk23" data-entity-2="ent0011" data-entity-1="ent0009" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M705.87,278.62 C705.87,308.66 705.87,357 705.87,386.9" /><polygon stroke-width="1" stroke="#181818" fill="#00000000" points="705.87,260.62 699.87,278.62 711.87,278.62 705.87,260.62" /></g><g data-link-type="extension" data-source-line="42" id="f4-lnk24" data-entity-2="ent0012" data-entity-1="ent0009" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M732.3983,273.7915 C760.3783,303.8315 809.9,357 837.76,386.9" /><polygon stroke-width="1" stroke="#181818" fill="#00000000" points="720.13,260.62 728.01,277.88 736.79,269.70 720.13,260.62" /></g><g data-link-type="extension" data-source-line="43" id="f4-lnk25" data-entity-2="ent0013" data-entity-1="ent0009" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M763.144,267.4365 C808.594,285.5265 867.03,311.05 926.87,347.77 C945.57,359.25 965.07,374.99 978.54,386.56" /><polygon stroke-width="1" stroke="#181818" fill="#00000000" points="746.42,260.78 760.93,273.01 765.36,261.86 746.42,260.78" /></g></g></svg></div><figcaption><span>核心数据模型（节选）</span></figcaption></figure>
+<ul>
+<li>标注是矢量对象，每种标注只实现一个 <code>paint(QPainter&amp;)</code>，屏幕和导出共用。二次编辑（<code>ANN-07</code>）和撤销 / 重做都基于命令栈；“清除全部”也是一条可撤销的命令。</li>
+<li>贴图状态可序列化，用于重启后恢复（<code>PIN-54</code>），也供内置测试接口读取。底图另存为文件，状态文件只存引用。</li>
+</ul>
+<h2 id="threads"><span class="hs-num">10.</span>线程模型<a class="hs-anchor" href="#threads" aria-label="本节链接">#</a></h2>
+<div class="hs-table lead"><table>
+<caption>线程分工</caption>
+<thead>
+<tr>
+<th>线程</th>
+<th>职责</th>
+<th>约束</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>界面线程</td>
+<td>Qt 事件循环、绘制与交互</td>
+<td>不做任何跨进程调用和大文件读写</td>
+</tr>
+<tr>
+<td>热键与事件监听线程</td>
+<td>全局鼠标 / 键盘事件</td>
+<td>回调只投递消息</td>
+</tr>
+<tr>
+<td>捕获线程</td>
+<td>截屏、滚动截图取帧</td>
+<td>结果以只读 QImage 交出</td>
+</tr>
+<tr>
+<td>元素检测线程</td>
+<td>UI Automation / Accessibility 调用</td>
+<td>超时几百毫秒，超时的进程临时进黑名单</td>
+</tr>
+<tr>
+<td>线程池</td>
+<td>模糊、编码、保存、OCR、识别、拼接哈希</td>
+<td>可取消；识别类任务低优先级</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="tests"><span class="hs-num">11.</span>自动化测试架构<a class="hs-anchor" href="#tests" aria-label="本节链接">#</a></h2>
+<figure><div class="hs-zoom" data-plate="light"><svg role="img" aria-label="测试分层与内置测试接口" height="411" width="1671" viewBox="0 0 1671 411" version="1.1" xmlns="http://www.w3.org/2000/svg"><defs /><g><g data-source-line="4" id="f5-ent0002" data-qualified-name="...." class="cluster"><path stroke-width="1.50" stroke="#000000" fill="#E9F5EC" d="M8.50,89.64 L65.50,89.64 A3.75,3.75 0 0 1 68,92.14 L75,111.28 L467.50,111.28 A2.50,2.50 0 0 1 470,113.78 L470,172.78 A2.50,2.50 0 0 1 467.50,175.28 L8.50,175.28 A2.50,2.50 0 0 1 6,172.78 L6,92.14 A2.50,2.50 0 0 1 8.50,89.64" /><line stroke-width="1.50" stroke="#000000" y2="111.28" x2="75" y1="111.28" x1="6" /><text font-family="sans-serif" font-weight="bold" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="104.31" x="10">单元测试</text></g><g data-source-line="7" id="f5-ent0004" data-qualified-name="............" class="cluster"><path stroke-width="1.50" stroke="#000000" fill="#E8F0FB" d="M496.50,89.64 L665.50,89.64 A3.75,3.75 0 0 1 668,92.14 L675,111.28 L839.50,111.28 A2.50,2.50 0 0 1 842,113.78 L842,172.78 A2.50,2.50 0 0 1 839.50,175.28 L496.50,175.28 A2.50,2.50 0 0 1 494,172.78 L494,92.14 A2.50,2.50 0 0 1 496.50,89.64" /><line stroke-width="1.50" stroke="#000000" y2="111.28" x2="675" y1="111.28" x1="494" /><text font-family="sans-serif" font-weight="bold" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="104.31" x="498">组件测试（无显示器运行）</text></g><g data-source-line="10" id="f5-ent0006" data-qualified-name="..........." class="cluster"><path stroke-width="1.50" stroke="#000000" fill="#FDF1DC" d="M868.50,89.64 L1023.50,89.64 A3.75,3.75 0 0 1 1026,92.14 L1033,111.28 L1364.50,111.28 A2.50,2.50 0 0 1 1367,113.78 L1367,398.70 A2.50,2.50 0 0 1 1364.50,401.20 L868.50,401.20 A2.50,2.50 0 0 1 866,398.70 L866,92.14 A2.50,2.50 0 0 1 868.50,89.64" /><line stroke-width="1.50" stroke="#000000" y2="111.28" x2="1033" y1="111.28" x1="866" /><text font-family="sans-serif" font-weight="bold" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="104.31" x="870">端到端测试（真实桌面）</text></g><g data-source-line="5" id="f5-ent0003" data-qualified-name=".....Unit" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="431.50" y="123.64" x="22.25" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="146.31" x="32.25">screenshot_core：拼接、标注模型、模糊、路径变量、命令行解析</text></g><g data-source-line="8" id="f5-ent0005" data-qualified-name=".............Comp" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="316.38" y="123.64" x="509.81" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="146.31" x="519.81">Widgets 控件 + QTest 模拟输入 + 渲染结果比对</text></g><g data-source-line="11" id="f5-ent0007" data-qualified-name="............Driver" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="153.84" y="123.64" x="895.08" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="146.31" x="905.08">screenshot_testdriver</text></g><g data-source-line="12" id="f5-ent0008" data-qualified-name="............Api" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="51.28" width="175.57" y="237.28" x="1175.22" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="259.95" x="1185.22">内置测试接口</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="275.59" x="1185.22">命名管道 / Unix 域套接字</text></g><g data-source-line="13" id="f5-ent0009" data-qualified-name="............AppT" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="153.05" y="349.56" x="1186.48" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="372.23" x="1196.48">ScreenShot 测试构建</text></g><g data-source-line="14" id="f5-ent0010" data-qualified-name="............Os" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="51.28" width="258" y="237.28" x="882" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="259.95" x="892">系统辅助功能接口</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="275.59" x="892">输入法候选窗、系统对话框、其他程序</text></g><g data-source-line="3" id="f5-ent0001" data-qualified-name="Cases" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="247.90" y="7" x="544.05" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="29.67" x="554.05">测试用例（Qt Test，标注需求编号）</text></g><g data-source-line="16" id="f5-ent0011" data-qualified-name="Report" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="314" y="245.10" x="511" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="267.77" x="521">报告：通过率、需求覆盖矩阵、性能、失败截图</text></g><g data-source-line="17" id="f5-ent0012" data-qualified-name="Mcp" class="entity"><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="2.50" rx="2.50" height="35.64" width="279" y="123.64" x="1383.50" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="146.31" x="1393.50">MCP 适配器（开发工具，不随产品发布）</text></g><g data-link-type="dependency" data-source-line="18" id="f5-lnk13" data-entity-2="ent0003" data-entity-1="ent0001" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M603.16,43.1 C521.98,64.75 388.5913,100.3121 307.4913,121.9321" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="302.66,123.22 312.39,124.77 307.49,121.93 310.33,117.04 302.66,123.22" /></g><g data-link-type="dependency" data-source-line="19" id="f5-lnk14" data-entity-2="ent0005" data-entity-1="ent0001" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M668,42.73 C668,64.41 668,96.76 668,118.47" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="668,123.47 672,114.47 668,118.47 664,114.47 668,123.47" /></g><g data-link-type="dependency" data-source-line="20" id="f5-lnk15" data-entity-2="ent0007" data-entity-1="ent0001" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M727.38,43.02 C761.29,53.3 804.4,67.16 842,81.64 C874.71,94.24 906.4675,108.7265 932.3675,121.0865" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="936.88,123.24 930.48,115.75 932.37,121.09 927.03,122.97 936.88,123.24" /></g><g data-link-type="dependency" data-source-line="21" id="f5-lnk16" data-entity-2="ent0008" data-entity-1="ent0007" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M1014,159.7 C1063.35,179.96 1140.9946,211.8312 1197.3646,234.9712" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="1201.99,236.87 1195.18,229.75 1197.36,234.97 1192.15,237.15 1201.99,236.87" /></g><g data-link-type="dependency" data-source-line="22" id="f5-lnk17" data-entity-2="ent0010" data-entity-1="ent0007" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M977.59,159.57 C984.2,179.83 993.7184,208.9868 1001.2884,232.1768" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="1002.84,236.93 1003.85,227.13 1001.29,232.18 996.24,229.62 1002.84,236.93" /></g><g data-link-type="dependency" data-source-line="23" id="f5-lnk18" data-entity-2="ent0009" data-entity-1="ent0008" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M1263,288.98 C1263,307.7 1263,327.8 1263,344.27" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="1263,349.27 1267,340.27 1263,344.27 1259,340.27 1263,349.27" /></g><g data-link-type="dependency" data-source-line="24" id="f5-lnk19" data-entity-2="ent0008" data-entity-1="ent0012" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M1485.47,159.7 C1441.31,179.99 1372.1835,211.7527 1321.8135,234.8927" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="1317.27,236.98 1327.12,236.86 1321.81,234.89 1323.78,229.59 1317.27,236.98" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="204.05" x="1417.29">AI 直接调用</text></g><g data-link-type="dependency" data-source-line="25" id="f5-lnk20" data-entity-2="ent0011" data-entity-1="ent0003" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M300.07,159.7 C381.7,182.38 519.5125,220.6614 601.1325,243.3414" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="605.95,244.68 598.35,238.42 601.13,243.34 596.21,246.12 605.95,244.68" /></g><g data-link-type="dependency" data-source-line="26" id="f5-lnk21" data-entity-2="ent0011" data-entity-1="ent0005" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M668,159.57 C668,182.28 668,217.14 668,239.83" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="668,244.83 672,235.83 668,239.83 664,235.83 668,244.83" /></g><g data-link-type="dependency" data-source-line="27" id="f5-lnk22" data-entity-2="ent0011" data-entity-1="ent0007" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M928.12,159.7 C870.41,182.38 774.2234,220.1709 716.5234,242.8509" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="711.87,244.68 721.71,245.11 716.52,242.85 718.78,237.66 711.87,244.68" /></g></g></svg></div><figcaption><span>测试分层与内置测试接口</span></figcaption></figure>
+<ul>
+<li><strong>测试框架</strong>：Qt Test。单元测试和组件测试在无显示器模式下运行，适合持续构建。</li>
+<li><strong>需求追踪</strong>（<code>TST-01</code>）：用例名或标注里写明覆盖的需求编号；构建时扫描需求文档里的全部编号和用例标注，生成覆盖矩阵，已交付范围内有空项即失败。</li>
+<li><strong>内置测试接口</strong>（<code>TST-03</code>）：只编译进测试构建，发布构建里没有这段代码。提供的操作：注入合成屏幕画面和显示器布局（多屏、缩放比例、HDR）、注入剪贴板、触发动作、发送输入序列、读取贴图 / 标注 / 设置状态、获取窗口渲染结果、控制时钟。发布构建另做一轮只经系统辅助功能接口驱动的冒烟测试。</li>
+<li><strong>测试替身</strong>：平台能力都在纯虚接口后面，测试构建可以换成合成实现，单显示器的测试机也能跑多屏、混合缩放、HDR 的逻辑用例；真实硬件用例在对应测试机上用同一套脚本运行（<code>TST-08</code>）。</li>
+<li><strong>零网络</strong>（<code>TST-09</code>）：构建时检查最终产物没有链接 Qt Network 和任何网络库；运行全部测试时监控本进程的网络连接。</li>
+<li><strong>MCP 适配器</strong>：把内置测试接口包装成 MCP 工具，同样用 C++ 写，AI 可以直接启动程序、注入画面、执行操作、取回截图。它是开发工具，不随产品发布。</li>
+</ul>
+<h2 id="deps"><span class="hs-num">12.</span>第三方依赖与许可证<a class="hs-anchor" href="#deps" aria-label="本节链接">#</a></h2>
+<div class="hs-table lead"><table>
+<caption>主要依赖</caption>
+<thead>
+<tr>
+<th>依赖</th>
+<th>用途</th>
+<th>许可证</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Qt 6.12：Core、Gui、Widgets、Svg、PrintSupport、Concurrent、Test</td>
+<td>框架、界面、打印、并行、测试</td>
+<td>LGPLv3</td>
+</tr>
+<tr>
+<td>Qt Image Formats</td>
+<td>WebP 等图像格式</td>
+<td>LGPLv3</td>
+</tr>
+<tr>
+<td>ZXing-C++</td>
+<td>二维码与条码</td>
+<td>Apache-2.0</td>
+</tr>
+<tr>
+<td>QuickJS-ng</td>
+<td>JavaScript 脚本引擎</td>
+<td>MIT</td>
+</tr>
+<tr>
+<td>ONNX Runtime（可选）</td>
+<td>本地模型推理</td>
+<td>MIT</td>
+</tr>
+<tr>
+<td>macOS 系统框架</td>
+<td>ScreenCaptureKit、Vision、AVFoundation、Accessibility</td>
+<td>系统自带</td>
+</tr>
+<tr>
+<td>Windows 系统组件</td>
+<td>DXGI、UI Automation、Media Foundation、Windows.Media.Ocr</td>
+<td>系统自带</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>不使用 Qt Network、Qt Qml、Qt Quick。</li>
+<li>LGPLv3 的义务：动态链接；允许用户替换并重新链接 Qt 库；提供 Qt 源码或书面要约；附许可声明。</li>
+<li>离线组件包中的模型权重另有许可证，选用时逐个核对。</li>
+</ul>
+<h2 id="poc"><span class="hs-num">13.</span>M0 技术验证<a class="hs-anchor" href="#poc" aria-label="本节链接">#</a></h2>
+<div class="hs-table lead"><table>
+<caption>M0 验证清单</caption>
+<thead>
+<tr>
+<th>编号</th>
+<th>风险</th>
+<th>验证方法</th>
+<th>通过标准</th>
+<th>不通过时的预案</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>R-01</code></td>
+<td>工具链组合</td>
+<td>Qt 6.12 官方二进制 + MSVC 2026 + C++20，编译、运行一个最小程序</td>
+<td>编译通过，运行正常</td>
+<td>改用 Qt 支持列表中的 MSVC 2022</td>
+</tr>
+<tr>
+<td><code>R-02</code></td>
+<td>冻结画面延迟</td>
+<td>两台 4K 显示器（150% / 100%），热键到可框选计时 1000 次</td>
+<td>P95 ≤ 150 ms</td>
+<td>预创建窗口、避免图像格式转换、只重画变化区域</td>
+</tr>
+<tr>
+<td><code>R-03</code></td>
+<td>混合缩放坐标精度</td>
+<td>跨屏框选，与捕获原图逐像素比对</td>
+<td>零偏差</td>
+<td>用系统接口直接设置窗口物理位置</td>
+</tr>
+<tr>
+<td><code>R-04</code></td>
+<td>覆盖窗口上的中文输入法</td>
+<td>微软拼音、搜狗</td>
+<td>候选窗跟随光标，上屏正确</td>
+<td>平台层直接处理输入法消息</td>
+</tr>
+<tr>
+<td><code>R-05</code></td>
+<td>CPU 透明贴图性能</td>
+<td>50 个 1080p 贴图带阴影，逐个拖动、缩放、开关穿透</td>
+<td>拖动 ≥ 60 FPS，缩放流畅</td>
+<td>缩放过程中降低质量，停下后再平滑；阴影缓存</td>
+</tr>
+<tr>
+<td><code>R-06</code></td>
+<td>CPU 马赛克 / 模糊</td>
+<td>4K 全图高斯模糊和马赛克计时</td>
+<td>≤ 100 ms</td>
+<td>缩小后模糊再放大；增加并行度</td>
+</tr>
+<tr>
+<td><code>R-07</code></td>
+<td>CPU 大图缩放</td>
+<td>8K 贴图连续缩放</td>
+<td>≥ 30 FPS 且不卡顿</td>
+<td>多级缩小图 + 只画可见区域</td>
+</tr>
+<tr>
+<td><code>R-08</code></td>
+<td>常驻内存</td>
+<td>无贴图运行 10 分钟后测私有内存，同条件测 Snipaste</td>
+<td>不高于 Snipaste，且 ≤ 150 MB</td>
+<td>精简加载的 Qt 插件；延迟初始化</td>
+</tr>
+<tr>
+<td><code>R-09</code></td>
+<td>UI 元素检测卡死</td>
+<td>对挂起的程序和大型程序（Office、浏览器）悬停检测</td>
+<td>界面不卡，超时后降级为窗口检测</td>
+<td>检测放到独立子进程</td>
+</tr>
+<tr>
+<td><code>R-10</code></td>
+<td>HDR 色彩</td>
+<td>HDR 显示器上截图与 SDR 参照比对</td>
+<td>不发灰、不过曝，色调映射耗时可接受</td>
+<td>需要 HDR 设备；没有设备时顺延到 M5</td>
+</tr>
+<tr>
+<td><code>R-11</code></td>
+<td>Windows 系统 OCR</td>
+<td>未打包程序经 C++/WinRT 调用，分别在你的 LTSC 2021 和 Windows 11 上测</td>
+<td>能识别中英文</td>
+<td>改用 ONNX Runtime + PP-OCR 模型作为 Windows 默认 OCR</td>
+</tr>
+<tr>
+<td><code>R-12</code></td>
+<td>双显卡笔记本捕获</td>
+<td>外接屏挂在独显、内屏挂在核显时截图</td>
+<td>两块屏都能捕获</td>
+<td>按显卡分别创建设备，仍失败则该屏走 GDI</td>
+</tr>
+<tr>
+<td><code>R-13</code></td>
+<td>macOS 贴图窗口 <span class="hs-tag" data-kind="muted">延后</span></td>
+<td>Qt 窗口经 .mm 设置浮动层级、穿透、所有空间；在全屏程序上方显示</td>
+<td>行为正确</td>
+<td>改用系统面板类窗口承载</td>
+</tr>
+<tr>
+<td><code>R-14</code></td>
+<td>macOS 截图延迟 <span class="hs-tag" data-kind="muted">延后</span></td>
+<td>截图管理器单帧捕获计时</td>
+<td>P95 ≤ 150 ms</td>
+<td>常驻视频流取最新帧（代价是菜单栏持续显示录屏指示）</td>
+</tr>
+<tr>
+<td><code>R-15</code></td>
+<td>macOS 权限与无人值守测试 <span class="hs-tag" data-kind="muted">延后</span></td>
+<td>测试机预授权后连续运行端到端用例</td>
+<td>除系统每月确认外无需人工</td>
+<td>端到端用例改用测试替身，真实捕获只做冒烟测试</td>
+</tr>
+<tr>
+<td><code>R-16</code></td>
+<td>测试替身覆盖多屏用例</td>
+<td>单显示器机器上用合成显示器跑完全部多屏用例</td>
+<td>结果与真实多屏一致</td>
+<td>补充虚拟显示器</td>
+</tr>
+<tr>
+<td><code>R-17</code></td>
+<td>Qt Qml 是否依赖 Qt Network</td>
+<td>检查官方二进制的依赖</td>
+<td>有依赖则维持 QuickJS-ng 方案</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p>M0 只在 Windows 上进行，标为“延后”的三项等有 Mac 设备后再验证。不达标时按预案处理；预案仍不达标时，调整对应的需求指标并在需求文档中记录。</p>
+<h2 id="s14"><span class="hs-num">14.</span>参考资料<a class="hs-anchor" href="#s14" aria-label="本节链接">#</a></h2>
+<ul>
+<li><a href="https://docs.snipaste.com/" class="hs-pill" target="_blank" rel="noopener noreferrer">Snipaste 官方文档</a>、<a href="https://pixpin.cn/docs/start/what-is-pixpin" class="hs-pill" target="_blank" rel="noopener noreferrer">PixPin 使用文档</a></li>
+<li><a href="https://www.v2ex.com/t/989393" class="hs-pill" target="_blank" rel="noopener noreferrer">V2EX：PixPin 发布帖</a>、<a href="https://meta.appinn.net/t/topic/49017" class="hs-pill" target="_blank" rel="noopener noreferrer">小众软件论坛：PixPin 推荐</a></li>
+<li>Qt：<a href="https://doc.qt.io/qt-6/supported-platforms.html" class="hs-pill" target="_blank" rel="noopener noreferrer">支持的平台</a>、<a href="https://www.qt.io/blog/qt-6.12-released" class="hs-pill" target="_blank" rel="noopener noreferrer">Qt 6.12 发布</a>、<a href="https://doc.qt.io/qt-6/qt-releases.html" class="hs-pill" target="_blank" rel="noopener noreferrer">Qt 发布与 LTS 政策</a>、<a href="https://www.qt.io/licensing/open-source-lgpl-obligations" class="hs-pill" target="_blank" rel="noopener noreferrer">Qt LGPL 义务</a>、<a href="https://doc.qt.io/qt-6/windows-graphics.html" class="hs-pill" target="_blank" rel="noopener noreferrer">Qt for Windows 图形</a>、<a href="https://doc.qt.io/qt-6/qtqml-qml-script-compiler.html" class="hs-pill" target="_blank" rel="noopener noreferrer">QML 脚本编译器</a></li>
+<li>C++ 标准：<a href="https://dev.epicgames.com/documentation/unreal-engine/epic-cplusplus-coding-standard-for-unreal-engine?lang=en-US" class="hs-pill" target="_blank" rel="noopener noreferrer">Epic C++ 编码规范（UE 默认 C++20）</a></li>
+<li>AI 工具：<a href="https://www.qt.io/blog/qt-creator-19-released" class="hs-pill" target="_blank" rel="noopener noreferrer">Qt Creator 19 发布（内置 MCP）</a>、<a href="https://www.qt.io/blog/qt-creator-20-released" class="hs-pill" target="_blank" rel="noopener noreferrer">Qt Creator 20 发布</a>、<a href="https://www.jetbrains.com.cn/rider/whatsnew/2026-1" class="hs-pill" target="_blank" rel="noopener noreferrer">Rider 2026.1 新功能</a></li>
+<li>Dear ImGui：<a href="https://github.com/ocornut/imgui/wiki/Implementing-Power-Save%2C-aka-Idling-outside-of-ImGui" class="hs-pill" target="_blank" rel="noopener noreferrer">空闲省电</a>、<a href="https://awesome.ecosyste.ms/projects/github.com%2Focornut%2Fimgui_test_engine" class="hs-pill" target="_blank" rel="noopener noreferrer">Test Engine 许可</a></li>
+<li>Windows：<a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi1_5/nf-dxgi1_5-idxgioutput5-duplicateoutput1" class="hs-pill" target="_blank" rel="noopener noreferrer">DuplicateOutput1</a>、<a href="https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowdisplayaffinity" class="hs-pill" target="_blank" rel="noopener noreferrer">SetWindowDisplayAffinity</a>、<a href="https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-threading" class="hs-pill" target="_blank" rel="noopener noreferrer">UIA 线程要求</a>、<a href="https://learn.microsoft.com/en-us/windows/win32/api/uiautomationclient/nf-uiautomationclient-iuiautomation2-put_transactiontimeout" class="hs-pill" target="_blank" rel="noopener noreferrer">UIA 事务超时</a>、<a href="https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/winrt-api-desktop-app-support" class="hs-pill" target="_blank" rel="noopener noreferrer">桌面应用可用的 WinRT 接口</a>、<a href="https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-ivirtualdesktopmanager" class="hs-pill" target="_blank" rel="noopener noreferrer">IVirtualDesktopManager</a></li>
+<li>macOS：<a href="https://9to5mac.com/2024/08/14/macos-sequoia-screen-recording-prompt-monthly/" class="hs-pill" target="_blank" rel="noopener noreferrer">每月确认屏幕录制权限（9to5Mac）</a>、<a href="https://developer.apple.com/forums/thread/765103" class="hs-pill" target="_blank" rel="noopener noreferrer">“请求绕过系统窗口选择器”提示（Apple 开发者论坛）</a></li>
+<li>图像：<a href="https://developers.google.com/speed/webp/faq" class="hs-pill" target="_blank" rel="noopener noreferrer">WebP 常见问题</a></li>
+</ul>
+</main>
+<a class="hs-top" href="#top" aria-label="回到顶部"><i class="hs-ico" data-icon="arrow-up"></i></a>
+<script id="hs-script">
+(() => {
+  const doc = document.querySelector('.hs-doc');
+  if (!doc) return;
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const plainLabel = h => {
+    const label = h.cloneNode(true);
+    label.querySelectorAll('.hs-anchor').forEach(n => n.remove());
+    label.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+    return label;
+  };
+
+  // ---------- ID 标记：行内 code 形如 RT-01 / SW-R1.7 / G15 时着色，同前缀同色 ----------
+  const markIds = () => {
+    const ID = /^[A-Z]{1,4}(?:-[A-Z]{1,3})?-?\d+(?:\.\d+)*$/;
+    const hues = new Map();
+    doc.querySelectorAll('code').forEach(code => {
+      const text = code.textContent.trim();
+      if (code.closest('pre') || code.children.length || !ID.test(text)) return;
+      const prefix = text.replace(/-?[\d.]+$/, '');
+      if (!hues.has(prefix)) hues.set(prefix, hues.size % 7 + 1);
+      code.classList.add('hs-id');
+      code.dataset.hue = hues.get(prefix);
+    });
+  };
+
+  // ---------- 右侧大纲：从标题生成条目，每条记录父条目与所属的第一层条目 ----------
+  const createToc = heads => {
+    const h1 = doc.querySelector('h1');
+    if (h1 && !h1.id) h1.id = 'top';
+    const nav = document.createElement('nav');
+    nav.className = 'hs-toc';
+    nav.id = 'hs-toc';
+    nav.setAttribute('aria-label', '大纲');
+    nav.innerHTML = '<div class="hs-toc-head"><a class="hs-toc-title"></a><button type="button" class="hs-toc-fold" aria-controls="hs-toc"></button></div>'
+      + '<input type="search" class="hs-toc-filter" id="hs-toc-filter" aria-label="筛选大纲标题">'
+      + '<div class="hs-toc-panel"><ol></ol><p class="hs-toc-empty" hidden>没有匹配的标题</p></div>';
+    const title = nav.querySelector('.hs-toc-title');
+    title.textContent = h1 ? plainLabel(h1).textContent.trim() : document.title;
+    title.href = h1 ? '#' + h1.id : '#';
+    nav.querySelector('.hs-toc-filter').placeholder = `筛选标题（共 ${heads.length} 节）`;
+    const list = nav.querySelector('ol');
+    const items = [];
+    const stack = [];
+    heads.forEach((h, i) => {
+      if (!h.id) h.id = 'hs-h' + (i + 1);
+      const level = +h.tagName[1];
+      while (stack.length && items[stack[stack.length - 1]].level >= level) stack.pop();
+      const parent = stack.length ? stack[stack.length - 1] : -1;
+      stack.push(i);
+      const li = document.createElement('li');
+      li.className = 'hs-l' + level;
+      const a = document.createElement('a');
+      a.href = '#' + h.id;
+      a.innerHTML = plainLabel(h).innerHTML;
+      li.append(a);
+      list.append(li);
+      items.push({ head: h, li, a, level, parent, root: parent < 0 ? i : items[parent].root });
+    });
+    document.body.append(nav);
+    document.body.classList.add('hs-with-toc');
+    return { nav, items };
+  };
+
+  // 窄屏：大纲收进右上角按钮，从右侧滑出
+  const bindTocDrawer = nav => {
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'hs-toc-toggle';
+    toggle.setAttribute('aria-controls', 'hs-toc');
+    const scrim = document.createElement('div');
+    scrim.className = 'hs-scrim';
+    document.body.append(scrim, toggle);
+    const setOpen = open => {
+      nav.classList.toggle('is-open', open);
+      scrim.hidden = !open;
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.textContent = open ? '关闭' : '大纲';
+    };
+    setOpen(false);
+    toggle.addEventListener('click', () => setOpen(!nav.classList.contains('is-open')));
+    scrim.addEventListener('click', () => setOpen(false));
+    nav.addEventListener('click', e => { if (e.target.closest('a')) setOpen(false); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') setOpen(false); });
+  };
+
+  // 阅读位置：越过阅读线（视口 30% 处）的最后一个标题，还没读到任何标题时为 -1；
+  // 滚到页底时取视口内最后一个标题，保证末尾章节也能成为当前位置
+  const locateHeading = items => {
+    const line = Math.max(96, innerHeight * 0.3);
+    let idx = -1;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].head.getBoundingClientRect().top <= line) idx = i; else break;
+    }
+    if (scrollY > 0 && innerHeight + scrollY >= document.documentElement.scrollHeight - 4) {
+      for (let i = items.length - 1; i > idx; i--) {
+        if (items[i].head.getBoundingClientRect().top < innerHeight) return i;
+      }
+    }
+    return idx;
+  };
+
+  // 折叠 / 展开、筛选、滚动高亮：
+  // 折叠模式（默认）显示第一层，以及当前位置和它各级上级的下一层子标题，其余分支收起；当前位置来自点击或滚动。
+  // 展开模式显示全部；筛选时显示全部匹配项
+  const bindTocTree = ({ nav, items }) => {
+    const panel = nav.querySelector('.hs-toc-panel');
+    const filter = nav.querySelector('.hs-toc-filter');
+    const empty = nav.querySelector('.hs-toc-empty');
+    const fold = nav.querySelector('.hs-toc-fold');
+    let expanded = false, current = -1, queued = false, pinned = -1;
+
+    const pathOf = i => {
+      const path = new Set();
+      for (; i >= 0; i = items[i].parent) path.add(i);
+      return path;
+    };
+    // 当前位置所属的第一层条目也挂上标记；返回面板里实际可见的那一项，供滚动定位
+    const markCurrent = () => {
+      items.forEach(it => it.a.classList.remove('is-within'));
+      if (current < 0) return null;
+      const it = items[current];
+      if (it.root !== current) items[it.root].a.classList.add('is-within');
+      return it.li.hidden ? items[it.root].a : it.a;
+    };
+    const keepVisible = a => {
+      if (!a || a.parentNode.hidden) return;
+      const box = panel.getBoundingClientRect(), r = a.getBoundingClientRect();
+      if (r.top < box.top + 56) panel.scrollTop += r.top - box.top - 56;
+      else if (r.bottom > box.bottom - 24) panel.scrollTop += r.bottom - box.bottom + 24;
+    };
+    const render = () => {
+      const q = filter.value.trim().toLowerCase();
+      const path = pathOf(current);
+      let shown = 0;
+      items.forEach(it => {
+        const visible = q ? it.a.textContent.toLowerCase().includes(q) : expanded || it.parent < 0 || path.has(it.parent);
+        it.li.hidden = !visible;
+        if (visible) shown++;
+      });
+      empty.hidden = shown > 0;
+      const label = expanded ? '折叠大纲' : '展开全部标题';
+      fold.dataset.icon = expanded ? 'fold' : 'unfold';
+      fold.setAttribute('aria-label', label);
+      fold.setAttribute('aria-expanded', String(expanded));
+      fold.title = label;
+      return markCurrent();
+    };
+    // 点击大纲后锁定所点条目，直到用户自己滚动，或该标题离开视口
+    const spy = () => {
+      queued = false;
+      if (pinned >= 0) {
+        const t = items[pinned].head.getBoundingClientRect().top;
+        if (t < -40 || t > innerHeight) pinned = -1;
+      }
+      const idx = pinned >= 0 ? pinned : locateHeading(items);
+      if (idx === current) return;
+      if (current >= 0) items[current].a.removeAttribute('aria-current');
+      current = idx;
+      if (idx >= 0) items[idx].a.setAttribute('aria-current', 'location');
+      keepVisible(render());
+    };
+    const unpin = () => { pinned = -1; };
+
+    fold.addEventListener('click', () => { expanded = !expanded; keepVisible(render()); });
+    filter.addEventListener('input', render);
+    nav.addEventListener('click', e => {
+      const idx = items.findIndex(x => x.a === e.target.closest('a'));
+      if (idx < 0) return;
+      pinned = idx;
+      // 点击时跳转尚未发生，等锚点跳转完成后再定位
+      setTimeout(spy);
+    });
+    addEventListener('wheel', unpin, { passive: true });
+    addEventListener('touchstart', unpin, { passive: true });
+    addEventListener('keydown', unpin);
+    addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(spy); } }, { passive: true });
+    render();
+    spy();
+  };
+
+  markIds();
+  const levels =(doc.dataset.tocLevels || '2,3').split(',').map(n => 'h' + n.trim()).join(',');
+  const heads = [...doc.querySelectorAll(levels)].filter(h => !h.closest('figure, details, .hs-no-toc'));
+  if (heads.length) {
+    const toc = createToc(heads);
+    bindTocDrawer(toc.nav);
+    bindTocTree(toc);
+  }
+
+  // ---------- 网页全屏：图表与表格共用 ----------
+  // 用 fixed 浮层铺满当前窗口（is-full），不调用浏览器全屏：视口不变，页面其余部分不重排，切换是瞬时的。
+  // 占位块撑住原位置，页面高度不变。不用 overflow: hidden 锁页面滚动：滚动条消失会改变视口宽度，引起整页重排；
+  // 改为退出时恢复进入前的滚动位置（全屏时在浮层空白处滚动会带动背后的页面）
+  const bindFullscreen = (box, onToggle) => {
+    const holder = document.createElement('div');
+    let y = 0;
+    const isFull = () => box.classList.contains('is-full');
+    const set = on => {
+      if (on === isFull()) return;
+      if (on) {
+        y = scrollY;
+        holder.style.cssText = `height: ${box.getBoundingClientRect().height}px; margin: ${getComputedStyle(box).margin}`;
+        box.before(holder);
+      } else {
+        holder.remove();
+      }
+      box.classList.toggle('is-full', on);
+      onToggle(on);
+      if (!on && scrollY !== y) scrollTo(0, y);
+    };
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') set(false); });
+    return () => set(!isFull());
+  };
+
+  // ---------- 尺寸手柄：拖动右下角改大小；宽度不超过所在内容栏，宽高不小于 MIN_W × MIN_H ----------
+  const MIN_W = 200, MIN_H = 120;
+  // 在 box 右下角放手柄；拖动时把相对按下点的位移交给 onMove，起止时切换 is-resizing
+  const addGrip = (box, title, onStart, onMove) => {
+    const grip = document.createElement('div');
+    grip.className = 'hs-resize';
+    grip.title = title;
+    box.append(grip);
+    grip.addEventListener('pointerdown', e => {
+      if (box.classList.contains('is-full') || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      grip.setPointerCapture(e.pointerId);
+      onStart();
+      box.classList.add('is-resizing');
+      const move = ev => onMove(ev.clientX - e.clientX, ev.clientY - e.clientY);
+      const end = () => {
+        grip.removeEventListener('pointermove', move);
+        box.classList.remove('is-resizing');
+      };
+      grip.addEventListener('pointermove', move);
+      grip.addEventListener('pointerup', end, { once: true });
+      grip.addEventListener('pointercancel', end, { once: true });
+    });
+    return grip;
+  };
+
+  // 图表视窗：宽高各自可调
+  const bindResize = box => {
+    let r, maxW;
+    addGrip(box, '拖动调整大小', () => {
+      r = box.getBoundingClientRect();
+      maxW = Math.max(MIN_W, box.parentElement.clientWidth);
+    }, (dx, dy) => {
+      box.style.width = clamp(r.width + dx, MIN_W, maxW) + 'px';
+      box.style.height = Math.max(MIN_H, r.height + dy) + 'px';
+    });
+  };
+
+  // 图片、视频：改的是元素本身的宽度，高度随比例变化；双击手柄恢复导出时算好的默认大小
+  const bindMediaResize = wrap => {
+    const el = wrap.querySelector(':scope > img, :scope > video');
+    if (!el) return;
+    let r, ratio, minW, maxW;
+    const grip = addGrip(wrap, '拖动等比缩放，双击恢复默认大小', () => {
+      r = el.getBoundingClientRect();
+      ratio = r.width / r.height || 1;
+      maxW = wrap.parentElement.clientWidth;
+      minW = Math.min(maxW, Math.max(MIN_W, MIN_H * ratio));
+    }, (dx, dy) => {
+      const d = Math.abs(dx) >= Math.abs(dy * ratio) ? dx : dy * ratio;
+      el.style.width = clamp(r.width + d, minW, maxW) + 'px';
+    });
+    grip.addEventListener('dblclick', () => { el.style.width = ''; });
+  };
+
+  // ---------- 图表：左/右键拖动，滚轮定点缩放，双指缩放，双击全屏 ----------
+  const bindZoomInput = (frame, view) => {
+    const points = new Map();
+    let pinch = null;
+    frame.addEventListener('pointerdown', e => {
+      if (e.target.closest('button')) return;
+      if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 2) return;
+      e.preventDefault();
+      frame.setPointerCapture(e.pointerId);
+      points.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      frame.classList.add('is-dragging');
+      if (points.size === 2) {
+        const [a, b] = [...points.values()];
+        pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, s: view.scale() };
+      }
+    });
+    frame.addEventListener('pointermove', e => {
+      const p = points.get(e.pointerId);
+      if (!p) return;
+      const dx = e.clientX - p.x, dy = e.clientY - p.y;
+      p.x = e.clientX;
+      p.y = e.clientY;
+      if (!pinch) { view.pan(dx, dy); return; }
+      // 双指：中点跟随手指平移，再以中点为锚按指距比例缩放
+      const [a, b] = [...points.values()];
+      const r = frame.getBoundingClientRect();
+      view.pan(dx / 2, dy / 2);
+      view.zoomAt((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, pinch.s * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d);
+    });
+    const release = e => {
+      points.delete(e.pointerId);
+      if (points.size < 2) pinch = null;
+      if (!points.size) frame.classList.remove('is-dragging');
+    };
+    frame.addEventListener('pointerup', release);
+    frame.addEventListener('pointercancel', release);
+    frame.addEventListener('contextmenu', e => e.preventDefault());
+    frame.addEventListener('dblclick', e => { if (!e.target.closest('button, .hs-resize')) view.toggleFull(); });
+    frame.addEventListener('wheel', e => {
+      e.preventDefault();
+      const r = frame.getBoundingClientRect();
+      const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? r.height : 1;
+      view.zoomAt(e.clientX - r.left, e.clientY - r.top, view.scale() * Math.exp(-e.deltaY * unit * (e.ctrlKey ? 0.01 : 0.0015)));
+    }, { passive: false });
+    const arrows = { ArrowLeft: [48, 0], ArrowRight: [-48, 0], ArrowUp: [0, 48], ArrowDown: [0, -48] };
+    frame.addEventListener('keydown', e => {
+      const cx = frame.clientWidth / 2, cy = frame.clientHeight / 2;
+      if (e.key === '+' || e.key === '=') view.zoomAt(cx, cy, view.scale() * 1.25);
+      else if (e.key === '-') view.zoomAt(cx, cy, view.scale() / 1.25);
+      else if (e.key === '0') view.reset();
+      else if (e.key === 'f' || e.key === 'F') view.toggleFull();
+      else if (arrows[e.key]) view.pan(...arrows[e.key]);
+      else return;
+      e.preventDefault();
+    });
+  };
+
+  const HINT = '拖动平移 · 滚轮缩放 · 双击全屏';
+  const HINT_FULL = '拖动平移 · 滚轮缩放 · 双击或 Esc 退出全屏';
+  const makeChrome = frame => {
+    const bar = document.createElement('div');
+    bar.className = 'hs-zoom-bar';
+    bar.innerHTML = '<span class="hs-zoom-pct"></span><button type="button" data-icon="reset">复位</button><button type="button" data-icon="expand">全屏</button>';
+    const hint = document.createElement('div');
+    hint.className = 'hs-zoom-hint';
+    hint.textContent = HINT;
+    frame.append(bar, hint);
+    const [pct, resetBtn, fullBtn] = bar.children;
+    return { pct, resetBtn, fullBtn, hint };
+  };
+
+  const initZoom = frame => {
+    if (frame.dataset.hsReady) return;
+    const el = frame.querySelector(':scope > img, :scope > svg, :scope > canvas');
+    if (!el) return;
+    frame.dataset.hsReady = '1';
+    if (!frame.dataset.plate) frame.dataset.plate = el.tagName === 'IMG' ? 'light' : 'none';
+    let natW = 0, natH = 0, s = 1, x = 0, y = 0, fit = 1, touched = false, ui;
+
+    const measure = () => {
+      if (el.tagName === 'IMG') { natW = el.naturalWidth; natH = el.naturalHeight; }
+      else if (el.tagName === 'CANVAS') { natW = +el.getAttribute('width') || el.width; natH = +el.getAttribute('height') || el.height; }
+      else {
+        const vb = el.viewBox.baseVal;
+        natW = (vb && vb.width) || parseFloat(el.getAttribute('width')) || 600;
+        natH = (vb && vb.height) || parseFloat(el.getAttribute('height')) || 400;
+      }
+      return natW > 0 && natH > 0;
+    };
+    const render = () => {
+      el.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
+      ui.pct.textContent = Math.round(s * 100) + '%';
+    };
+    const isFull = () => frame.classList.contains('is-full');
+    const reset = () => {
+      const w = frame.clientWidth;
+      if (isFull()) {
+        fit = Math.min((w - 48) / natW, (frame.clientHeight - 48) / natH, 2);
+      } else {
+        fit = Math.min(1, w / natW);
+        // 用户拖过外框高度时沿用该高度，否则按图高自动适应
+        let h = frame.clientHeight;
+        if (!frame.style.height) {
+          h = clamp(natH * fit, 160, innerHeight * 0.7);
+          frame.style.setProperty('--hs-zoom-h', h + 'px');
+        }
+        fit = Math.min(fit, h / natH);
+      }
+      s = fit;
+      x = (w - natW * s) / 2;
+      y = (frame.clientHeight - natH * s) / 2;
+      touched = false;
+      render();
+    };
+    const zoomAt = (px, py, next) => {
+      next = clamp(next, Math.min(fit, 1) * 0.5, 8);
+      x = px - (px - x) * next / s;
+      y = py - (py - y) * next / s;
+      s = next;
+      touched = true;
+      render();
+    };
+    const pan = (dx, dy) => {
+      x += dx;
+      y += dy;
+      touched = true;
+      render();
+    };
+    const start = () => {
+      if (!measure()) return;
+      el.style.width = natW + 'px';
+      el.style.height = natH + 'px';
+      el.style.maxWidth = 'none';
+      el.setAttribute('draggable', 'false');
+      if (!frame.hasAttribute('tabindex')) frame.tabIndex = 0;
+      if (!frame.hasAttribute('aria-label')) frame.setAttribute('aria-label', '可缩放图表：拖动平移，滚轮缩放，双击全屏');
+      ui = makeChrome(frame);
+      const toggleFull = bindFullscreen(frame, on => {
+        ui.fullBtn.textContent = on ? '退出全屏' : '全屏';
+        ui.fullBtn.dataset.icon = on ? 'shrink' : 'expand';
+        ui.hint.textContent = on ? HINT_FULL : HINT;
+        reset();
+      });
+      ui.resetBtn.addEventListener('click', reset);
+      ui.fullBtn.addEventListener('click', toggleFull);
+      bindResize(frame);
+
+      // 尺寸变化（含拖动外框）后在下一个任务里重新适应，避免在 ResizeObserver 回调内改尺寸
+      let last = '', pending = 0;
+      new ResizeObserver(() => {
+        const key = frame.clientWidth + 'x' + frame.clientHeight;
+        if (key === last) return;
+        last = key;
+        if (!touched && !pending) pending = setTimeout(() => { pending = 0; reset(); });
+      }).observe(frame);
+      reset();
+      bindZoomInput(frame, { scale: () => s, pan, zoomAt, reset, toggleFull });
+    };
+
+    if (el.tagName === 'IMG' && !el.complete) el.addEventListener('load', start, { once: true });
+    else start();
+  };
+
+  const wrap = el => {
+    const frame = document.createElement('div');
+    frame.className = 'hs-zoom';
+    el.replaceWith(frame);
+    frame.append(el);
+    return frame;
+  };
+  doc.querySelectorAll('figure > img, figure > svg, figure > canvas').forEach(wrap);
+  doc.querySelectorAll('.hs-zoom').forEach(initZoom);
+  doc.querySelectorAll('.hs-media').forEach(bindMediaResize);
+
+  // 嵌入的视频：base64 放在不执行的 script 里，视频接近视口时才转成 Blob 地址，打开页面时不一次性解出全部视频
+  const loadVideo = async video => {
+    const data = document.getElementById(video.dataset.hsSrc);
+    if (!data) return;
+    const blob = await (await fetch(`data:${data.dataset.type};base64,${data.textContent}`)).blob();
+    video.src = URL.createObjectURL(blob);
+  };
+  const videoObserver = new IntersectionObserver(entries => entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    videoObserver.unobserve(e.target);
+    loadVideo(e.target);
+  }), { rootMargin: '100% 0px' });
+  doc.querySelectorAll('video[data-hs-src]').forEach(v => videoObserver.observe(v));
+  // Mermaid 由宿主异步渲染，SVG 出现后再接管
+  doc.querySelectorAll('.mermaid').forEach(m => {
+    const adopt = () => {
+      const svg = m.querySelector(':scope > svg');
+      if (svg) initZoom(wrap(svg));
+      return !!svg;
+    };
+    if (!adopt()) {
+      const mo = new MutationObserver(() => { if (adopt()) mo.disconnect(); });
+      mo.observe(m, { childList: true });
+    }
+  });
+
+  // ---------- 表格：右上角按钮全屏；按钮放在滚动容器外，不随表格横向滚动 ----------
+  doc.querySelectorAll('.hs-table').forEach(t => {
+    const box = document.createElement('div');
+    box.className = 'hs-table-box';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'hs-table-full';
+    t.replaceWith(box);
+    box.append(t, btn);
+    const label = on => {
+      btn.dataset.icon = on ? 'shrink' : 'expand';
+      btn.title = on ? '退出全屏（Esc）' : '全屏查看表格';
+      btn.setAttribute('aria-label', btn.title);
+    };
+    label(false);
+    btn.addEventListener('click', bindFullscreen(box, label));
+  });
+})();
+</script>
+</body>
+</html>

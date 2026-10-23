@@ -1,0 +1,16 @@
+# 构建产物
+/build/
+/build-*/
+/out/
+/cmake-build-*/
+# IDE
+/.idea/
+/.vs/
+/.vscode/
+*.user
+# 临时
+*.tmp
+*.log
+Thumbs.db
+# 第三方下载缓存
+/third_party/_downloads/
