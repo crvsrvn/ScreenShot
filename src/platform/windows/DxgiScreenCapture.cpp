@@ -61,7 +61,12 @@ float screenSdrWhiteNits(const QString& deviceName)
 
 } // namespace
 
-DxgiScreenCapture::DxgiScreenCapture() = default;
+DxgiScreenCapture::DxgiScreenCapture()
+{
+    m_idleRelease.setSingleShot(true);
+    m_idleRelease.setInterval(3000);
+    QObject::connect(&m_idleRelease, &QTimer::timeout, [this] { reset(); });
+}
 DxgiScreenCapture::~DxgiScreenCapture() = default;
 
 QList<ScreenInfo> DxgiScreenCapture::screens()
@@ -217,6 +222,7 @@ std::optional<ScreenSnapshot> DxgiScreenCapture::capture(const ScreenInfo& scree
         m_outputs.remove(screen.id);
         return std::nullopt;
     }
+    m_idleRelease.start();
     return ScreenSnapshot{screen, std::move(image), monotonicNs()};
 }
 

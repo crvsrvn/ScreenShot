@@ -4,6 +4,7 @@
 #include "core/ports/IScreenCapture.h"
 
 #include <QHash>
+#include <QTimer>
 #include <memory>
 
 namespace ss::win {
@@ -31,6 +32,7 @@ private:
     bool acquire(Output& out, QImage& image);
 
     QHash<QString, std::shared_ptr<Output>> m_outputs;
+    QTimer m_idleRelease; // 空闲一段时间后释放复制会话：桌面复制接口数量有限，常驻会挡住同机的另一个实例或录屏软件
     fx::HdrStrategy m_hdrStrategy = fx::HdrStrategy::PreserveHighlights;
 };
 

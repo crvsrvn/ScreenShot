@@ -521,7 +521,7 @@ void App::finishCommand(int requestId, const QString& text)
 QString App::runCommand(const QStringList& command, int requestId)
 {
     const QString name = command.value(0);
-    const bool wait = command.contains(QStringLiteral("--wait"));
+    bool wait = command.contains(QStringLiteral("--wait"));
     QString result = QStringLiteral("ok");
     if (name == QLatin1String("snip")) {
         // snip [full|last|active-window|active-screen|cursor-screen|custom|whiteboard|x,y,w,h]
@@ -573,6 +573,12 @@ QString App::runCommand(const QStringList& command, int requestId)
             const QStringList parts = arg.split(QLatin1Char(','));
             if (parts.size() == 4)
                 captureRegion(QRect(parts[0].toInt(), parts[1].toInt(), parts[2].toInt(), parts[3].toInt()), delay, edit);
+        }
+        if (wait && delay == 0 && !m_session->isActive()) {
+            // 截图没有开始（已有截图在进行、区域为空、启动失败）：立即应答，不让调用方等到超时
+            m_pendingReply = 0;
+            result = QStringLiteral("error: capture did not start");
+            wait = false;
         }
         if (wait)
             return result; // 稍后应答

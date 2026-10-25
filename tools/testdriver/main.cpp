@@ -14,6 +14,8 @@
 #include <QThread>
 #include <cstdio>
 
+#include <windows.h>
+
 using namespace ss::driver;
 
 namespace {
@@ -44,6 +46,8 @@ int checkImports(const QString& binary)
 
 int main(int argc, char* argv[])
 {
+    // 每显示器 DPI 感知（NFR-07）：驱动的坐标与被测程序一样是物理像素
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     QCoreApplication app(argc, argv);
     QCommandLineParser parser;
     parser.addPositionalArgument(QStringLiteral("command"), QStringLiteral("run-all | check-imports"));

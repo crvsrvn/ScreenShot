@@ -17,6 +17,7 @@
 #include <QJsonDocument>
 #include <QProcess>
 #include <QTemporaryDir>
+#include <QScopeGuard>
 #include <QThread>
 #include <algorithm>
 #include <cstdio>
@@ -53,6 +54,26 @@ void pressKey(WORD vk)
     in[1].ki.wVk = vk;
     in[1].ki.dwFlags = KEYEVENTF_KEYUP;
     SendInput(2, in, sizeof(INPUT));
+}
+
+// 组合键：按下全部再按相反顺序松开
+void pressCombo(std::initializer_list<WORD> keys)
+{
+    QList<INPUT> in;
+    for (WORD vk : keys) {
+        INPUT i{};
+        i.type = INPUT_KEYBOARD;
+        i.ki.wVk = vk;
+        in.append(i);
+    }
+    for (auto it = std::rbegin(keys); it != std::rend(keys); ++it) {
+        INPUT i{};
+        i.type = INPUT_KEYBOARD;
+        i.ki.wVk = *it;
+        i.ki.dwFlags = KEYEVENTF_KEYUP;
+        in.append(i);
+    }
+    SendInput(static_cast<UINT>(in.size()), in.data(), sizeof(INPUT));
 }
 
 // 在物理坐标上模拟鼠标拖拽
@@ -278,14 +299,23 @@ ScenarioResult Runner::r02CaptureLatency()
 
 ScenarioResult Runner::hotkeyEndToEnd()
 {
-    ScenarioResult r{QStringLiteral("HOTKEY"), QStringLiteral("真实热键 F1：SendInput 到首次绘制")};
+    ScenarioResult r{QStringLiteral("HOTKEY"), QStringLiteral("真实热键：SendInput 到首次绘制")};
     if (!desktopUnlocked())
         return skipped(r.id, r.title, QStringLiteral("锁屏中，无法模拟按键"));
+    // 用一个不太可能被占用的组合键（默认 F1 常被另一个正在运行的 ScreenShot 占用），结束后恢复
+    const QString original = m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("hotkey.capture")}}).value(QStringLiteral("value")).toString();
+    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("hotkey.capture")}, {QStringLiteral("value"), QStringLiteral("Ctrl+Alt+Shift+F9")}});
+    auto restore = qScopeGuard([&] { m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("hotkey.capture")}, {QStringLiteral("value"), original}}); });
+    QThread::msleep(100);
+    if (!m_client.call(QStringLiteral("state")).value(QStringLiteral("hotkeys")).toObject().value(QStringLiteral("1")).toBool()) {
+        r.summary = QStringLiteral("截图热键 Ctrl+Alt+Shift+F9 注册失败（被其他程序占用）");
+        return r;
+    }
     const int iterations = m_options.quick ? 20 : 50;
     QList<double> totals;
     for (int i = 0; i < iterations; ++i) {
         const qint64 t0 = monotonicNs();
-        pressKey(VK_F1);
+        pressCombo({VK_CONTROL, VK_MENU, VK_SHIFT, VK_F9});
         QJsonObject t;
         bool fresh = false;
         for (int wait = 0; wait < 200; ++wait) {
