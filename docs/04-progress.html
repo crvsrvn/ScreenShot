@@ -485,7 +485,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <body>
 <main class="hs-doc" data-toc-levels="2,3">
 <h1 id="top">ScreenShot 实现进度与交付报告（M0 ~ M8）</h1>
-<p class="hs-meta">v1.1 · 2026-10-24 · 输入：<a href="01-requirements.md">需求</a>、<a href="02-architecture.md">架构</a>、<a href="03-m0-report.md">M0 报告</a></p>
+<p class="hs-meta">v1.2 · 2026-10-25 · 输入：<a href="01-requirements.md">需求</a>、<a href="02-architecture.md">架构</a>、<a href="03-m0-report.md">M0 报告</a></p>
 <h2 id="summary"><span class="hs-num">1.</span>结论<a class="hs-anchor" href="#summary" aria-label="本节链接">#</a></h2>
 <p><mark>八个里程碑全部实现并逐里程碑本地提交；需求文档 v0.5 删除了公式贴图与公式识别后，现行 244 条需求全部进入交付范围且每条都有自动用例（覆盖矩阵无空项）。Debug 与 Release 两套自动测试全部通过，程序零网络导入。需要真实桌面的端到端场景与 macOS 用例已写好，等解锁桌面 / Mac 设备后执行。</mark></p>
 <div class="hs-table lead"><table>
@@ -585,8 +585,8 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td>端到端 <code>e2e_m0</code></td>
-<td>测试驱动启动真实程序；需要真实输入的场景在锁屏时跳过</td>
-<td>20 个场景：15 通过、5 因锁屏跳过（<code>R-02</code> <code>R-03</code> <code>HOTKEY</code> <code>R-09</code> <code>M4-SCROLL</code>），<code>AC-12</code> 首轮因驱动进程未声明 DPI 感知误判尺寸，改为按被测程序的显示器布局比对后通过；启动到接口可用 250 ms（<code>NFR-03</code>），空闲私有内存 8.8 MB，50 张 1080p 贴图拖动 ≥ 220 次/秒 <span class="hs-tag" data-kind="ok">通过</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+<td>测试驱动启动真实程序；需要真实输入的场景在没有可用桌面时跳过</td>
+<td>开发会话里两次运行：锁屏时 20 个场景 15 通过、5 跳过；桌面解锁后再跑，发现开发会话（远程桌面会话 1）已断开而人坐在控制台会话 2 前，驱动看不到真实桌面：11 通过、5 跳过、4 失败（<code>M1-FLOW</code> <code>M1-INSTANCE</code> <code>M2-ANNOTATE</code> <code>AC-12</code> 均因断开会话里无法抓屏）。<mark>真实桌面上的结果要在控制台会话里运行 <code>scripts\e2e.cmd</code> 得到，本报告尚未包含</mark>。启动到接口可用 124 ~ 250 ms（<code>NFR-03</code>），空闲私有内存 10 MB，50 张 1080p 贴图拖动 ≥ 113 次/秒 <span class="hs-mark" data-kind="warn" title="需要解锁桌面或特定设备后再测">待测</span></td>
 </tr>
 <tr>
 <td>零网络</td>

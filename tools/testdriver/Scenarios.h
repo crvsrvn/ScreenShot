@@ -40,6 +40,8 @@ public:
 
     // 交互桌面是否可用（未锁屏）。锁屏时模拟输入到不了程序窗口，相关场景只能跳过。
     static bool desktopUnlocked();
+    // 桌面状态说明（可用 / 锁屏 / 会话已断开），写进日志帮助判断为什么场景被跳过
+    static QString desktopStatus();
 
 private:
     ScenarioResult r01Toolchain();

@@ -116,6 +116,22 @@ void Runner::pollNetwork()
     }
 }
 
+QString Runner::desktopStatus()
+{
+    // 会话断开（例如本进程跑在已断开的远程桌面会话里，而人坐在控制台会话前）：没有可用桌面
+    WTS_CONNECTSTATE_CLASS* state = nullptr;
+    DWORD bytes = 0;
+    QString status;
+    if (WTSQuerySessionInformationW(WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSConnectState, reinterpret_cast<LPWSTR*>(&state), &bytes) && state) {
+        if (*state == WTSDisconnected)
+            status = QStringLiteral("会话已断开：本进程不在当前使用的桌面会话里，请在控制台会话中运行 scripts\e2e.cmd");
+        WTSFreeMemory(state);
+    }
+    if (status.isEmpty())
+        status = desktopUnlocked() ? QStringLiteral("可用") : QStringLiteral("锁屏中，真实输入场景将跳过");
+    return status;
+}
+
 bool Runner::desktopUnlocked()
 {
     // 会话锁定状态（Windows 10 的锁屏画在 Default 桌面上，只看输入桌面名会误判）
@@ -163,7 +179,7 @@ QList<ScenarioResult> Runner::runAll()
                           QStringLiteral("M1-FLOW"), QStringLiteral("M1-INSTANCE"), QStringLiteral("M2-ANNOTATE"), QStringLiteral("M3-PINS"),
                           QStringLiteral("M4-SCROLL"), QStringLiteral("NFR-03"), QStringLiteral("AC-12")};
     QList<ScenarioResult> results;
-    logLine(QStringLiteral("交互桌面：%1").arg(desktopUnlocked() ? QStringLiteral("可用") : QStringLiteral("锁屏中，真实输入场景将跳过")));
+    logLine(QStringLiteral("交互桌面：%1").arg(desktopStatus()));
     for (const auto& id : ids) {
         if (!m_options.only.isEmpty() && m_options.only != id)
             continue;
