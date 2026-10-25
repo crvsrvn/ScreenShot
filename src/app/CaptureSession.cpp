@@ -1443,6 +1443,11 @@ QString CaptureSession::modeName() const
     return tr("Capture");
 }
 
+QString CaptureSession::modeIconName() const
+{
+    return m_mode == Mode::Scroll ? QStringLiteral("modeScroll") : m_mode == Mode::Record ? QStringLiteral("modeRecord") : QStringLiteral("modeStatic");
+}
+
 void CaptureSession::cycleMode()
 {
     if (!isActive() || m_state == State::Annotating)

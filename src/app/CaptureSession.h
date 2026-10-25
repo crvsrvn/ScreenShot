@@ -119,6 +119,7 @@ public:
     QList<CodeResult> detectedCodes() const { return m_codes; }
     void detectCodes() override;
     QString modeName() const override;
+    QString modeIconName() const override;
     void cycleMode() override;
     bool hasCodes() const override { return !m_codes.isEmpty(); }
 

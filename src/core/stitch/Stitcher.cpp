@@ -493,6 +493,17 @@ Stitcher::FrameResult Stitcher::addFrame(const QImage& frameIn)
 
     // 固定区：前几帧按两帧相同行数识别，之后锁定（取稳定值）
     const FixedRegions detected = detectFixedRegions(m_prevHashes, hashes);
+    const int h = frame.height();
+    if (h - detected.top - detected.bottom < m_options.minOverlapRows) {
+        // 两帧几乎相同（悬停高亮、光标闪烁、时钟跳动）：没有滚动，不算错误，也不能把整帧当成固定区
+        ++m_zeroShiftRun;
+        result.fixed = m_fixed;
+        result.shift.ok = true;
+        result.shift.shift = 0;
+        result.shift.confidence = 1.0;
+        result.reachedEnd = m_zeroShiftRun >= m_endThreshold;
+        return result;
+    }
     if (!m_fixedLocked) {
         if (detected.top == m_fixed.top && detected.bottom == m_fixed.bottom && m_frames > 2)
             m_fixedLocked = true;
@@ -512,7 +523,6 @@ Stitcher::FrameResult Stitcher::addFrame(const QImage& frameIn)
     }
     m_zeroShiftRun = 0;
 
-    const int h = frame.height();
     const int top = m_fixed.top, bottom = m_fixed.bottom;
     const int scrollRows = h - top - bottom;
     if (scrollRows < m_options.minOverlapRows) {

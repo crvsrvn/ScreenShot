@@ -35,6 +35,8 @@ public:
     virtual void detectCodes() {}
     // 模式轮换（CAP-07）：截图会话提供
     virtual QString modeName() const { return QString(); }
+    // 模式按钮的图标名（modeStatic / modeScroll / modeRecord）
+    virtual QString modeIconName() const { return QStringLiteral("modeStatic"); }
     virtual void cycleMode() {}
     virtual bool hasCodes() const { return false; }
 };

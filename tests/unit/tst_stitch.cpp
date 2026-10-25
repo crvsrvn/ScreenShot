@@ -66,7 +66,32 @@ private slots:
     void longImageChunks();
     void randomizedScrollRun();
     void perFrameBudget();
+    void tinyChangeIsNotScroll();
 };
+
+void TestStitch::tinyChangeIsNotScroll()
+{
+    // 真实桌面上帧与帧之间常有几行变化（悬停高亮、光标、时钟）：不是滚动，不能报错，也不能把整帧当成固定区而拒绝后面的真实滚动
+    const QImage doc = makeDocument(300, 2000, 7);
+    Stitcher s;
+    s.begin(frameAt(doc, 0, 400, 30, 20));
+    QImage blink = frameAt(doc, 0, 400, 30, 20);
+    QPainter(&blink).fillRect(100, 200, 40, 3, Qt::red);
+    auto r = s.addFrame(blink);
+    QVERIFY2(r.shift.ok, qPrintable(r.shift.reason));
+    QCOMPARE(r.shift.shift, 0);
+    QVERIFY(!r.reachedEnd);
+    r = s.addFrame(blink);
+    QVERIFY(r.shift.ok);
+    QCOMPARE(s.image().height(), 450);
+    // 之后的真实滚动照常拼接
+    r = s.addFrame(frameAt(doc, 120, 400, 30, 20));
+    QVERIFY2(r.shift.ok, qPrintable(r.shift.reason));
+    QCOMPARE(r.shift.shift, 120);
+    QCOMPARE(r.fixed.top, 30);
+    QCOMPARE(r.fixed.bottom, 20);
+    QCOMPARE(s.image().height(), 570);
+}
 
 void TestStitch::rowHashesAndFixedRegions()
 {

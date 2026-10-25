@@ -14,6 +14,8 @@
 #include <QClipboard>
 #include <QKeyEvent>
 #include <QInputMethodEvent>
+#include <QTranslator>
+#include <QMenu>
 #include <QPlainTextEdit>
 #include <QSignalSpy>
 #include <QTest>
@@ -91,6 +93,7 @@ private slots:
     void toolbarButtonsDriveEditor();
     void undoRedoThirtyOperations();
     void imeTextRotateExport();
+    void toolbarIconsAndTranslations();
 };
 
 void TestAnnotationEditor::undoRedoThirtyOperations()
@@ -158,6 +161,45 @@ void TestAnnotationEditor::imeTextRotateExport()
     const QImage exported = f.session->finalImage();
     QCOMPARE(exported.size(), shown.size());
     QCOMPARE(exported.convertToFormat(QImage::Format_ARGB32), shown.convertToFormat(QImage::Format_ARGB32));
+}
+
+void TestAnnotationEditor::toolbarIconsAndTranslations()
+{
+    // ANN-14 / GEN-13：工具栏按钮都是图标（名称进提示）；装上中文翻译后，每个按钮的提示都是中文——
+    // 工具表若落到错误的翻译上下文，这里会出现英文
+    QTranslator zh;
+    const QString dir = QString::fromLocal8Bit(qgetenv("SS_TRANSLATIONS_DIR"));
+    QVERIFY2(zh.load(QStringLiteral("screenshot_zh_CN"), dir), qPrintable(dir));
+    QVERIFY(QCoreApplication::installTranslator(&zh));
+    Fixture f;
+    f.startWith(Tool::Rect);
+    CaptureToolbar* tb = f.session->toolbar();
+    QVERIFY(tb);
+    auto hasCjk = [](const QString& s) {
+        for (const QChar c : s)
+            if (c.unicode() >= 0x4E00 && c.unicode() <= 0x9FFF)
+                return true;
+        return false;
+    };
+    int checked = 0;
+    for (QToolButton* b : tb->findChildren<QToolButton*>()) {
+        if (b->icon().isNull())
+            continue;
+        QVERIFY2(b->text().isEmpty(), qPrintable(b->objectName()));
+        QVERIFY2(hasCjk(b->toolTip()), qPrintable(b->objectName() + QStringLiteral(": ") + b->toolTip()));
+        ++checked;
+    }
+    QVERIFY(checked >= 20);
+    for (const char* name : {"rect", "ellipse", "line", "arrow", "pencil", "highlighter", "mosaic", "blur", "text", "eraser", "step", "magnifier", "undo", "redo", "copy", "save", "cancel"}) {
+        QToolButton* b = tb->button(QString::fromLatin1(name));
+        QVERIFY2(b && !b->icon().isNull(), name);
+        QVERIFY2(hasCjk(b->toolTip()), name);
+    }
+    // “更多”菜单里的工具名也是中文
+    QMenu* more = tb->button(QStringLiteral("more"))->menu();
+    for (QAction* a : more->actions())
+        QVERIFY2(hasCjk(a->text()), qPrintable(a->text()));
+    QCoreApplication::removeTranslator(&zh);
 }
 
 void TestAnnotationEditor::drawRectEntersAnnotatingAndExports()

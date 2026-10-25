@@ -839,9 +839,9 @@ ScenarioResult Runner::cliWait()
     bool sizeOk = false;
     for (const QJsonValue& v : m_client.call(QStringLiteral("screens")).value(QStringLiteral("screens")).toArray()) {
         const QJsonObject o = v.toObject();
-        const QRect r(o.value(QStringLiteral("x")).toInt(), o.value(QStringLiteral("y")).toInt(), o.value(QStringLiteral("w")).toInt(), o.value(QStringLiteral("h")).toInt());
-        desktop |= r;
-        sizeOk = sizeOk || img.size() == r.size(); // 全屏 = 当前显示器或全部显示器（按设置）
+        const QRect screenRect(o.value(QStringLiteral("x")).toInt(), o.value(QStringLiteral("y")).toInt(), o.value(QStringLiteral("w")).toInt(), o.value(QStringLiteral("h")).toInt());
+        desktop |= screenRect;
+        sizeOk = sizeOk || img.size() == screenRect.size(); // 全屏 = 当前显示器或全部显示器（按设置）
     }
     sizeOk = !img.isNull() && (sizeOk || img.size() == desktop.size());
     r.data = QJsonObject{{QStringLiteral("exited"), exited}, {QStringLiteral("exitCode"), second.exitCode()}, {QStringLiteral("files"), files.size()},

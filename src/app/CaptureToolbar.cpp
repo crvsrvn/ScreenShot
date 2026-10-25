@@ -1,8 +1,11 @@
 #include "app/CaptureToolbar.h"
 
+#include "app/ToolbarIcons.h"
+
 #include "core/config/Settings.h"
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QColorDialog>
 #include <QCursor>
 #include <QEvent>
@@ -36,23 +39,26 @@ struct ToolDef {
 };
 
 const ToolDef kTools[] = {
-    {AnnotationEditor::Tool::Rect, "rect", QT_TR_NOOP("Rect"), QT_TR_NOOP("Rectangle (Ctrl+1)")},
-    {AnnotationEditor::Tool::Ellipse, "ellipse", QT_TR_NOOP("Ellipse"), QT_TR_NOOP("Ellipse (Ctrl+2)")},
-    {AnnotationEditor::Tool::Line, "line", QT_TR_NOOP("Line"), QT_TR_NOOP("Line / polyline (Ctrl+3); Tab switches to arrow")},
-    {AnnotationEditor::Tool::Arrow, "arrow", QT_TR_NOOP("Arrow"), QT_TR_NOOP("Arrow (Ctrl+4)")},
-    {AnnotationEditor::Tool::Pencil, "pencil", QT_TR_NOOP("Pencil"), QT_TR_NOOP("Pencil (B); Shift for a straight line")},
-    {AnnotationEditor::Tool::Highlighter, "highlighter", QT_TR_NOOP("Marker"), QT_TR_NOOP("Highlighter (Ctrl+5)")},
-    {AnnotationEditor::Tool::Mosaic, "mosaic", QT_TR_NOOP("Mosaic"), QT_TR_NOOP("Mosaic (Ctrl+6)")},
-    {AnnotationEditor::Tool::Blur, "blur", QT_TR_NOOP("Blur"), QT_TR_NOOP("Gaussian blur (Ctrl+7)")},
-    {AnnotationEditor::Tool::Text, "text", QT_TR_NOOP("Text"), QT_TR_NOOP("Text (T); right-click to finish")},
-    {AnnotationEditor::Tool::Eraser, "eraser", QT_TR_NOOP("Eraser"), QT_TR_NOOP("Eraser (Ctrl+8): erases annotations only")},
-    {AnnotationEditor::Tool::Step, "step", QT_TR_NOOP("Step"), QT_TR_NOOP("Step number (N): click to add, drag to add a pointer, double-click to add a note")},
-    {AnnotationEditor::Tool::Magnifier, "magnifier", QT_TR_NOOP("Magnify"), QT_TR_NOOP("Magnifier (M): drag the area to enlarge")},
-    {AnnotationEditor::Tool::Spotlight, "spotlight", QT_TR_NOOP("Spotlight"), QT_TR_NOOP("Spotlight: darken everything outside the area")},
-    {AnnotationEditor::Tool::SmartErase, "smartErase", QT_TR_NOOP("Smart erase"), QT_TR_NOOP("Smart erase: fill the area from its surroundings")},
+    {AnnotationEditor::Tool::Rect, "rect", QT_TRANSLATE_NOOP("CaptureToolbar", "Rect"), QT_TRANSLATE_NOOP("CaptureToolbar", "Rectangle (Ctrl+1)")},
+    {AnnotationEditor::Tool::Ellipse, "ellipse", QT_TRANSLATE_NOOP("CaptureToolbar", "Ellipse"), QT_TRANSLATE_NOOP("CaptureToolbar", "Ellipse (Ctrl+2)")},
+    {AnnotationEditor::Tool::Line, "line", QT_TRANSLATE_NOOP("CaptureToolbar", "Line"), QT_TRANSLATE_NOOP("CaptureToolbar", "Line / polyline (Ctrl+3); Tab switches to arrow")},
+    {AnnotationEditor::Tool::Arrow, "arrow", QT_TRANSLATE_NOOP("CaptureToolbar", "Arrow"), QT_TRANSLATE_NOOP("CaptureToolbar", "Arrow (Ctrl+4)")},
+    {AnnotationEditor::Tool::Pencil, "pencil", QT_TRANSLATE_NOOP("CaptureToolbar", "Pencil"), QT_TRANSLATE_NOOP("CaptureToolbar", "Pencil (B); Shift for a straight line")},
+    {AnnotationEditor::Tool::Highlighter, "highlighter", QT_TRANSLATE_NOOP("CaptureToolbar", "Marker"), QT_TRANSLATE_NOOP("CaptureToolbar", "Highlighter (Ctrl+5)")},
+    {AnnotationEditor::Tool::Mosaic, "mosaic", QT_TRANSLATE_NOOP("CaptureToolbar", "Mosaic"), QT_TRANSLATE_NOOP("CaptureToolbar", "Mosaic (Ctrl+6)")},
+    {AnnotationEditor::Tool::Blur, "blur", QT_TRANSLATE_NOOP("CaptureToolbar", "Blur"), QT_TRANSLATE_NOOP("CaptureToolbar", "Gaussian blur (Ctrl+7)")},
+    {AnnotationEditor::Tool::Text, "text", QT_TRANSLATE_NOOP("CaptureToolbar", "Text"), QT_TRANSLATE_NOOP("CaptureToolbar", "Text (T); right-click to finish")},
+    {AnnotationEditor::Tool::Eraser, "eraser", QT_TRANSLATE_NOOP("CaptureToolbar", "Eraser"), QT_TRANSLATE_NOOP("CaptureToolbar", "Eraser (Ctrl+8): erases annotations only")},
+    {AnnotationEditor::Tool::Step, "step", QT_TRANSLATE_NOOP("CaptureToolbar", "Step"), QT_TRANSLATE_NOOP("CaptureToolbar", "Step number (N): click to add, drag to add a pointer, double-click to add a note")},
+    {AnnotationEditor::Tool::Magnifier, "magnifier", QT_TRANSLATE_NOOP("CaptureToolbar", "Magnify"), QT_TRANSLATE_NOOP("CaptureToolbar", "Magnifier (M): drag the area to enlarge")},
+    {AnnotationEditor::Tool::Spotlight, "spotlight", QT_TRANSLATE_NOOP("CaptureToolbar", "Spotlight"), QT_TRANSLATE_NOOP("CaptureToolbar", "Spotlight: darken everything outside the area")},
+    {AnnotationEditor::Tool::SmartErase, "smartErase", QT_TRANSLATE_NOOP("CaptureToolbar", "Smart erase"), QT_TRANSLATE_NOOP("CaptureToolbar", "Smart erase: fill the area from its surroundings")},
 };
 
 const char* const kHeadNames[] = {"none", "triangle", "open", "dot", "bar"};
+
+// 工具表里的文案按声明时的上下文查翻译
+QString trTool(const char* source) { return QCoreApplication::translate("CaptureToolbar", source); }
 
 } // namespace
 
@@ -80,7 +86,7 @@ void CaptureToolbar::rebuildTools()
         if (ordered.contains(&d))
             continue;
         const AnnotationEditor::Tool tool = d.tool;
-        moreMenu->addAction(tr(d.text), this, [this, tool] { m_target->setTool(tool); });
+        moreMenu->addAction(toolbarIcon(QString::fromLatin1(d.name)), trTool(d.text), this, [this, tool] { m_target->setTool(tool); });
     }
     m_moreButton->setVisible(!moreMenu->isEmpty());
     m_recentButton->setVisible(false);
@@ -131,7 +137,7 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
     layout->addWidget(m_tools);
     // 自定义工具栏（ANN-14）：常用区按设置顺序；其余折叠进“更多”；最近从折叠区用过的工具有一个浮动按钮
     for (const auto& d : kTools) {
-        QToolButton* b = addButton(m_tools, QString::fromLatin1(d.name), tr(d.text), tr(d.tip), true);
+        QToolButton* b = addButton(m_tools, QString::fromLatin1(d.name), trTool(d.text), trTool(d.tip), true);
         m_toolButtons.insert(QString::fromLatin1(d.name), b);
         const AnnotationEditor::Tool tool = d.tool;
         connect(b, &QToolButton::clicked, this, [this, tool, b](bool checked) {
@@ -232,8 +238,15 @@ QToolButton* CaptureToolbar::addButton(QWidget* row, const QString& name, const 
 {
     auto* b = new QToolButton(row);
     b->setObjectName(name);
-    b->setText(text);
-    b->setToolTip(tooltip);
+    if (hasToolbarIcon(name)) {
+        b->setIcon(toolbarIcon(name));
+        b->setIconSize(QSize(20, 20));
+        b->setToolButtonStyle(Qt::ToolButtonIconOnly);
+        b->setToolTip(tooltip.isEmpty() || tooltip.startsWith(text) ? tooltip : text + QStringLiteral(" - ") + tooltip);
+    } else {
+        b->setText(text);
+        b->setToolTip(tooltip);
+    }
     b->setCheckable(checkable);
     b->setFocusPolicy(Qt::NoFocus);
     row->layout()->addWidget(b);
@@ -646,7 +659,8 @@ void CaptureToolbar::syncFromEditor()
     // 折叠区工具被使用：显示“最近”浮动按钮（ANN-14）
     if (tool != AnnotationEditor::Tool::None && m_toolButtons.contains(toolName(tool)) && !m_toolButtons.value(toolName(tool))->isVisibleTo(m_tools)) {
         m_recentTool = tool;
-        m_recentButton->setText(tr(kToolText(tool)));
+        m_recentButton->setIcon(toolbarIcon(toolName(tool)));
+        m_recentButton->setToolTip(trTool(kToolText(tool)));
         m_recentButton->setVisible(true);
     }
     m_recentButton->setChecked(annotating && m_recentButton->isVisibleTo(m_tools) && tool == m_recentTool);
@@ -658,12 +672,14 @@ void CaptureToolbar::syncFromEditor()
         b->setChecked(m_target->shadowEnabled());
     if (auto* b = button(QStringLiteral("border")))
         b->setChecked(m_target->borderEnabled());
-    if (auto* b = button(QStringLiteral("mode")); b && m_target->supportsCaptureOptions())
-        b->setText(m_target->modeName());
+    if (auto* b = button(QStringLiteral("mode")); b && m_target->supportsCaptureOptions()) {
+        b->setIcon(toolbarIcon(m_target->modeIconName()));
+        b->setToolTip(m_target->modeName() + QStringLiteral(" - ") + tr("Mode: capture / scrolling capture / recording (Ctrl+Tab)"));
+    }
     if (auto* b = button(QStringLiteral("codes"))) {
         const QString mode = m_target->settings().stringValue(QStringLiteral("capture.qrDetect"));
         b->setVisible(m_target->supportsCaptureOptions() && (mode == QLatin1String("manual") || m_target->hasCodes()));
-        b->setText(m_target->hasCodes() ? tr("QR (%1)").arg(m_target->hasCodes() ? 1 : 0) : tr("QR"));
+        b->setToolTip(m_target->hasCodes() ? tr("QR code / barcode found - click to decode") : tr("Decode QR codes / barcodes in the selection"));
     }
     const bool showOptions = annotating && (tool != AnnotationEditor::Tool::None || e.selectedId() >= 0);
     m_options->setVisible(showOptions);

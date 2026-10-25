@@ -149,7 +149,8 @@ void TestM6B::modeCycling()
     QCOMPARE(session.mode(), CaptureSession::Mode::Static);
     key(session, QStringLiteral("Ctrl+Tab"));
     QCOMPARE(session.mode(), CaptureSession::Mode::Scroll);
-    QCOMPARE(session.toolbar()->button(QStringLiteral("mode"))->text(), QStringLiteral("Scroll"));
+    QVERIFY(session.toolbar()->button(QStringLiteral("mode"))->toolTip().startsWith(QStringLiteral("Scroll"))); // 模式按钮是图标，名称在提示里
+    QVERIFY(!session.toolbar()->button(QStringLiteral("mode"))->icon().isNull());
     key(session, QStringLiteral("Ctrl+Tab"));
     QCOMPARE(session.mode(), CaptureSession::Mode::Record);
     key(session, QStringLiteral("Ctrl+Tab"));
