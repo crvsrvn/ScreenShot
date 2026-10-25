@@ -721,12 +721,22 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <p class="hs-callout-title">代码体量</p>
 <p><code>App.cpp</code>（1362 行）、<code>PinWindow.cpp</code>（1525 行）、<code>CaptureSession.cpp</code>（1559 行）超过 1000 行。功能已稳定，建议下一步按职责拆分（例如把命令行、热键、录制接线从 <code>App</code> 拆出；把贴图的内容类型与图像处理从 <code>PinWindow</code> 拆出），拆分不改变行为，用现有用例回归。</p>
 </blockquote>
-<h2 id="howto"><span class="hs-num">6.</span>如何构建与测试<a class="hs-anchor" href="#howto" aria-label="本节链接">#</a></h2>
-<details class="hs-code" open><summary><span class="hs-code-lang">Bash</span><span class="hs-code-meta">1 行</span></summary><pre><code>scripts\build.cmd win-release-test</code></pre></details>
-<details class="hs-code" open><summary><span class="hs-code-lang">Bash</span><span class="hs-code-meta">1 行</span></summary><pre><code>scripts\test.cmd win-release-test</code></pre></details>
+<h2 id="howto"><span class="hs-num">6.</span>如何构建、测试与发布<a class="hs-anchor" href="#howto" aria-label="本节链接">#</a></h2>
+<p>一键发布构建（配置 + 构建 <code>win-release</code> + 打绿色版 zip 与安装包，产物在 <code>build\win-release\dist</code>）：</p>
+<details class="hs-code" open><summary><span class="hs-code-lang">Bash</span><span class="hs-code-meta">2 行</span></summary><pre><code>scripts
+elease.cmd</code></pre></details>
+<p>发布到某个目录（省略目录时弹出选择框；结束该目录里正在运行的实例，删掉旧程序文件，复制新程序，保留程序目录下的 <code>config</code> 用户数据；加 <code>--launch</code> 发布后启动）：</p>
+<details class="hs-code" open><summary><span class="hs-code-lang">Bash</span><span class="hs-code-meta">1 行</span></summary><pre><code>scripts\publish.cmd D:\Tools\ScreenShot --launch</code></pre></details>
+<blockquote class="hs-callout" data-kind="info">
+<p class="hs-callout-title">设置的位置</p>
+<p>程序目录可写时为便携模式：设置在 <code>&lt;程序目录&gt;\config\settings.json</code>，日志、崩溃转储、贴图与录制的恢复数据也在 <code>config</code> 下，发布脚本只保留这个目录。程序目录不可写（例如装在 Program Files）时设置在 <code>%AppData%</code> 下，不受发布影响。</p>
+</blockquote>
+<p>测试构建与测试：</p>
+<details class="hs-code" open><summary><span class="hs-code-lang">Bash</span><span class="hs-code-meta">1 行</span></summary><pre><code>scriptsuild.cmd win-release-test</code></pre></details>
+<details class="hs-code" open><summary><span class="hs-code-lang">Bash</span><span class="hs-code-meta">1 行</span></summary><pre><code>scripts	est.cmd win-release-test</code></pre></details>
 <ul>
-<li>只跑无需桌面的用例：<code>scripts\test.cmd win-release-test -LE e2e</code>；只跑端到端：<code>-L e2e</code>；打包：<code>-L package</code>（产物在 <code>build\win-release-test\dist</code>）。</li>
-<li>发布构建：<code>scripts\build.cmd win-release</code>，然后运行 <code>tests\package\check_package.py</code>（参数见 <code>tests/CMakeLists.txt</code>）生成绿色版与安装包。</li>
+<li>只跑无需桌面的用例：<code>scripts	est.cmd win-release-test -LE e2e</code>；只跑端到端：<code>-L e2e</code>；打包检查：<code>-L package</code>。</li>
+<li>安装包由 Inno Setup 6 生成（<code>scripts\installer.iss</code>，winget 安装 <code>JRSoftware.InnoSetup</code>）；没有 Inno Setup 时只生成绿色版。</li>
 </ul>
 </main>
 <a class="hs-top" href="#top" aria-label="回到顶部"><i class="hs-ico" data-icon="arrow-up"></i></a>

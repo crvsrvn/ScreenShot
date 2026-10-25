@@ -111,15 +111,32 @@ Table: 需要真实桌面或设备的用例
 > [!warn] 代码体量
 > `App.cpp`（1362 行）、`PinWindow.cpp`（1525 行）、`CaptureSession.cpp`（1559 行）超过 1000 行。功能已稳定，建议下一步按职责拆分（例如把命令行、热键、录制接线从 `App` 拆出；把贴图的内容类型与图像处理从 `PinWindow` 拆出），拆分不改变行为，用现有用例回归。
 
-## 如何构建与测试 {#howto}
+## 如何构建、测试与发布 {#howto}
+
+一键发布构建（配置 + 构建 `win-release` + 打绿色版 zip 与安装包，产物在 `build\win-release\dist`）：
 
 ```bash
-scripts\build.cmd win-release-test
+scriptselease.cmd
+```
+
+发布到某个目录（省略目录时弹出选择框；结束该目录里正在运行的实例，删掉旧程序文件，复制新程序，保留程序目录下的 `config` 用户数据；加 `--launch` 发布后启动）：
+
+```bash
+scripts\publish.cmd D:\Tools\ScreenShot --launch
+```
+
+> [!info] 设置的位置
+> 程序目录可写时为便携模式：设置在 `<程序目录>\config\settings.json`，日志、崩溃转储、贴图与录制的恢复数据也在 `config` 下，发布脚本只保留这个目录。程序目录不可写（例如装在 Program Files）时设置在 `%AppData%` 下，不受发布影响。
+
+测试构建与测试：
+
+```bash
+scriptsuild.cmd win-release-test
 ```
 
 ```bash
-scripts\test.cmd win-release-test
+scripts	est.cmd win-release-test
 ```
 
-- 只跑无需桌面的用例：`scripts\test.cmd win-release-test -LE e2e`；只跑端到端：`-L e2e`；打包：`-L package`（产物在 `build\win-release-test\dist`）。
-- 发布构建：`scripts\build.cmd win-release`，然后运行 `tests\package\check_package.py`（参数见 `tests/CMakeLists.txt`）生成绿色版与安装包。
+- 只跑无需桌面的用例：`scripts	est.cmd win-release-test -LE e2e`；只跑端到端：`-L e2e`；打包检查：`-L package`。
+- 安装包由 Inno Setup 6 生成（`scripts\installer.iss`，winget 安装 `JRSoftware.InnoSetup`）；没有 Inno Setup 时只生成绿色版。

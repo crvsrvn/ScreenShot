@@ -8,6 +8,7 @@ ScreenShot-<版本>-win64-portable.zip；要求 ≤ 50 MB，且包里不能有 Q
 import argparse
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -37,12 +38,16 @@ def main():
     ap.add_argument("--iss", required=True)
     a = ap.parse_args()
 
-    out = pathlib.Path(a.out)
+    out = pathlib.Path(a.out).resolve()
+    if a.version == "auto":
+        # 从 CMakeLists.txt 的 project(... VERSION x.y.z) 取版本
+        text = (pathlib.Path(__file__).resolve().parents[2] / "CMakeLists.txt").read_text(encoding="utf-8")
+        a.version = re.search(r"project\(.*?VERSION\s+([0-9.]+)", text, re.S).group(1)
     staging = out / "portable"
     if staging.exists():
         shutil.rmtree(staging)
     staging.mkdir(parents=True)
-    exe = pathlib.Path(a.exe)
+    exe = pathlib.Path(a.exe).resolve()
     shutil.copy2(exe, staging / exe.name)
     # MSVC 运行库：优先把 CRT 的 DLL 放在程序目录（真正的“解压即用”）；没有 VC 工具链环境时退回 windeployqt 的 vc_redist 安装器
     redist = pathlib.Path(os.environ.get("VCToolsRedistDir", "")) / "x64"
@@ -81,7 +86,7 @@ def main():
     if not iscc:
         print("没有 Inno Setup，跳过安装包（绿色版已满足要求）")
         return 0
-    cmd = [iscc, f"/DAppVersion={a.version}", f"/DSourceDir={staging}", f"/DOutDir={out}", a.iss]
+    cmd = [iscc, f"/DAppVersion={a.version}", f"/DSourceDir={staging}", f"/DOutDir={out}", str(pathlib.Path(a.iss).resolve())]
     print(" ".join(cmd))
     subprocess.run(cmd, check=True)
     installers = sorted(out.glob("ScreenShot-*-setup.exe"), key=lambda p: p.stat().st_mtime)
