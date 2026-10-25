@@ -101,7 +101,7 @@ Table: 需要真实桌面或设备的用例
 
 | 用例 | 现状 |
 |---|---|
-| 端到端 `R-02` `R-03` `HOTKEY` `M1-FLOW` `M2-ANNOTATE` `M3-PINS` `M4-SCROLL` `AC-12` | 已写好；锁屏期间需要真实输入的部分跳过。解锁后运行 `scripts\test.cmd win-release-test -L e2e` |
+| 端到端 `R-02` `R-03` `HOTKEY` `R-09` `M1-FLOW` `M2-ANNOTATE` `M4-SCROLL` `AC-12` | 已写好；开发会话是断开的远程桌面会话，驱动在里面看不到真实桌面。在控制台会话里双击 `scripts\e2e.cmd`（或运行 `scripts\test.cmd win-release-test -L e2e`），报告在 `build\win-release-test\test-results\e2e_m0.json`；驱动日志第一行会说明桌面是“可用 / 锁屏 / 会话已断开” |
 | `AC-02` 在文件管理器 / 浏览器 / Office / 编辑器上悬停 | 端到端 `R-09` 覆盖任务栏元素与挂起程序；其他程序需人工在解锁桌面上检查 |
 | `AC-03` 输入法候选窗跟随光标 | 组件用例用 `QInputMethodEvent` 模拟输入法提交；候选窗位置需人工用真实输入法检查 |
 | `AC-06` 穿透后点击下方网页链接 | 端到端 `M3-PINS` 验证穿透开关与命中；点击真实网页需人工检查 |

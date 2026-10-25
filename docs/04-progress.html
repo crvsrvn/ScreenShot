@@ -692,8 +692,8 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </thead>
 <tbody>
 <tr>
-<td>端到端 <code>R-02</code> <code>R-03</code> <code>HOTKEY</code> <code>M1-FLOW</code> <code>M2-ANNOTATE</code> <code>M3-PINS</code> <code>M4-SCROLL</code> <code>AC-12</code></td>
-<td>已写好；锁屏期间需要真实输入的部分跳过。解锁后运行 <code>scripts\test.cmd win-release-test -L e2e</code></td>
+<td>端到端 <code>R-02</code> <code>R-03</code> <code>HOTKEY</code> <code>R-09</code> <code>M1-FLOW</code> <code>M2-ANNOTATE</code> <code>M4-SCROLL</code> <code>AC-12</code></td>
+<td>已写好；开发会话是断开的远程桌面会话，驱动在里面看不到真实桌面。在控制台会话里双击 <code>scripts\e2e.cmd</code>（或运行 <code>scripts\test.cmd win-release-test -L e2e</code>），报告在 <code>build\win-release-test\test-results\e2e_m0.json</code>；驱动日志第一行会说明桌面是“可用 / 锁屏 / 会话已断开”</td>
 </tr>
 <tr>
 <td><code>AC-02</code> 在文件管理器 / 浏览器 / Office / 编辑器上悬停</td>

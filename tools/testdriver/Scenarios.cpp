@@ -124,7 +124,7 @@ QString Runner::desktopStatus()
     QString status;
     if (WTSQuerySessionInformationW(WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSConnectState, reinterpret_cast<LPWSTR*>(&state), &bytes) && state) {
         if (*state == WTSDisconnected)
-            status = QStringLiteral("会话已断开：本进程不在当前使用的桌面会话里，请在控制台会话中运行 scripts\e2e.cmd");
+            status = QStringLiteral("会话已断开：本进程不在当前使用的桌面会话里，请在控制台会话中运行 scripts\\e2e.cmd");
         WTSFreeMemory(state);
     }
     if (status.isEmpty())
