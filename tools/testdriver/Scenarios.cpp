@@ -305,7 +305,12 @@ ScenarioResult Runner::hotkeyEndToEnd()
     // 用一个不太可能被占用的组合键（默认 F1 常被另一个正在运行的 ScreenShot 占用），结束后恢复
     const QString original = m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("hotkey.capture")}}).value(QStringLiteral("value")).toString();
     m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("hotkey.capture")}, {QStringLiteral("value"), QStringLiteral("Ctrl+Alt+Shift+F9")}});
-    auto restore = qScopeGuard([&] { m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("hotkey.capture")}, {QStringLiteral("value"), original}}); });
+    // 程序默认忽略模拟按键发出的热键（ACT-15）；SendInput 正是模拟按键，测试期间关掉
+    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("hotkey.ignoreInjected")}, {QStringLiteral("value"), false}});
+    auto restore = qScopeGuard([&] {
+        m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("hotkey.capture")}, {QStringLiteral("value"), original}});
+        m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("hotkey.ignoreInjected")}, {QStringLiteral("value"), true}});
+    });
     QThread::msleep(100);
     if (!m_client.call(QStringLiteral("state")).value(QStringLiteral("hotkeys")).toObject().value(QStringLiteral("1")).toBool()) {
         r.summary = QStringLiteral("截图热键 Ctrl+Alt+Shift+F9 注册失败（被其他程序占用）");
@@ -821,6 +826,9 @@ ScenarioResult Runner::m4Scroll()
             break;
     }
     const QString path = tempPng(QStringLiteral("m4-scroll"));
+    const int windowOffset = window.offset(); // 测试窗口实际滚到了哪里：为 0 说明滚轮根本没送到窗口
+    if (!st.value(QStringLiteral("reachedEnd")).toBool())
+        m_client.call(QStringLiteral("screenshotDesktop"), {{QStringLiteral("path"), tempPng(QStringLiteral("m4-failure"))}});
     const QJsonObject fin = m_client.call(QStringLiteral("scrollFinish"), {{QStringLiteral("path"), path}});
     m_client.call(QStringLiteral("scrollCancel"));
     const QImage out(path);
@@ -828,7 +836,9 @@ ScenarioResult Runner::m4Scroll()
     const auto cmp = testing::compareImages(out, doc);
     r.data = QJsonObject{{QStringLiteral("elapsedMs"), static_cast<double>(t.elapsed())}, {QStringLiteral("reachedEnd"), st.value(QStringLiteral("reachedEnd")).toBool()},
                          {QStringLiteral("frames"), st.value(QStringLiteral("frames")).toInt()}, {QStringLiteral("rejected"), st.value(QStringLiteral("rejected")).toInt()},
-                         {QStringLiteral("height"), fin.value(QStringLiteral("h")).toInt()}, {QStringLiteral("docHeight"), doc.height()}, {QStringLiteral("pixels"), cmp.summary()}};
+                         {QStringLiteral("height"), fin.value(QStringLiteral("h")).toInt()}, {QStringLiteral("docHeight"), doc.height()}, {QStringLiteral("pixels"), cmp.summary()},
+                         {QStringLiteral("windowOffset"), windowOffset}, {QStringLiteral("lastReason"), st.value(QStringLiteral("reason")).toString()},
+                         {QStringLiteral("lastShift"), st.value(QStringLiteral("lastShift")).toInt()}, {QStringLiteral("lastOk"), st.value(QStringLiteral("lastOk")).toBool()}};
     r.passed = st.value(QStringLiteral("reachedEnd")).toBool() && cmp.passed;
     r.summary = QStringLiteral("到底=%1，%2 帧（拒绝 %3），长图 %4 px / 文档 %5 px，%6，耗时 %7 s")
                     .arg(st.value(QStringLiteral("reachedEnd")).toBool() ? QStringLiteral("ok") : QStringLiteral("FAIL")).arg(st.value(QStringLiteral("frames")).toInt())

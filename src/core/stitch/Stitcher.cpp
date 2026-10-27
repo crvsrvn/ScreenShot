@@ -106,28 +106,52 @@ ShiftResult estimateShift(const QImage& previousIn, const QImage& currentIn, con
         r.reason = QStringLiteral("frame too small");
         return r;
     }
-    // 上一帧中只出现一次的行作为锚点
+    // 把连续相同的行压成“行段”：表格、列表、色块这类内容整段的行都一样，按单行找唯一行会找不到锚点。
+    // 两帧里各只出现一次的行段作为锚点，用不贴着帧边缘的那一端（段首或段尾）投票
+    struct Run {
+        quint64 hash;
+        int start;
+        int end; // 不含
+    };
+    auto runsOf = [h](const QVector<quint64>& hashes) {
+        QVector<Run> runs;
+        for (int y = 0; y < h; ++y) {
+            if (!runs.isEmpty() && runs.last().hash == hashes[y])
+                runs.last().end = y + 1;
+            else
+                runs.append({hashes[y], y, y + 1});
+        }
+        return runs;
+    };
+    const QVector<Run> prevRuns = runsOf(prevHashes);
+    const QVector<Run> curRuns = runsOf(curHashes);
     QHash<quint64, int> prevIndex;
     QHash<quint64, int> prevCount;
-    for (int y = 0; y < h; ++y) {
-        ++prevCount[prevHashes[y]];
-        prevIndex.insert(prevHashes[y], y);
+    for (int i = 0; i < prevRuns.size(); ++i) {
+        ++prevCount[prevRuns[i].hash];
+        prevIndex.insert(prevRuns[i].hash, i);
     }
     QHash<quint64, int> curCount;
-    for (int y = 0; y < h; ++y)
-        ++curCount[curHashes[y]];
+    for (const Run& run : curRuns)
+        ++curCount[run.hash];
     // 投票：锚点在新帧中的位置 → 位移 = prevY - curY
     QHash<int, int> votes;
     int anchors = 0;
-    for (int y = 0; y < h; ++y) {
-        const quint64 hv = curHashes[y];
-        if (curCount.value(hv) != 1)
+    for (const Run& c : curRuns) {
+        if (curCount.value(c.hash) != 1)
             continue;
-        auto it = prevIndex.find(hv);
-        if (it == prevIndex.end() || prevCount.value(hv) != 1)
+        auto it = prevIndex.find(c.hash);
+        if (it == prevIndex.end() || prevCount.value(c.hash) != 1)
             continue;
-        ++anchors;
-        ++votes[it.value() - y];
+        const Run& p = prevRuns[it.value()];
+        if (c.start > 0 && p.start > 0) { // 段首在两帧里都完整
+            ++anchors;
+            ++votes[p.start - c.start];
+        }
+        if (c.end < h && p.end < h) { // 段尾在两帧里都完整
+            ++anchors;
+            ++votes[p.end - c.end];
+        }
     }
     r.anchors = anchors;
     if (anchors < o.minAnchors) {
