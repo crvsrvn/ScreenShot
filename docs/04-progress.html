@@ -485,9 +485,9 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <body>
 <main class="hs-doc" data-toc-levels="2,3">
 <h1 id="top">ScreenShot 实现进度与交付报告（M0 ~ M8）</h1>
-<p class="hs-meta">v1.4 · 2026-10-27 · 输入：<a href="01-requirements.md">需求</a>、<a href="02-architecture.md">架构</a>、<a href="03-m0-report.md">M0 报告</a></p>
+<p class="hs-meta">v1.5 · 2026-10-27 · 输入：<a href="01-requirements.md">需求</a>、<a href="02-architecture.md">架构</a>、<a href="03-m0-report.md">M0 报告</a></p>
 <h2 id="summary"><span class="hs-num">1.</span>结论<a class="hs-anchor" href="#summary" aria-label="本节链接">#</a></h2>
-<p><mark>八个里程碑全部实现并逐里程碑本地提交；需求文档 v0.5 删除了公式贴图与公式识别后，现行 244 条需求全部进入交付范围且每条都有自动用例（覆盖矩阵无空项）。Debug 与 Release 两套自动测试全部通过，程序零网络导入。需要真实桌面的端到端场景与 macOS 用例已写好，等解锁桌面 / Mac 设备后执行。</mark></p>
+<p><mark>八个里程碑全部实现并逐里程碑本地提交；需求文档 v0.5 删除了公式贴图与公式识别后，现行 244 条需求全部进入交付范围且每条都有自动用例（覆盖矩阵无空项）。Debug 与 Release 两套自动测试全部通过，程序零网络导入。真实桌面端到端 20 个场景经三轮修复后全部通过；macOS 用例已写好，等 Mac 设备后执行。</mark></p>
 <div class="hs-table lead"><table>
 <caption>里程碑结果</caption>
 <thead>
@@ -586,7 +586,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <tr>
 <td>端到端 <code>e2e_m0</code></td>
 <td>测试驱动启动真实程序；需要真实输入的场景在没有可用桌面时跳过</td>
-<td>控制台会话（真实桌面，两台 2560×1440 @125%）第二轮：20 个场景 18 通过、2 失败。冻结画面 P50 22.9 ms / P95 27.6 ms（DXGI，抓屏 P50 10.8 ms）、真实鼠标框选 3 次逐像素一致、命令行 <code>--wait</code> 全屏 5120×1440、启动 241 ms、挂起程序检测 5 ms / 309 ms 均通过。余下 <code>HOTKEY</code>、<code>M4-SCROLL</code> 的原因已在离线复现中定位并修复（见 <a href="#e2e-fixes">4.5</a>），待第三轮确认 <span class="hs-mark" data-kind="warn" title="需要解锁桌面或特定设备后再测">待测</span></td>
+<td>控制台会话（真实桌面，两台 2560×1440 @125%）第三轮：20 个场景全部通过，无网络端点。冻结画面 P50 30.5 ms / P95 43.2 ms（DXGI，抓屏 P50 12.8 ms）、真实鼠标框选 3 次逐像素一致、真实热键 20 次首次绘制 P50 35.2 ms、真实窗口自动滚动 26 帧拒绝 0、长图 4320 px 与文档逐像素一致、命令行 <code>--wait</code> 全屏 5120×1440、启动 307 ms、挂起程序检测 7 ms / 308 ms、50 张贴图拖动 147 次/秒、8K 贴图缩放 55 FPS、4K 高斯模糊 54 ms、系统 OCR 中英通过 <span class="hs-tag" data-kind="ok">通过</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
 </tr>
 <tr>
 <td>零网络</td>
@@ -632,9 +632,9 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <li>公式贴图 <code>PIN-09</code> 与公式识别 <code>REC-09</code> 按决定从需求中删除（需求文档 v0.5）。</li>
 <li>已实现但此前未纳入范围的需求（各工具记住颜色、形状旋转、工具快捷键、一键禁用热键、选项说明、贴图尺寸限制、屏幕外贴图恢复）补入交付范围并核对用例。</li>
 </ul>
-<h3 id="e2e-fixes"><span class="hs-num">4.5</span>真实桌面端到端首轮失败项与修复<a class="hs-anchor" href="#e2e-fixes" aria-label="本节链接">#</a></h3>
+<h3 id="e2e-fixes"><span class="hs-num">4.5</span>真实桌面端到端失败项与修复<a class="hs-anchor" href="#e2e-fixes" aria-label="本节链接">#</a></h3>
 <div class="hs-table"><table>
-<caption>控制台会话端到端失败项（第一、二轮）</caption>
+<caption>控制台会话端到端失败项（三轮）</caption>
 <thead>
 <tr>
 <th>场景</th>
@@ -657,14 +657,14 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <td>第一轮：窗口被拉伸；第二轮：616 帧拒绝 22，长图停在首屏</td>
 <td>第一轮同上。第二轮用驱动的同一份文档离线复现（<code>tst_stitch_window</code>）：文档是每 24 px 一条 16 px 高的色块行，整段的行哈希相同，拼接器按“单行唯一”找锚点一个都找不到，退到投影匹配又因 24 px 周期而“ambiguous match (repeated content)”，22 次滚动全部被拒</td>
 <td>锚点改为“行段”（连续相同行压成一段，两帧各只出现一次的段用不贴边的段首 / 段尾投票）；离线复现按 3 格与 1 格步长都逐像素一致</td>
-<td><span class="hs-tag" data-kind="info">待第三轮</span></td>
+<td><span class="hs-tag" data-kind="ok">第三轮通过：26 帧拒绝 0，4320 px 逐像素一致，4.7 s</span></td>
 </tr>
 <tr>
 <td><code>HOTKEY</code> 真实热键</td>
 <td>第一轮 F1 不触发；第二轮专用组合键注册成功仍不触发</td>
 <td>第一轮：F1 被正在运行的发布版实例占用。第二轮：程序默认忽略模拟按键发出的热键（<code>ACT-15</code>，防宏工具误触），而驱动正是用 SendInput 模拟按键</td>
 <td>场景期间关闭 <code>hotkey.ignoreInjected</code>，结束后恢复</td>
-<td><span class="hs-tag" data-kind="info">待第三轮</span></td>
+<td><span class="hs-tag" data-kind="ok">第三轮通过：20 次 P50 35.2 ms</span></td>
 </tr>
 <tr>
 <td><code>R-02</code> 冻结画面延迟</td>
@@ -684,7 +684,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <td>其余 14 项</td>
 <td>—</td>
 <td>—</td>
-<td>两轮都通过</td>
+<td>三轮都通过</td>
 <td><span class="hs-tag" data-kind="ok">通过</span></td>
 </tr>
 </tbody>
@@ -753,10 +753,6 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </thead>
 <tbody>
 <tr>
-<td>端到端 <code>HOTKEY</code> <code>M4-SCROLL</code></td>
-<td>第二轮仍失败，原因已定位并修复（见 <a href="#e2e-fixes">4.5</a>），待在控制台会话双击 <code>scripts\e2e.cmd</code> 重跑确认。开发会话是断开的远程桌面会话，驱动在里面看不到真实桌面</td>
-</tr>
-<tr>
 <td><code>AC-02</code> 在文件管理器 / 浏览器 / Office / 编辑器上悬停</td>
 <td>端到端 <code>R-09</code> 覆盖任务栏元素与挂起程序；其他程序需人工在解锁桌面上检查</td>
 </tr>
@@ -774,7 +770,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>NFR-03</code> 启动耗时</td>
-<td>控制台会话实测二次启动 241 ms（要求 ≤ 1500 ms）；真正冷启动需重启后人工测一次</td>
+<td>控制台会话实测二次启动 241 ms / 307 ms（要求 ≤ 1500 ms）；真正冷启动需重启后人工测一次</td>
 </tr>
 </tbody>
 </table></div>
