@@ -92,6 +92,7 @@ private slots:
     void marqueeMultiSelectMoveDelete();
     void selectAfterCreate();
     void customToolbarCommonMoreRecent();
+    void defaultToolbarKeepsCommonOnly();
     void rememberToolAndDefaultTool();
     void pinHideAnnotationsAndKeepAfterRotate();
     void ellipseArcHandles();
@@ -205,6 +206,23 @@ void TestAnnotationP2::customToolbarCommonMoreRecent()
     QVERIFY(!tb->button(QStringLiteral("recent"))->isChecked());
     tb->button(QStringLiteral("recent"))->click();
     QCOMPARE(f.editor().tool(), Tool::Mosaic);
+}
+
+void TestAnnotationP2::defaultToolbarKeepsCommonOnly()
+{
+    Fixture f;
+    f.startWith(Tool::Rect);
+    CaptureToolbar* tb = f.session->toolbar();
+    QVERIFY(tb->testAttribute(Qt::WA_AlwaysShowToolTips)); // 工具栏不激活，也要显示悬停提示
+    // 主栏只有常用工具与输出按钮
+    for (const char* name : {"rect", "ellipse", "arrow", "pencil", "mosaic", "text", "more", "undo", "redo", "pin", "save", "cancel", "copy"})
+        QVERIFY2(tb->button(QString::fromLatin1(name))->isVisibleTo(tb), name);
+    // 其余工具和低频操作在“更多”面板里，仍能按名称找到并使用
+    for (const char* name : {"line", "highlighter", "blur", "eraser", "step", "clear", "watermark", "quickSave", "mode", "scroll", "ratio", "shadow", "border"})
+        QVERIFY2(!tb->button(QString::fromLatin1(name))->isVisibleTo(tb), name);
+    tb->button(QStringLiteral("step"))->click();
+    QCOMPARE(f.editor().tool(), Tool::Step);
+    QVERIFY(tb->button(QStringLiteral("recent"))->isVisibleTo(tb));
 }
 
 void TestAnnotationP2::rememberToolAndDefaultTool()

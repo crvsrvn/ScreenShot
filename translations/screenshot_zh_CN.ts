@@ -438,8 +438,8 @@
     </message>
     <message>
         <location filename="../src/app/CaptureToolbar.cpp" line="157" />
-        <source>Tools not on the toolbar</source>
-        <translation>没放在工具栏上的工具</translation>
+        <source>More tools and options</source>
+        <translation>更多工具与选项</translation>
     </message>
     <message>
         <location filename="../src/app/CaptureToolbar.cpp" line="170" />
@@ -2628,8 +2628,8 @@
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="68" />
-        <source>Tools shown directly on the toolbar, in order (rect, ellipse, line, arrow, pencil, highlighter, mosaic, blur, text, eraser, step, magnifier, spotlight, smartErase). The rest go under More; the last one used from there gets a quick button.</source>
-        <translation>直接显示在工具栏上的工具及顺序（rect、ellipse、line、arrow、pencil、highlighter、mosaic、blur、text、eraser、step、magnifier、spotlight、smartErase）。其余折叠到“更多”；最近从那里用过的工具会有一个快捷按钮。</translation>
+        <source>Tools shown directly on the toolbar, in order (rect, ellipse, line, arrow, pencil, highlighter, mosaic, blur, text, eraser, step, magnifier, spotlight, smartErase). The rest go under More, together with less-used actions; the last tool used from there gets a quick button.</source>
+        <translation>直接显示在工具栏上的工具及顺序（rect、ellipse、line、arrow、pencil、highlighter、mosaic、blur、text、eraser、step、magnifier、spotlight、smartErase）。其余工具和低频操作折叠到“更多”；最近从那里用过的工具会有一个快捷按钮。</translation>
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="69" />
@@ -5360,8 +5360,8 @@
     </message>
     <message>
         <location filename="../src/app/CaptureToolbar.cpp" line="157" />
-        <source>Tools not on the toolbar</source>
-        <translation>没放在工具栏上的工具</translation>
+        <source>More tools and options</source>
+        <translation>更多工具与选项</translation>
     </message>
     <message>
         <location filename="../src/app/CaptureToolbar.cpp" line="170" />

@@ -195,10 +195,8 @@ void TestAnnotationEditor::toolbarIconsAndTranslations()
         QVERIFY2(b && !b->icon().isNull(), name);
         QVERIFY2(hasCjk(b->toolTip()), name);
     }
-    // “更多”菜单里的工具名也是中文
-    QMenu* more = tb->button(QStringLiteral("more"))->menu();
-    for (QAction* a : more->actions())
-        QVERIFY2(hasCjk(a->text()), qPrintable(a->text()));
+    // “更多”面板里的按钮也是工具栏的子孙，上面的遍历已检查其提示为中文
+    QVERIFY(tb->button(QStringLiteral("more"))->menu()->isAncestorOf(tb->button(QStringLiteral("step"))));
     QCoreApplication::removeTranslator(&zh);
 }
 

@@ -438,8 +438,8 @@
     </message>
     <message>
         <location filename="../src/app/CaptureToolbar.cpp" line="157" />
-        <source>Tools not on the toolbar</source>
-        <translation>Tools not on the toolbar</translation>
+        <source>More tools and options</source>
+        <translation>More tools and options</translation>
     </message>
     <message>
         <location filename="../src/app/CaptureToolbar.cpp" line="170" />
@@ -2628,8 +2628,8 @@
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="68" />
-        <source>Tools shown directly on the toolbar, in order (rect, ellipse, line, arrow, pencil, highlighter, mosaic, blur, text, eraser, step, magnifier, spotlight, smartErase). The rest go under More; the last one used from there gets a quick button.</source>
-        <translation>Tools shown directly on the toolbar, in order (rect, ellipse, line, arrow, pencil, highlighter, mosaic, blur, text, eraser, step, magnifier, spotlight, smartErase). The rest go under More; the last one used from there gets a quick button.</translation>
+        <source>Tools shown directly on the toolbar, in order (rect, ellipse, line, arrow, pencil, highlighter, mosaic, blur, text, eraser, step, magnifier, spotlight, smartErase). The rest go under More, together with less-used actions; the last tool used from there gets a quick button.</source>
+        <translation>Tools shown directly on the toolbar, in order (rect, ellipse, line, arrow, pencil, highlighter, mosaic, blur, text, eraser, step, magnifier, spotlight, smartErase). The rest go under More, together with less-used actions; the last tool used from there gets a quick button.</translation>
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="69" />
@@ -5360,8 +5360,8 @@
     </message>
     <message>
         <location filename="../src/app/CaptureToolbar.cpp" line="157" />
-        <source>Tools not on the toolbar</source>
-        <translation>Tools not on the toolbar</translation>
+        <source>More tools and options</source>
+        <translation>More tools and options</translation>
     </message>
     <message>
         <location filename="../src/app/CaptureToolbar.cpp" line="170" />

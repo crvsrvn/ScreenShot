@@ -21,6 +21,7 @@
 #include <QSpinBox>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <QWidgetAction>
 #include <cmath>
 #include <tuple>
 
@@ -71,24 +72,21 @@ void CaptureToolbar::rebuildTools()
         for (const auto& d : kTools)
             if (name.trimmed() == QLatin1String(d.name) && !ordered.contains(&d))
                 ordered.append(&d);
-    // 先全部摘下，再按常用区顺序插到行首
-    for (const auto& d : kTools) {
-        QToolButton* b = m_toolButtons.value(QString::fromLatin1(d.name));
+    // 先全部摘下，再按常用区顺序插到主栏行首，其余按工具表顺序放进“更多”面板
+    auto* moreRow = static_cast<QHBoxLayout*>(m_moreTools->layout());
+    for (QToolButton* b : std::as_const(m_toolButtons)) {
         row->removeWidget(b);
-        b->setVisible(ordered.contains(&d));
+        moreRow->removeWidget(b);
     }
     int index = 0;
     for (const ToolDef* d : ordered)
         row->insertWidget(index++, m_toolButtons.value(QString::fromLatin1(d->name)));
-    QMenu* moreMenu = m_moreButton->menu();
-    moreMenu->clear();
-    for (const auto& d : kTools) {
-        if (ordered.contains(&d))
-            continue;
-        const AnnotationEditor::Tool tool = d.tool;
-        moreMenu->addAction(toolbarIcon(QString::fromLatin1(d.name)), trTool(d.text), this, [this, tool] { m_target->setTool(tool); });
-    }
-    m_moreButton->setVisible(!moreMenu->isEmpty());
+    for (const auto& d : kTools)
+        if (!ordered.contains(&d))
+            moreRow->addWidget(m_toolButtons.value(QString::fromLatin1(d.name)));
+    for (QToolButton* b : std::as_const(m_toolButtons))
+        b->show(); // 换了父控件的按钮需要重新显示
+    m_moreTools->setVisible(ordered.size() < static_cast<qsizetype>(std::size(kTools)));
     m_recentButton->setVisible(false);
     m_recentTool = AnnotationEditor::Tool::None;
     adjustSize();
@@ -123,6 +121,7 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
     , m_target(target)
 {
     setAttribute(Qt::WA_ShowWithoutActivating);
+    setAttribute(Qt::WA_AlwaysShowToolTips); // 工具栏从不激活，Qt 默认只给激活窗口显示悬停提示
     setStyleSheet(QStringLiteral("QWidget { background: #2b2b2b; color: white; } QToolButton { color: white; padding: 4px 7px; border: none; border-radius: 3px; }"
                                  "QToolButton:hover { background: #3d6fb4; } QToolButton:checked { background: #1f5aa6; }"
                                  "QSpinBox, QFontComboBox { background: #3a3a3a; color: white; border: 1px solid #555; }"));
@@ -134,7 +133,7 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
     auto* row = new QHBoxLayout(m_tools);
     row->setContentsMargins(0, 0, 0, 0);
     row->setSpacing(2);
-    layout->addWidget(m_tools);
+    layout->addWidget(m_tools, 0, Qt::AlignLeft); // 选项行更宽时不把主栏按钮拉开
     // 自定义工具栏（ANN-14）：常用区按设置顺序；其余折叠进“更多”；最近从折叠区用过的工具有一个浮动按钮
     for (const auto& d : kTools) {
         QToolButton* b = addButton(m_tools, QString::fromLatin1(d.name), trTool(d.text), trTool(d.tip), true);
@@ -154,8 +153,25 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
         if (!m_syncing)
             m_target->setTool(checked ? m_recentTool : AnnotationEditor::Tool::None);
     });
-    m_moreButton = addButton(m_tools, QStringLiteral("more"), tr("More"), tr("Tools not on the toolbar"));
-    m_moreButton->setMenu(new QMenu(m_moreButton));
+    // “更多”（参考 PixPin 的副区）：弹出面板两行图标按钮，第一行是折叠的工具，第二行是低频操作
+    m_moreButton = addButton(m_tools, QStringLiteral("more"), tr("More"), tr("More tools and options"));
+    auto* moreMenu = new QMenu(m_moreButton);
+    moreMenu->setAttribute(Qt::WA_AlwaysShowToolTips);
+    auto* morePanel = new QWidget(moreMenu);
+    auto* panelLayout = new QVBoxLayout(morePanel);
+    panelLayout->setContentsMargins(4, 4, 4, 4);
+    panelLayout->setSpacing(3);
+    for (QWidget** panelRow : {&m_moreTools, &m_moreActions}) {
+        *panelRow = new QWidget(morePanel);
+        auto* l = new QHBoxLayout(*panelRow);
+        l->setContentsMargins(0, 0, 0, 0);
+        l->setSpacing(2);
+        panelLayout->addWidget(*panelRow, 0, Qt::AlignLeft); // 两行按钮各自靠左，不被拉宽
+    }
+    auto* panelAction = new QWidgetAction(moreMenu);
+    panelAction->setDefaultWidget(morePanel);
+    moreMenu->addAction(panelAction);
+    m_moreButton->setMenu(moreMenu);
     m_moreButton->setPopupMode(QToolButton::InstantPopup);
     rebuildTools();
     connect(&target->settings(), &Settings::changed, this, [this](const QString& key, const QVariant&) {
@@ -169,8 +185,28 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
     row->addWidget(sep);
     connect(addButton(m_tools, QStringLiteral("undo"), tr("Undo"), tr("Undo (Ctrl+Z)")), &QToolButton::clicked, this, [this] { m_target->editor().undo(); });
     connect(addButton(m_tools, QStringLiteral("redo"), tr("Redo"), tr("Redo (Ctrl+Y)")), &QToolButton::clicked, this, [this] { m_target->editor().redo(); });
-    connect(addButton(m_tools, QStringLiteral("clear"), tr("Clear"), tr("Remove all annotations (undoable)")), &QToolButton::clicked, this, [this] { m_target->editor().clearAll(); });
-    QToolButton* watermark = addButton(m_tools, QStringLiteral("watermark"), tr("Watermark"), tr("Add or remove the watermark (settings: Annotation)"), true);
+    auto* sep2 = new QFrame(m_tools);
+    sep2->setFrameShape(QFrame::VLine);
+    row->addWidget(sep2);
+    // 主栏只留输出：二维码（检测到才出现）/ 钉图 / 保存 / 取消 / 复制；复制即完成，放在最右（与 Snipaste、微信截图一致）
+    QToolButton* codesButton = addButton(m_tools, QStringLiteral("codes"), tr("QR"), tr("Decode QR codes / barcodes in the selection"));
+    connect(codesButton, &QToolButton::clicked, this, [this] { m_target->detectCodes(); });
+    codesButton->setVisible(false);
+    QToolButton* pinButton = addButton(m_tools, QStringLiteral("pin"), tr("Pin"), tr("Pin to screen (Ctrl+T)"));
+    connect(pinButton, &QToolButton::clicked, this, [this] { m_target->pin(); });
+    pinButton->setVisible(target->supportsPin());
+    connect(addButton(m_tools, QStringLiteral("save"), tr("Save"), tr("Save to file (Ctrl+S); Shift+click for quick save")), &QToolButton::clicked, this, [this] {
+        if (QApplication::keyboardModifiers() & Qt::ShiftModifier)
+            m_target->quickSave();
+        else
+            m_target->save();
+    });
+    connect(addButton(m_tools, QStringLiteral("cancel"), tr("Cancel"), tr("Cancel (Esc)")), &QToolButton::clicked, this, [this] { m_target->cancel(); });
+    connect(addButton(m_tools, QStringLiteral("copy"), tr("Copy"), tr("Copy to clipboard (Enter)")), &QToolButton::clicked, this, [this] { m_target->copy(); });
+
+    // 低频操作收进“更多”面板第二行
+    connect(addButton(m_moreActions, QStringLiteral("clear"), tr("Clear"), tr("Remove all annotations (undoable)")), &QToolButton::clicked, this, [this] { m_target->editor().clearAll(); });
+    QToolButton* watermark = addButton(m_moreActions, QStringLiteral("watermark"), tr("Watermark"), tr("Add or remove the watermark (settings: Annotation)"), true);
     connect(watermark, &QToolButton::clicked, this, [this](bool on) {
         if (m_syncing)
             return;
@@ -179,36 +215,20 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
         else
             m_target->editor().removeWatermark();
     });
-    auto* sep2 = new QFrame(m_tools);
-    sep2->setFrameShape(QFrame::VLine);
-    row->addWidget(sep2);
-    connect(addButton(m_tools, QStringLiteral("copy"), tr("Copy"), tr("Copy to clipboard (Enter)")), &QToolButton::clicked, this, [this] { m_target->copy(); });
-    connect(addButton(m_tools, QStringLiteral("save"), tr("Save"), tr("Save to file (Ctrl+S); Shift+click for quick save")), &QToolButton::clicked, this, [this] {
-        if (QApplication::keyboardModifiers() & Qt::ShiftModifier)
-            m_target->quickSave();
-        else
-            m_target->save();
-    });
-    connect(addButton(m_tools, QStringLiteral("quickSave"), tr("Quick save"), tr("Save to the quick save folder (Ctrl+Shift+S)")), &QToolButton::clicked, this, [this] { m_target->quickSave(); });
-    QToolButton* pinButton = addButton(m_tools, QStringLiteral("pin"), tr("Pin"), tr("Pin to screen (Ctrl+T)"));
-    connect(pinButton, &QToolButton::clicked, this, [this] { m_target->pin(); });
-    pinButton->setVisible(target->supportsPin());
-    QToolButton* printButton = addButton(m_tools, QStringLiteral("print"), tr("Print"), tr("Print (Ctrl+P)"));
+    connect(addButton(m_moreActions, QStringLiteral("quickSave"), tr("Quick save"), tr("Save to the quick save folder (Ctrl+Shift+S)")), &QToolButton::clicked, this, [this] { m_target->quickSave(); });
+    QToolButton* printButton = addButton(m_moreActions, QStringLiteral("print"), tr("Print"), tr("Print (Ctrl+P)"));
     connect(printButton, &QToolButton::clicked, this, [this] { m_target->print(); });
     printButton->setVisible(target->supportsCaptureOptions());
-    QToolButton* codesButton = addButton(m_tools, QStringLiteral("codes"), tr("QR"), tr("Decode QR codes / barcodes in the selection"));
-    connect(codesButton, &QToolButton::clicked, this, [this] { m_target->detectCodes(); });
-    codesButton->setVisible(false);
-    QToolButton* modeButton = addButton(m_tools, QStringLiteral("mode"), tr("Capture"), tr("Mode: capture / scrolling capture / recording (Ctrl+Tab)"));
+    QToolButton* modeButton = addButton(m_moreActions, QStringLiteral("mode"), tr("Capture"), tr("Mode: capture / scrolling capture / recording (Ctrl+Tab)"));
     connect(modeButton, &QToolButton::clicked, this, [this] { m_target->cycleMode(); });
     modeButton->setVisible(target->supportsCaptureOptions());
-    QToolButton* scrollButton = addButton(m_tools, QStringLiteral("scroll"), tr("Scroll"), tr("Scrolling capture (Ctrl+L)"));
+    QToolButton* scrollButton = addButton(m_moreActions, QStringLiteral("scroll"), tr("Scroll"), tr("Scrolling capture (Ctrl+L)"));
     connect(scrollButton, &QToolButton::clicked, this, [this] { m_target->startScroll(); });
     scrollButton->setVisible(target->supportsScroll());
     for (const auto& [name, text, tip] : QList<std::tuple<QString, QString, QString>>{{QStringLiteral("ratio"), tr("1:1 lock"), tr("Keep the current aspect ratio while resizing (Shift drags a square)")},
                                                                                      {QStringLiteral("shadow"), tr("Shadow"), tr("Add a shadow to the output")},
                                                                                      {QStringLiteral("border"), tr("Border"), tr("Add a border to the output")}}) {
-        QToolButton* b = addButton(m_tools, name, text, tip, true);
+        QToolButton* b = addButton(m_moreActions, name, text, tip, true);
         b->setVisible(target->supportsCaptureOptions());
         const QString n = name;
         connect(b, &QToolButton::clicked, this, [this, n](bool checked) {
@@ -220,7 +240,9 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
                 m_target->setBorderEnabled(checked);
         });
     }
-    connect(addButton(m_tools, QStringLiteral("cancel"), tr("Cancel"), tr("Cancel (Esc)")), &QToolButton::clicked, this, [this] { m_target->cancel(); });
+    // 在面板里点了任何按钮都收起面板（工具按钮可能随设置在主栏 / 面板间移动，对收起的面板 hide 无副作用）
+    for (QToolButton* b : m_toolButtons.values() + m_moreActions->findChildren<QToolButton*>())
+        connect(b, &QToolButton::clicked, moreMenu, &QWidget::hide);
 
     buildOptions();
     layout->addWidget(m_options);
@@ -657,7 +679,7 @@ void CaptureToolbar::syncFromEditor()
     for (auto it = m_toolButtons.cbegin(); it != m_toolButtons.cend(); ++it)
         it.value()->setChecked(annotating && toolFromName(it.key()) == tool);
     // 折叠区工具被使用：显示“最近”浮动按钮（ANN-14）
-    if (tool != AnnotationEditor::Tool::None && m_toolButtons.contains(toolName(tool)) && !m_toolButtons.value(toolName(tool))->isVisibleTo(m_tools)) {
+    if (tool != AnnotationEditor::Tool::None && m_toolButtons.contains(toolName(tool)) && m_toolButtons.value(toolName(tool))->parentWidget() == m_moreTools) {
         m_recentTool = tool;
         m_recentButton->setIcon(toolbarIcon(toolName(tool)));
         m_recentButton->setToolTip(trTool(kToolText(tool)));
