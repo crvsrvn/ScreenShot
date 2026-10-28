@@ -53,7 +53,7 @@ def main():
 
     source = pathlib.Path(a.source).resolve()
     if not (source / EXE).exists():
-        print(f"没有找到发布构建：{source / EXE}\n先运行 scripts\\release.cmd")
+        print(f"没有找到发布构建：{source / EXE}\n请用 scripts\\publish.cmd 构建并发布")
         return 1
     target_text = a.target or pick_folder()
     if not target_text:
