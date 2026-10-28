@@ -1,22 +1,24 @@
 #include "app/PreferencesDialog.h"
 
+#include "app/Theme.h"
+#include "app/ToolbarIcons.h"
 #include "core/config/Settings.h"
 
-#include <QCheckBox>
-#include <QComboBox>
+#include <QColorDialog>
 #include <QCoreApplication>
-#include <QDialogButtonBox>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
-#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QKeySequenceEdit>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
+#include <QPainter>
+#include <QPainterPath>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSpinBox>
-#include <QTabWidget>
+#include <QStackedWidget>
 #include <QVBoxLayout>
 
 namespace ss {
@@ -26,14 +28,57 @@ QString tr2(const char* text)
 {
     return QCoreApplication::translate("Settings", text);
 }
+
+// 侧边栏图标：复用工具栏的矢量图标
+QIcon pageIcon(const QString& page, const QColor& color)
+{
+    static const QHash<QString, QString> icons{
+        {QStringLiteral("general"), QStringLiteral("more")}, {QStringLiteral("appearance"), QStringLiteral("blur")},
+        {QStringLiteral("capture"), QStringLiteral("modeStatic")}, {QStringLiteral("pin"), QStringLiteral("pin")},
+        {QStringLiteral("annotation"), QStringLiteral("pencil")}, {QStringLiteral("output"), QStringLiteral("save")},
+        {QStringLiteral("control"), QStringLiteral("arrow")}, {QStringLiteral("recognition"), QStringLiteral("codes")},
+        {QStringLiteral("record"), QStringLiteral("modeRecord")}, {QStringLiteral("advanced"), QStringLiteral("more")},
+    };
+    return toolbarIcon(icons.value(page), color);
+}
+
+// 颜色色块：带透明度的颜色画在棋盘格上；无效颜色（空值）画一条斜线
+QIcon swatchIcon(const QColor& color, const QColor& border)
+{
+    QPixmap pm(36, 36);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing);
+    QPainterPath shape;
+    shape.addRoundedRect(QRectF(1, 1, 34, 34), 7, 7);
+    p.setClipPath(shape);
+    for (int y = 0; y < 4; ++y)
+        for (int x = 0; x < 4; ++x)
+            p.fillRect(x * 9, y * 9, 9, 9, (x + y) % 2 ? QColor(0xcc, 0xcc, 0xcc) : Qt::white);
+    if (color.isValid()) {
+        p.fillRect(pm.rect(), color);
+    } else {
+        p.setPen(QPen(QColor(0xe0, 0x40, 0x40), 2));
+        p.drawLine(6, 30, 30, 6);
+    }
+    p.setClipping(false);
+    p.setPen(QPen(border, 1.5));
+    p.setBrush(Qt::NoBrush);
+    p.drawPath(shape);
+    pm.setDevicePixelRatio(2.0);
+    return QIcon(pm);
+}
 } // namespace
 
 PreferencesDialog::PreferencesDialog(Settings& settings, QWidget* parent)
     : QDialog(parent)
     , m_settings(settings)
+    , m_colors(prefs::Colors::make(theme::accent(settings)))
 {
     setWindowTitle(tr("Preferences"));
-    setMinimumSize(560, 420);
+    setMinimumSize(760, 520);
+    resize(920, 660);
+    setStyleSheet(prefs::styleSheet(m_colors));
     buildPages();
 }
 
@@ -52,39 +97,140 @@ QString PreferencesDialog::pageTitle(const QString& page)
 
 void PreferencesDialog::buildPages()
 {
-    auto* layout = new QVBoxLayout(this);
-    auto* tabs = new QTabWidget(this);
-    layout->addWidget(tabs);
+    auto* root = new QHBoxLayout(this);
+    root->setContentsMargins(0, 0, 0, 0);
+    root->setSpacing(0);
+
+    // 左侧：搜索 + 分类
+    auto* sidebar = new QWidget(this);
+    sidebar->setObjectName(QStringLiteral("sidebar"));
+    sidebar->setFixedWidth(224);
+    auto* side = new QVBoxLayout(sidebar);
+    side->setContentsMargins(8, 12, 8, 12);
+    side->setSpacing(12);
+    auto* search = new QLineEdit(sidebar);
+    search->setObjectName(QStringLiteral("search"));
+    search->setPlaceholderText(tr("Search"));
+    search->setClearButtonEnabled(true);
+    search->addAction(toolbarIcon(QStringLiteral("magnifier"), m_colors.text), QLineEdit::LeadingPosition);
+    m_nav = new QListWidget(sidebar);
+    m_nav->setObjectName(QStringLiteral("nav"));
+    m_nav->setItemDelegate(new prefs::NavDelegate(m_colors, m_nav));
+    m_nav->setMouseTracking(true);
+    m_nav->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_nav->setCursor(Qt::PointingHandCursor);
+    side->addWidget(search);
+    side->addWidget(m_nav, 1);
+    root->addWidget(sidebar);
+
+    // 右侧：半透明面板（透出窗口底色），每页一个滚动区域，标题 + 卡片
+    m_stack = new QStackedWidget(this);
+    m_stack->setObjectName(QStringLiteral("content"));
+    auto* panel = new QVBoxLayout;
+    panel->setContentsMargins(0, 8, 0, 0);
+    panel->addWidget(m_stack);
+    root->addLayout(panel, 1);
+
     // 按首次出现顺序分页
     QStringList pages;
     for (const auto& spec : settingSpecs())
         if (!pages.contains(spec.page))
             pages.append(spec.page);
     pages.removeAll(QStringLiteral("hidden")); // CFG-06：高级配置只在配置文件里
-    for (const QString& page : pages) {
-        auto* scroll = new QScrollArea(tabs);
+    for (int i = 0; i < pages.size(); ++i) {
+        auto* scroll = new QScrollArea(m_stack);
         scroll->setWidgetResizable(true);
-        auto* content = new QWidget(scroll);
-        auto* form = new QFormLayout(content);
+        scroll->setFrameShape(QFrame::NoFrame);
+        scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        auto* page = new QWidget(scroll);
+        page->setObjectName(QStringLiteral("page"));
+        auto* v = new QVBoxLayout(page);
+        v->setContentsMargins(36, 28, 36, 36);
+        v->setSpacing(14);
+        auto* title = new QLabel(pageTitle(pages[i]), page);
+        title->setObjectName(QStringLiteral("pageTitle"));
+        auto* card = new prefs::Card(m_colors, page);
+        auto* rows = new QVBoxLayout(card);
+        rows->setContentsMargins(0, 2, 0, 2);
+        rows->setSpacing(0);
         for (const auto& spec : settingSpecs()) {
-            if (spec.page != page)
+            if (spec.page != pages[i])
                 continue;
-            auto* label = new QLabel(tr2(spec.title), content);
-            label->setToolTip(tr2(spec.description));
-            QWidget* editor = makeEditor(spec);
-            editor->setToolTip(tr2(spec.description));
-            editor->setAccessibleName(tr2(spec.title));            // NFR-14：屏幕阅读器读出选项名与说明
-            editor->setAccessibleDescription(tr2(spec.description));
-            label->setBuddy(editor);
-            editor->setObjectName(spec.key); // 测试按键名查找
-            form->addRow(label, editor);
+            QWidget* row = makeRow(spec, card);
+            rows->addWidget(row);
+            m_rows.append({row, tr2(spec.title) + QLatin1Char('\n') + tr2(spec.description), i});
         }
-        scroll->setWidget(content);
-        tabs->addTab(scroll, pageTitle(page));
+        v->addWidget(title);
+        v->addWidget(card);
+        v->addStretch(1);
+        scroll->setWidget(page);
+        m_stack->addWidget(scroll);
+        m_nav->addItem(new QListWidgetItem(pageIcon(pages[i], m_colors.text), pageTitle(pages[i])));
     }
-    auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
-    connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::accept);
-    layout->addWidget(buttons);
+    m_empty = new QLabel(tr("No matching settings"), m_stack);
+    m_empty->setObjectName(QStringLiteral("empty"));
+    m_empty->setAlignment(Qt::AlignCenter);
+    m_stack->addWidget(m_empty);
+
+    connect(m_nav, &QListWidget::currentRowChanged, m_stack, &QStackedWidget::setCurrentIndex);
+    connect(search, &QLineEdit::textChanged, this, &PreferencesDialog::filter);
+    m_nav->setCurrentRow(0);
+    m_nav->setFocus();
+}
+
+QWidget* PreferencesDialog::makeRow(const SettingSpec& spec, QWidget* parent)
+{
+    auto* row = new QWidget(parent);
+    auto* h = new QHBoxLayout(row);
+    h->setContentsMargins(16, 11, 16, 11);
+    h->setSpacing(24);
+    auto* texts = new QVBoxLayout;
+    texts->setSpacing(2);
+    // 标题与说明都可换行，最小宽度不受长串（如文件名变量列表）影响，窄窗口里不会把编辑器挤出卡片
+    auto* label = new QLabel(tr2(spec.title), row);
+    label->setObjectName(QStringLiteral("rowTitle"));
+    label->setToolTip(tr2(spec.description));
+    label->setWordWrap(true);
+    label->setMinimumWidth(1);
+    auto* desc = new QLabel(tr2(spec.description), row);
+    desc->setObjectName(QStringLiteral("rowDesc"));
+    desc->setWordWrap(true);
+    desc->setMinimumWidth(1);
+    texts->addWidget(label);
+    texts->addWidget(desc);
+
+    QWidget* editor = makeEditor(spec);
+    editor->setParent(row);
+    editor->setToolTip(tr2(spec.description));
+    editor->setAccessibleName(tr2(spec.title));            // NFR-14：屏幕阅读器读出选项名与说明
+    editor->setAccessibleDescription(tr2(spec.description));
+    label->setBuddy(editor);
+    editor->setObjectName(spec.key); // 测试按键名查找
+    h->addLayout(texts, 1);
+    h->addWidget(editor, 0, Qt::AlignRight | Qt::AlignVCenter);
+    return row;
+}
+
+void PreferencesDialog::filter(const QString& text)
+{
+    // 按标题与说明匹配；没有匹配项的分类从侧边栏隐藏
+    const QString needle = text.trimmed();
+    QList<bool> pageMatched(m_nav->count(), false);
+    for (const Row& row : m_rows) {
+        const bool match = needle.isEmpty() || row.text.contains(needle, Qt::CaseInsensitive);
+        row.widget->setVisible(match);
+        pageMatched[row.page] = pageMatched[row.page] || match;
+    }
+    int current = m_nav->currentRow();
+    for (int i = 0; i < m_nav->count(); ++i)
+        m_nav->item(i)->setHidden(!pageMatched[i]);
+    if (current < 0 || !pageMatched[current])
+        current = static_cast<int>(pageMatched.indexOf(true));
+    m_nav->setCurrentRow(current);
+    if (current < 0)
+        m_stack->setCurrentWidget(m_empty);
+    else
+        m_stack->setCurrentIndex(current);
 }
 
 QWidget* PreferencesDialog::makeEditor(const SettingSpec& spec)
@@ -93,43 +239,57 @@ QWidget* PreferencesDialog::makeEditor(const SettingSpec& spec)
     Settings& s = m_settings;
     switch (spec.type) {
     case SettingType::Bool: {
-        auto* box = new QCheckBox(this);
+        auto* box = new prefs::SwitchButton(m_colors, this);
         box->setChecked(s.boolValue(key));
         connect(box, &QCheckBox::toggled, this, [&s, key](bool v) { s.setValue(key, v); });
         return box;
     }
     case SettingType::Int: {
-        auto* spin = new QSpinBox(this);
+        auto* spin = new prefs::FocusWheel<QSpinBox>(this);
         spin->setRange(spec.minimum.isValid() ? spec.minimum.toInt() : -1000000, spec.maximum.isValid() ? spec.maximum.toInt() : 1000000);
         spin->setValue(s.intValue(key));
+        spin->setButtonSymbols(QAbstractSpinBox::NoButtons);
+        spin->findChild<QLineEdit*>()->setTextMargins(6, 0, 6, 0); // 样式表的 padding 对数字框内的编辑框不生效
+        spin->setFocusPolicy(Qt::StrongFocus);
+        spin->setFixedWidth(120);
         connect(spin, &QSpinBox::valueChanged, this, [&s, key](int v) { s.setValue(key, v); });
         return spin;
     }
     case SettingType::Double: {
-        auto* spin = new QDoubleSpinBox(this);
+        auto* spin = new prefs::FocusWheel<QDoubleSpinBox>(this);
         spin->setRange(spec.minimum.isValid() ? spec.minimum.toDouble() : -1e6, spec.maximum.isValid() ? spec.maximum.toDouble() : 1e6);
         spin->setValue(s.value(key).toDouble());
+        spin->setButtonSymbols(QAbstractSpinBox::NoButtons);
+        spin->findChild<QLineEdit*>()->setTextMargins(6, 0, 6, 0); // 样式表的 padding 对数字框内的编辑框不生效
+        spin->setFocusPolicy(Qt::StrongFocus);
+        spin->setFixedWidth(120);
         connect(spin, &QDoubleSpinBox::valueChanged, this, [&s, key](double v) { s.setValue(key, v); });
         return spin;
     }
     case SettingType::Enum: {
-        auto* combo = new QComboBox(this);
+        auto* combo = new prefs::ComboBox(m_colors, this);
         for (int i = 0; i < spec.choices.size(); ++i)
             combo->addItem(tr2(spec.choiceTitles.value(i, spec.choices[i].toUtf8().constData())), spec.choices[i]);
         combo->setCurrentIndex(std::max(0, static_cast<int>(spec.choices.indexOf(s.stringValue(key)))));
+        combo->setMinimumWidth(180);
+        combo->setMaximumWidth(260);
         connect(combo, &QComboBox::currentIndexChanged, this, [&s, key, combo](int i) { s.setValue(key, combo->itemData(i).toString()); });
         return combo;
     }
     case SettingType::KeySequence: {
         auto* edit = new QKeySequenceEdit(QKeySequence(s.stringValue(key)), this);
         edit->setMaximumSequenceLength(1);
+        edit->setClearButtonEnabled(true);
+        edit->setFixedWidth(180);
         connect(edit, &QKeySequenceEdit::editingFinished, this, [&s, key, edit] { s.setValue(key, edit->keySequence().toString(QKeySequence::PortableText)); });
         return edit;
     }
     case SettingType::Directory: {
         auto* row = new QWidget(this);
+        row->setFixedWidth(320);
         auto* h = new QHBoxLayout(row);
         h->setContentsMargins(0, 0, 0, 0);
+        h->setSpacing(8);
         auto* edit = new QLineEdit(s.stringValue(key), row);
         edit->setObjectName(key + QStringLiteral(".edit"));
         auto* browse = new QPushButton(tr("Browse..."), row);
@@ -145,9 +305,41 @@ QWidget* PreferencesDialog::makeEditor(const SettingSpec& spec)
         });
         return row;
     }
-    case SettingType::String:
     case SettingType::Color: {
+        // 色块打开取色器（含透明度）；文本框可直接输入，留空表示用默认
+        auto* row = new QWidget(this);
+        auto* h = new QHBoxLayout(row);
+        h->setContentsMargins(0, 0, 0, 0);
+        h->setSpacing(8);
+        auto* swatch = new QPushButton(row);
+        swatch->setObjectName(key + QStringLiteral(".swatch"));
+        swatch->setIconSize(QSize(18, 18));
+        swatch->setFixedSize(32, 30);
+        swatch->setCursor(Qt::PointingHandCursor);
+        swatch->setStyleSheet(QStringLiteral("padding: 0;"));
+        auto* edit = new QLineEdit(s.stringValue(key), row);
+        edit->setFixedWidth(110);
+        const QColor border = m_colors.cardBorder;
+        auto apply = [&s, key, edit, swatch, border](const QString& text) {
+            s.setValue(key, text);
+            swatch->setIcon(swatchIcon(QColor::fromString(text), border));
+        };
+        swatch->setIcon(swatchIcon(QColor::fromString(edit->text()), border));
+        h->addWidget(swatch);
+        h->addWidget(edit);
+        connect(edit, &QLineEdit::editingFinished, this, [apply, edit] { apply(edit->text()); });
+        connect(swatch, &QPushButton::clicked, this, [this, apply, edit] {
+            const QColor c = QColorDialog::getColor(QColor::fromString(edit->text()), this, QString(), QColorDialog::ShowAlphaChannel);
+            if (c.isValid()) {
+                edit->setText(c.name(QColor::HexArgb));
+                apply(edit->text());
+            }
+        });
+        return row;
+    }
+    case SettingType::String: {
         auto* edit = new QLineEdit(s.stringValue(key), this);
+        edit->setFixedWidth(240);
         connect(edit, &QLineEdit::editingFinished, this, [&s, key, edit] { s.setValue(key, edit->text()); });
         return edit;
     }

@@ -1671,6 +1671,16 @@
         <source>Choose folder</source>
         <translation>选择文件夹</translation>
     </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="113" />
+        <source>Search</source>
+        <translation>搜索</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="170" />
+        <source>No matching settings</source>
+        <translation>没有匹配的设置</translation>
+    </message>
 </context>
 <context>
     <name>QObject</name>
@@ -6455,6 +6465,16 @@
         <location filename="../src/app/PreferencesDialog.cpp" line="140" />
         <source>Choose folder</source>
         <translation>选择文件夹</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="113" />
+        <source>Search</source>
+        <translation>搜索</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="170" />
+        <source>No matching settings</source>
+        <translation>没有匹配的设置</translation>
     </message>
 </context>
 <context>

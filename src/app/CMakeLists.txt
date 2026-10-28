@@ -24,6 +24,7 @@ set(APPLIB_SOURCES
     CustomCaptureDialog.h CustomCaptureDialog.cpp
     OutputActions.h OutputActions.cpp
     PreferencesDialog.h PreferencesDialog.cpp
+    PreferencesWidgets.h PreferencesWidgets.cpp
     CommandServer.h CommandServer.cpp
 )
 if(SCREENSHOT_TEST_BUILD)

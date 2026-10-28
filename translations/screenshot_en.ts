@@ -1671,6 +1671,16 @@
         <source>Choose folder</source>
         <translation>Choose folder</translation>
     </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="113" />
+        <source>Search</source>
+        <translation>Search</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="170" />
+        <source>No matching settings</source>
+        <translation>No matching settings</translation>
+    </message>
 </context>
 <context>
     <name>QObject</name>
@@ -6455,6 +6465,16 @@
         <location filename="../src/app/PreferencesDialog.cpp" line="140" />
         <source>Choose folder</source>
         <translation>Choose folder</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="113" />
+        <source>Search</source>
+        <translation>Search</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="170" />
+        <source>No matching settings</source>
+        <translation>No matching settings</translation>
     </message>
 </context>
 <context>

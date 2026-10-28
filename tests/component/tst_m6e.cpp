@@ -27,7 +27,7 @@
 #include <QKeyEvent>
 #include <QMimeData>
 #include <QSignalSpy>
-#include <QTabWidget>
+#include <QListWidget>
 #include <QTemporaryDir>
 #include <QTest>
 
@@ -346,10 +346,10 @@ void TestM6E::hiddenAdvancedSettings()
     QCOMPARE(s.intValue(QStringLiteral("advanced.notificationMs")), 5000);
     QVERIFY(settingSpec(QStringLiteral("advanced.elementTimeoutMs")));
     PreferencesDialog dialog(s);
-    auto* tabs = dialog.findChild<QTabWidget*>();
-    QVERIFY(tabs);
-    for (int i = 0; i < tabs->count(); ++i)
-        QVERIFY(tabs->tabText(i) != QLatin1String("hidden") && tabs->tabText(i) != PreferencesDialog::pageTitle(QStringLiteral("hidden")));
+    auto* nav = dialog.findChild<QListWidget*>(QStringLiteral("nav"));
+    QVERIFY(nav);
+    for (int i = 0; i < nav->count(); ++i)
+        QVERIFY(nav->item(i)->text() != QLatin1String("hidden") && nav->item(i)->text() != PreferencesDialog::pageTitle(QStringLiteral("hidden")));
     // 配置文件里仍可改
     QTemporaryDir dir;
     const QString path = dir.filePath(QStringLiteral("s.json"));
