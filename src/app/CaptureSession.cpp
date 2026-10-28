@@ -1,5 +1,6 @@
 #include "app/CaptureSession.h"
 
+#include "app/WindowChrome.h"
 #include "app/CaptureToolbar.h"
 #include "app/EncodePreviewDialog.h"
 #include "app/OutputActions.h"
@@ -1472,7 +1473,7 @@ bool CaptureSession::confirmCancel()
 {
     if (!m_settings.boolValue(QStringLiteral("capture.confirmEscape")) || m_selection.isEmpty())
         return true;
-    return QMessageBox::question(nullptr, tr("Cancel capture"), tr("Discard this capture?")) == QMessageBox::Yes;
+    return theme::message(nullptr, QMessageBox::Question, tr("Cancel capture"), tr("Discard this capture?"), QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes;
 }
 
 void CaptureSession::cancel()

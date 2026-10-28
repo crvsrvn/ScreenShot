@@ -1,5 +1,7 @@
 #include "app/ToolbarIcons.h"
 
+#include "app/Theme.h"
+
 #include <QPainter>
 #include <QPainterPath>
 #include <QPixmap>
@@ -148,7 +150,7 @@ void drawSave(QPainter& p, const QColor& c)
 void drawQuickSave(QPainter& p, const QColor& c)
 {
     drawSave(p, c);
-    p.setPen(QPen(QColor(255, 200, 0), 2));
+    p.setPen(QPen(theme::colors().accentText, 2));
     p.drawLine(QPointF(15, 12), QPointF(12, 17));
     p.drawLine(QPointF(12, 17), QPointF(18, 15));
 }
@@ -209,7 +211,7 @@ void drawShadow(QPainter& p, const QColor& c)
     QColor faint = c;
     faint.setAlphaF(0.4f);
     p.fillRect(QRectF(6, 6, 11, 11), faint);
-    p.setBrush(QColor(43, 43, 43));
+    p.setBrush(theme::colors().surface[0]);
     p.drawRect(QRectF(3, 3, 11, 11));
 }
 void drawBorder(QPainter& p, const QColor&)
@@ -260,22 +262,27 @@ bool hasToolbarIcon(const QString& name)
     return drawFor(name) != nullptr;
 }
 
-QIcon toolbarIcon(const QString& name, const QColor& color)
+QIcon toolbarIcon(const QString& name, const QColor& requested)
 {
     const Draw draw = drawFor(name);
     if (!draw)
         return {};
+    // 未指定颜色时：常态用控件文字色，选中态（金色按钮上）用主按钮文字色
+    const QColor off = requested.isValid() ? requested : theme::colors().controlText;
+    const QColor on = requested.isValid() ? requested : theme::colors().onAccent;
     QIcon icon;
-    for (int scale : {1, 2, 3}) { // 高分屏（NFR-07）：按整数倍各画一份
-        QPixmap pm(20 * scale, 20 * scale);
-        pm.fill(Qt::transparent);
-        pm.setDevicePixelRatio(scale);
-        QPainter p(&pm);
-        p.setRenderHint(QPainter::Antialiasing, true);
-        p.setPen(QPen(color, 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-        p.setBrush(Qt::NoBrush);
-        draw(p, color);
-        icon.addPixmap(pm);
+    for (const auto& [color, state] : {std::pair{off, QIcon::Off}, std::pair{on, QIcon::On}}) {
+        for (int scale : {1, 2, 3}) { // 高分屏（NFR-07）：按整数倍各画一份
+            QPixmap pm(20 * scale, 20 * scale);
+            pm.fill(Qt::transparent);
+            pm.setDevicePixelRatio(scale);
+            QPainter p(&pm);
+            p.setRenderHint(QPainter::Antialiasing, true);
+            p.setPen(QPen(color, 1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)); // Fluent 图标的细线
+            p.setBrush(Qt::NoBrush);
+            draw(p, color);
+            icon.addPixmap(pm, QIcon::Normal, state);
+        }
     }
     return icon;
 }

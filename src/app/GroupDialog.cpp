@@ -1,11 +1,10 @@
 #include "app/GroupDialog.h"
 
+#include "app/WindowChrome.h"
 #include "app/PinManager.h"
 
-#include <QColorDialog>
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
-#include <QInputDialog>
 #include <QListWidget>
 #include <QMessageBox>
 #include <QPushButton>
@@ -46,6 +45,7 @@ GroupDialog::GroupDialog(PinManager& manager, QWidget* parent)
     layout->addWidget(buttons);
     connect(m_list, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem* item) { m_manager.switchToGroup(m_list->row(item)); });
     refresh();
+    theme::decorateWindow(this);
 }
 
 int GroupDialog::currentIndex() const
@@ -73,7 +73,7 @@ void GroupDialog::refresh()
 void GroupDialog::addGroup()
 {
     bool ok = false;
-    const QString name = QInputDialog::getText(this, tr("New pin group"), tr("Group name:"), QLineEdit::Normal, QString(), &ok);
+    const QString name = theme::getText(this, tr("New pin group"), tr("Group name:"), QString(), &ok);
     if (ok)
         m_manager.newGroup(name);
     refresh();
@@ -90,7 +90,7 @@ void GroupDialog::removeCurrent()
         if (i != index)
             others.append(names[i]);
     bool ok = false;
-    const QString target = QInputDialog::getItem(this, tr("Remove group"), tr("Move its pins to:"), others, 0, false, &ok);
+    const QString target = theme::getItem(this, tr("Remove group"), tr("Move its pins to:"), others, 0, &ok);
     if (!ok)
         return;
     m_manager.removeGroup(index, static_cast<int>(names.indexOf(target)));
@@ -103,7 +103,7 @@ void GroupDialog::renameCurrent()
     if (index < 0)
         return;
     bool ok = false;
-    const QString name = QInputDialog::getText(this, tr("Rename group"), tr("Group name:"), QLineEdit::Normal, m_manager.groupNames().value(index), &ok);
+    const QString name = theme::getText(this, tr("Rename group"), tr("Group name:"), m_manager.groupNames().value(index), &ok);
     if (ok && !name.trimmed().isEmpty())
         m_manager.renameGroup(index, name.trimmed());
     refresh();
@@ -125,7 +125,7 @@ void GroupDialog::colorCurrent()
     const int index = currentIndex();
     if (index < 0)
         return;
-    const QColor c = QColorDialog::getColor(m_manager.groupColor(index), this, tr("Group color"));
+    const QColor c = theme::getColor(m_manager.groupColor(index), this, tr("Group color"));
     if (c.isValid())
         m_manager.setGroupColor(index, c);
     refresh();

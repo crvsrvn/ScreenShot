@@ -1681,6 +1681,10 @@
         <source>No matching settings</source>
         <translation>No matching settings</translation>
     </message>
+    <message>
+        <source>Changes take effect immediately</source>
+        <translation>Changes take effect immediately</translation>
+    </message>
 </context>
 <context>
     <name>QObject</name>
@@ -6475,6 +6479,10 @@
         <location filename="../src/app/PreferencesDialog.cpp" line="170" />
         <source>No matching settings</source>
         <translation>No matching settings</translation>
+    </message>
+    <message>
+        <source>Changes take effect immediately</source>
+        <translation>Changes take effect immediately</translation>
     </message>
 </context>
 <context>

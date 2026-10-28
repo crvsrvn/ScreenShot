@@ -1,5 +1,6 @@
 #include "app/PinWindow.h"
 
+#include "app/WindowChrome.h"
 #include "app/CaptureToolbar.h"
 #include "app/OutputActions.h"
 #include "core/capture/Magnifier.h"
@@ -19,7 +20,6 @@
 #include <QDrag>
 #include <QDragEnterEvent>
 #include <QDropEvent>
-#include <QInputDialog>
 #include <QNativeGestureEvent>
 #include <QMessageBox>
 #include <QMimeData>
@@ -79,7 +79,7 @@ QScreen* screenForPhysical(QPoint physical)
 } // namespace
 
 std::function<bool(QWidget*, const QString&)> PinWindow::confirmHandler = [](QWidget* parent, const QString& text) {
-    return QMessageBox::question(parent, QStringLiteral("ScreenShot"), text) == QMessageBox::Yes;
+    return theme::message(parent, QMessageBox::Question, QStringLiteral("ScreenShot"), text, QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes;
 };
 
 PinWindow::PinWindow(const QImage& image, Settings& settings, OutputActions* output)
@@ -686,7 +686,7 @@ void PinWindow::setTitle(const QString& title)
 void PinWindow::editTitle()
 {
     bool ok = false;
-    const QString t = QInputDialog::getText(this, tr("Pin title"), tr("Title:"), QLineEdit::Normal, m_title, &ok);
+    const QString t = theme::getText(this, tr("Pin title"), tr("Title:"), m_title, &ok);
     if (ok)
         setTitle(t);
 }

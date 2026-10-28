@@ -1,5 +1,7 @@
 #include "app/Notification.h"
 
+#include "app/Theme.h"
+
 #include <QApplication>
 #include <QClipboard>
 #include <QDir>
@@ -33,10 +35,9 @@ NotificationWidget::NotificationWidget(const QString& title, const QString& mess
     setAttribute(Qt::WA_ShowWithoutActivating);
     setAttribute(Qt::WA_DeleteOnClose);
     setObjectName(QStringLiteral("notification"));
-    setStyleSheet(QStringLiteral("QWidget#notification { background: #2b2b2b; border: 1px solid #555; border-radius: 6px; } QLabel { color: white; } "
-                                 "QPushButton { color: white; background: #3a3a3a; border: 1px solid #666; border-radius: 3px; padding: 3px 8px; } QPushButton:hover { background: #3d6fb4; }"));
+    theme::makeSurface(this);
     auto* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(12, 10, 12, 10);
+    layout->setContentsMargins(14, 10, 14, 10);
     auto* titleLabel = new QLabel(QStringLiteral("<b>%1</b>").arg(title.toHtmlEscaped()), this);
     layout->addWidget(titleLabel);
     auto* messageLabel = new QLabel(message, this);

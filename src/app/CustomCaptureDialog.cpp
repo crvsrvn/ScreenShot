@@ -1,5 +1,6 @@
 #include "app/CustomCaptureDialog.h"
 
+#include "app/WindowChrome.h"
 #include "core/config/Settings.h"
 
 #include <QComboBox>
@@ -72,6 +73,7 @@ CustomCaptureDialog::CustomCaptureDialog(Settings& settings, QWidget* parent)
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
     form->addRow(buttons);
     reloadPresets();
+    theme::decorateWindow(this);
 }
 
 CustomCaptureDialog::Request CustomCaptureDialog::request() const

@@ -1,5 +1,7 @@
 #include "app/ResultDialogs.h"
 
+#include "app/WindowChrome.h"
+
 #include <QApplication>
 #include <QClipboard>
 #include "core/ocr/TableExtract.h"
@@ -39,6 +41,7 @@ OcrResultDialog::OcrResultDialog(const QString& text, QWidget* parent)
     buttons->addButton(QDialogButtonBox::Close);
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::accept);
     layout->addWidget(buttons);
+    theme::decorateWindow(this);
 }
 
 void OcrResultDialog::setLines(const QList<OcrLine>& lines)
@@ -87,6 +90,7 @@ CodeResultDialog::CodeResultDialog(const QList<CodeResult>& codes, QWidget* pare
     buttons->addButton(QDialogButtonBox::Close);
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::accept);
     layout->addWidget(buttons);
+    theme::decorateWindow(this);
 }
 
 QString CodeResultDialog::selectedText() const

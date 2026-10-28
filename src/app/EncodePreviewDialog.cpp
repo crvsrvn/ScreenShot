@@ -1,5 +1,6 @@
 #include "app/EncodePreviewDialog.h"
 
+#include "app/WindowChrome.h"
 #include "app/OutputActions.h"
 #include "core/pin/FilePin.h"
 
@@ -48,6 +49,7 @@ EncodePreviewDialog::EncodePreviewDialog(const QImage& image, OutputActions& out
     connect(m_format, &QComboBox::currentTextChanged, this, [this] { refresh(); });
     connect(m_quality, &QSlider::valueChanged, this, [this] { refresh(); });
     refresh();
+    theme::decorateWindow(this);
 }
 
 QString EncodePreviewDialog::format() const

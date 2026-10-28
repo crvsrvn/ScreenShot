@@ -1,7 +1,5 @@
 #pragma once
 
-#include "app/PreferencesWidgets.h"
-
 #include <QDialog>
 #include <QHash>
 
@@ -36,7 +34,6 @@ private:
     void filter(const QString& text);
 
     Settings& m_settings;
-    prefs::Colors m_colors;
     QListWidget* m_nav = nullptr;
     QStackedWidget* m_stack = nullptr;
     QLabel* m_empty = nullptr;

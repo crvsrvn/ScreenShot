@@ -1,6 +1,8 @@
 #include "app/CaptureToolbar.h"
 
+#include "app/Theme.h"
 #include "app/ToolbarIcons.h"
+#include "app/WindowChrome.h"
 
 #include "core/config/Settings.h"
 
@@ -122,17 +124,15 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
 {
     setAttribute(Qt::WA_ShowWithoutActivating);
     setAttribute(Qt::WA_AlwaysShowToolTips); // 工具栏从不激活，Qt 默认只给激活窗口显示悬停提示
-    setStyleSheet(QStringLiteral("QWidget { background: #2b2b2b; color: white; } QToolButton { color: white; padding: 4px 7px; border: none; border-radius: 3px; }"
-                                 "QToolButton:hover { background: #3d6fb4; } QToolButton:checked { background: #1f5aa6; }"
-                                 "QSpinBox, QFontComboBox { background: #3a3a3a; color: white; border: 1px solid #555; }"));
+    theme::makeSurface(this); // 与 AITranslator 截图翻译的工具栏一致：金色描边的圆角面板，内边距与间距 6
     auto* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(4, 4, 4, 4);
-    layout->setSpacing(3);
+    layout->setContentsMargins(6, 6, 6, 6);
+    layout->setSpacing(6);
 
     m_tools = new QWidget(this);
     auto* row = new QHBoxLayout(m_tools);
     row->setContentsMargins(0, 0, 0, 0);
-    row->setSpacing(2);
+    row->setSpacing(6);
     layout->addWidget(m_tools, 0, Qt::AlignLeft); // 选项行更宽时不把主栏按钮拉开
     // 自定义工具栏（ANN-14）：常用区按设置顺序；其余折叠进“更多”；最近从折叠区用过的工具有一个浮动按钮
     for (const auto& d : kTools) {
@@ -159,13 +159,13 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
     moreMenu->setAttribute(Qt::WA_AlwaysShowToolTips);
     auto* morePanel = new QWidget(moreMenu);
     auto* panelLayout = new QVBoxLayout(morePanel);
-    panelLayout->setContentsMargins(4, 4, 4, 4);
-    panelLayout->setSpacing(3);
+    panelLayout->setContentsMargins(6, 3, 6, 3);
+    panelLayout->setSpacing(6);
     for (QWidget** panelRow : {&m_moreTools, &m_moreActions}) {
         *panelRow = new QWidget(morePanel);
         auto* l = new QHBoxLayout(*panelRow);
         l->setContentsMargins(0, 0, 0, 0);
-        l->setSpacing(2);
+        l->setSpacing(6);
         panelLayout->addWidget(*panelRow, 0, Qt::AlignLeft); // 两行按钮各自靠左，不被拉宽
     }
     auto* panelAction = new QWidgetAction(moreMenu);
@@ -262,7 +262,8 @@ QToolButton* CaptureToolbar::addButton(QWidget* row, const QString& name, const 
     b->setObjectName(name);
     if (hasToolbarIcon(name)) {
         b->setIcon(toolbarIcon(name));
-        b->setIconSize(QSize(20, 20));
+        b->setIconSize(QSize(18, 18));
+        b->setFixedSize(32, 32);
         b->setToolButtonStyle(Qt::ToolButtonIconOnly);
         b->setToolTip(tooltip.isEmpty() || tooltip.startsWith(text) ? tooltip : text + QStringLiteral(" - ") + tooltip);
     } else {
@@ -280,19 +281,19 @@ void CaptureToolbar::buildOptions()
     m_options = new QWidget(this);
     auto* row = new QHBoxLayout(m_options);
     row->setContentsMargins(0, 0, 0, 0);
-    row->setSpacing(2);
+    row->setSpacing(6);
     AnnotationEditor& editor = m_target->editor();
 
     // 颜色（ANN-03、ANN-04）：色板来自设置，可编辑 / 排序 / 导入导出；滚轮调透明度
     m_paletteRow = new QWidget(m_options);
     auto* paletteLayout = new QHBoxLayout(m_paletteRow);
     paletteLayout->setContentsMargins(0, 0, 0, 0);
-    paletteLayout->setSpacing(2);
+    paletteLayout->setSpacing(4);
     row->addWidget(m_paletteRow);
     rebuildPalette();
     m_customColor = addButton(m_options, QStringLiteral("customColor"), tr("Custom"), tr("Pick a color (with opacity)"));
     connect(m_customColor, &QToolButton::clicked, this, [this] {
-        const QColor c = QColorDialog::getColor(m_target->editor().style().stroke, nullptr, tr("Annotation color"), QColorDialog::ShowAlphaChannel);
+        const QColor c = theme::getColor(m_target->editor().style().stroke, nullptr, tr("Annotation color"), QColorDialog::ShowAlphaChannel);
         if (c.isValid()) {
             m_target->editor().setColor(c);
             refreshColorButtons();
@@ -580,8 +581,10 @@ void CaptureToolbar::rebuildPalette()
         const QColor c = colors[i];
         auto* b = new QToolButton(m_paletteRow);
         b->setObjectName(QStringLiteral("color_%1").arg(i));
-        b->setFixedSize(20, 20);
-        b->setStyleSheet(QStringLiteral("QToolButton { background: %1; border: 1px solid #888; } QToolButton:checked { border: 2px solid white; }").arg(c.name(QColor::HexArgb)));
+        b->setFixedSize(24, 24);
+        b->setStyleSheet(QStringLiteral("QToolButton, QToolButton:hover { background: %1; border: 1px solid %2; border-radius: 4px; padding: 0; }"
+                                        "QToolButton:checked { border: 2px solid %3; }")
+                             .arg(c.name(QColor::HexArgb), theme::colors().strongStroke.name(QColor::HexArgb), theme::colors().text.name(QColor::HexArgb)));
         b->setCheckable(true);
         b->setFocusPolicy(Qt::NoFocus);
         b->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -604,13 +607,13 @@ void CaptureToolbar::rebuildPalette()
             QAction* exp = menu.addAction(tr("Export palette..."));
             QAction* chosen = menu.exec(m_colorButtons.value(i) ? m_colorButtons[i]->mapToGlobal(pos) : QCursor::pos());
             if (chosen == edit) {
-                const QColor c = QColorDialog::getColor(colors[i], nullptr, tr("Palette color"), QColorDialog::ShowAlphaChannel);
+                const QColor c = theme::getColor(colors[i], nullptr, tr("Palette color"), QColorDialog::ShowAlphaChannel);
                 if (c.isValid()) {
                     colors[i] = c;
                     savePalette(colors);
                 }
             } else if (chosen == add) {
-                const QColor c = QColorDialog::getColor(colors[i], nullptr, tr("Palette color"), QColorDialog::ShowAlphaChannel);
+                const QColor c = theme::getColor(colors[i], nullptr, tr("Palette color"), QColorDialog::ShowAlphaChannel);
                 if (c.isValid()) {
                     colors.insert(i + 1, c);
                     savePalette(colors);
@@ -667,7 +670,7 @@ void CaptureToolbar::refreshColorButtons()
     for (int i = 0; i < m_colorButtons.size() && i < colors.size(); ++i)
         m_colorButtons[i]->setChecked(colors[i].rgba() == current.rgba());
     if (m_customColor)
-        m_customColor->setStyleSheet(QStringLiteral("QToolButton { border: 2px solid %1; }").arg(current.name()));
+        m_customColor->setStyleSheet(QStringLiteral("QToolButton { border: 2px solid %1; border-radius: 4px; }").arg(current.name()));
 }
 
 void CaptureToolbar::syncFromEditor()

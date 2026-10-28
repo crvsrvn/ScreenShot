@@ -1,10 +1,12 @@
 #include "app/PreferencesDialog.h"
 
+#include "app/PreferencesWidgets.h"
 #include "app/Theme.h"
 #include "app/ToolbarIcons.h"
+#include "app/WindowChrome.h"
 #include "core/config/Settings.h"
 
-#include <QColorDialog>
+#include <QComboBox>
 #include <QCoreApplication>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
@@ -71,15 +73,15 @@ QIcon swatchIcon(const QColor& color, const QColor& border)
 } // namespace
 
 PreferencesDialog::PreferencesDialog(Settings& settings, QWidget* parent)
-    : QDialog(parent)
+    : QDialog(parent, Qt::Window | Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint)
     , m_settings(settings)
-    , m_colors(prefs::Colors::make(theme::accent(settings)))
 {
     setWindowTitle(tr("Preferences"));
     setMinimumSize(760, 520);
-    resize(920, 660);
-    setStyleSheet(prefs::styleSheet(m_colors));
+    resize(960, 680);
+    setStyleSheet(prefs::styleSheet());
     buildPages();
+    theme::decorateWindow(this);
 }
 
 QString PreferencesDialog::pageTitle(const QString& page)
@@ -97,39 +99,56 @@ QString PreferencesDialog::pageTitle(const QString& page)
 
 void PreferencesDialog::buildPages()
 {
-    auto* root = new QHBoxLayout(this);
+    // 布局与 AITranslator 主窗口一致：标题栏（decorateWindow）| 左侧导航 + 右侧内容面板 | 底部状态栏
+    const theme::Colors& colors = theme::colors();
+    auto* root = new QVBoxLayout(this);
     root->setContentsMargins(0, 0, 0, 0);
     root->setSpacing(0);
+    auto* body = new QHBoxLayout;
+    body->setSpacing(0);
+    root->addLayout(body, 1);
 
-    // 左侧：搜索 + 分类
-    auto* sidebar = new QWidget(this);
-    sidebar->setObjectName(QStringLiteral("sidebar"));
-    sidebar->setFixedWidth(224);
-    auto* side = new QVBoxLayout(sidebar);
-    side->setContentsMargins(8, 12, 8, 12);
-    side->setSpacing(12);
-    auto* search = new QLineEdit(sidebar);
+    m_nav = new QListWidget(this);
+    m_nav->setObjectName(QStringLiteral("nav"));
+    m_nav->setFixedWidth(176);
+    m_nav->setItemDelegate(new prefs::NavDelegate(m_nav));
+    m_nav->setMouseTracking(true);
+    m_nav->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    body->addWidget(m_nav);
+
+    // 内容面板：顶部栏（右侧搜索框，下方金色分隔线），下面每页一个滚动区域，页标题 + 卡片
+    constexpr int kHeaderHeight = 49;
+    auto* content = new prefs::ContentPanel(this);
+    content->setHeaderHeight(kHeaderHeight);
+    auto* panel = new QVBoxLayout(content);
+    panel->setContentsMargins(1, 1, 0, 0);
+    panel->setSpacing(0);
+    auto* header = new QHBoxLayout;
+    header->setContentsMargins(28, 0, 28, 1);
+    header->addStretch(1);
+    auto* search = new QLineEdit(content);
     search->setObjectName(QStringLiteral("search"));
     search->setPlaceholderText(tr("Search"));
     search->setClearButtonEnabled(true);
-    search->addAction(toolbarIcon(QStringLiteral("magnifier"), m_colors.text), QLineEdit::LeadingPosition);
-    m_nav = new QListWidget(sidebar);
-    m_nav->setObjectName(QStringLiteral("nav"));
-    m_nav->setItemDelegate(new prefs::NavDelegate(m_colors, m_nav));
-    m_nav->setMouseTracking(true);
-    m_nav->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_nav->setCursor(Qt::PointingHandCursor);
-    side->addWidget(search);
-    side->addWidget(m_nav, 1);
-    root->addWidget(sidebar);
+    search->setFixedWidth(240);
+    search->addAction(toolbarIcon(QStringLiteral("magnifier"), colors.controlTextSecondary), QLineEdit::LeadingPosition);
+    header->addWidget(search);
+    auto* headerBox = new QWidget(content);
+    headerBox->setFixedHeight(kHeaderHeight - 1);
+    headerBox->setLayout(header);
+    panel->addWidget(headerBox);
+    m_stack = new QStackedWidget(content);
+    panel->addWidget(m_stack, 1);
+    body->addWidget(content, 1);
 
-    // 右侧：半透明面板（透出窗口底色），每页一个滚动区域，标题 + 卡片
-    m_stack = new QStackedWidget(this);
-    m_stack->setObjectName(QStringLiteral("content"));
-    auto* panel = new QVBoxLayout;
-    panel->setContentsMargins(0, 8, 0, 0);
-    panel->addWidget(m_stack);
-    root->addLayout(panel, 1);
+    auto* status = new prefs::StatusBar(this);
+    status->setFixedHeight(34);
+    auto* statusRow = new QHBoxLayout(status);
+    statusRow->setContentsMargins(12, 1, 12, 0);
+    auto* statusText = new QLabel(tr("Changes take effect immediately"), status);
+    statusText->setObjectName(QStringLiteral("status"));
+    statusRow->addWidget(statusText);
+    root->addWidget(status);
 
     // 按首次出现顺序分页
     QStringList pages;
@@ -145,13 +164,13 @@ void PreferencesDialog::buildPages()
         auto* page = new QWidget(scroll);
         page->setObjectName(QStringLiteral("page"));
         auto* v = new QVBoxLayout(page);
-        v->setContentsMargins(36, 28, 36, 36);
-        v->setSpacing(14);
+        v->setContentsMargins(28, 20, 28, 24);
+        v->setSpacing(18);
         auto* title = new QLabel(pageTitle(pages[i]), page);
         title->setObjectName(QStringLiteral("pageTitle"));
-        auto* card = new prefs::Card(m_colors, page);
+        auto* card = new prefs::Card(page);
         auto* rows = new QVBoxLayout(card);
-        rows->setContentsMargins(0, 2, 0, 2);
+        rows->setContentsMargins(0, 0, 0, 0);
         rows->setSpacing(0);
         for (const auto& spec : settingSpecs()) {
             if (spec.page != pages[i])
@@ -165,7 +184,7 @@ void PreferencesDialog::buildPages()
         v->addStretch(1);
         scroll->setWidget(page);
         m_stack->addWidget(scroll);
-        m_nav->addItem(new QListWidgetItem(pageIcon(pages[i], m_colors.text), pageTitle(pages[i])));
+        m_nav->addItem(new QListWidgetItem(pageIcon(pages[i], colors.controlText), pageTitle(pages[i])));
     }
     m_empty = new QLabel(tr("No matching settings"), m_stack);
     m_empty->setObjectName(QStringLiteral("empty"));
@@ -182,7 +201,7 @@ QWidget* PreferencesDialog::makeRow(const SettingSpec& spec, QWidget* parent)
 {
     auto* row = new QWidget(parent);
     auto* h = new QHBoxLayout(row);
-    h->setContentsMargins(16, 11, 16, 11);
+    h->setContentsMargins(18, 12, 18, 12);
     h->setSpacing(24);
     auto* texts = new QVBoxLayout;
     texts->setSpacing(2);
@@ -239,7 +258,7 @@ QWidget* PreferencesDialog::makeEditor(const SettingSpec& spec)
     Settings& s = m_settings;
     switch (spec.type) {
     case SettingType::Bool: {
-        auto* box = new prefs::SwitchButton(m_colors, this);
+        auto* box = new prefs::SwitchButton(this);
         box->setChecked(s.boolValue(key));
         connect(box, &QCheckBox::toggled, this, [&s, key](bool v) { s.setValue(key, v); });
         return box;
@@ -248,8 +267,6 @@ QWidget* PreferencesDialog::makeEditor(const SettingSpec& spec)
         auto* spin = new prefs::FocusWheel<QSpinBox>(this);
         spin->setRange(spec.minimum.isValid() ? spec.minimum.toInt() : -1000000, spec.maximum.isValid() ? spec.maximum.toInt() : 1000000);
         spin->setValue(s.intValue(key));
-        spin->setButtonSymbols(QAbstractSpinBox::NoButtons);
-        spin->findChild<QLineEdit*>()->setTextMargins(6, 0, 6, 0); // 样式表的 padding 对数字框内的编辑框不生效
         spin->setFocusPolicy(Qt::StrongFocus);
         spin->setFixedWidth(120);
         connect(spin, &QSpinBox::valueChanged, this, [&s, key](int v) { s.setValue(key, v); });
@@ -259,15 +276,14 @@ QWidget* PreferencesDialog::makeEditor(const SettingSpec& spec)
         auto* spin = new prefs::FocusWheel<QDoubleSpinBox>(this);
         spin->setRange(spec.minimum.isValid() ? spec.minimum.toDouble() : -1e6, spec.maximum.isValid() ? spec.maximum.toDouble() : 1e6);
         spin->setValue(s.value(key).toDouble());
-        spin->setButtonSymbols(QAbstractSpinBox::NoButtons);
-        spin->findChild<QLineEdit*>()->setTextMargins(6, 0, 6, 0); // 样式表的 padding 对数字框内的编辑框不生效
         spin->setFocusPolicy(Qt::StrongFocus);
         spin->setFixedWidth(120);
         connect(spin, &QDoubleSpinBox::valueChanged, this, [&s, key](double v) { s.setValue(key, v); });
         return spin;
     }
     case SettingType::Enum: {
-        auto* combo = new prefs::ComboBox(m_colors, this);
+        auto* combo = new prefs::FocusWheel<QComboBox>(this);
+        combo->setFocusPolicy(Qt::StrongFocus);
         for (int i = 0; i < spec.choices.size(); ++i)
             combo->addItem(tr2(spec.choiceTitles.value(i, spec.choices[i].toUtf8().constData())), spec.choices[i]);
         combo->setCurrentIndex(std::max(0, static_cast<int>(spec.choices.indexOf(s.stringValue(key)))));
@@ -293,6 +309,7 @@ QWidget* PreferencesDialog::makeEditor(const SettingSpec& spec)
         auto* edit = new QLineEdit(s.stringValue(key), row);
         edit->setObjectName(key + QStringLiteral(".edit"));
         auto* browse = new QPushButton(tr("Browse..."), row);
+        browse->setAutoDefault(false);
         h->addWidget(edit, 1);
         h->addWidget(browse);
         connect(edit, &QLineEdit::editingFinished, this, [&s, key, edit] { s.setValue(key, edit->text()); });
@@ -314,12 +331,13 @@ QWidget* PreferencesDialog::makeEditor(const SettingSpec& spec)
         auto* swatch = new QPushButton(row);
         swatch->setObjectName(key + QStringLiteral(".swatch"));
         swatch->setIconSize(QSize(18, 18));
-        swatch->setFixedSize(32, 30);
+        swatch->setFixedSize(32, 32);
+        swatch->setAutoDefault(false);
         swatch->setCursor(Qt::PointingHandCursor);
         swatch->setStyleSheet(QStringLiteral("padding: 0;"));
         auto* edit = new QLineEdit(s.stringValue(key), row);
-        edit->setFixedWidth(110);
-        const QColor border = m_colors.cardBorder;
+        edit->setFixedWidth(120);
+        const QColor border = theme::colors().border;
         auto apply = [&s, key, edit, swatch, border](const QString& text) {
             s.setValue(key, text);
             swatch->setIcon(swatchIcon(QColor::fromString(text), border));
@@ -329,7 +347,7 @@ QWidget* PreferencesDialog::makeEditor(const SettingSpec& spec)
         h->addWidget(edit);
         connect(edit, &QLineEdit::editingFinished, this, [apply, edit] { apply(edit->text()); });
         connect(swatch, &QPushButton::clicked, this, [this, apply, edit] {
-            const QColor c = QColorDialog::getColor(QColor::fromString(edit->text()), this, QString(), QColorDialog::ShowAlphaChannel);
+            const QColor c = theme::getColor(QColor::fromString(edit->text()), this, QString(), QColorDialog::ShowAlphaChannel);
             if (c.isValid()) {
                 edit->setText(c.name(QColor::HexArgb));
                 apply(edit->text());

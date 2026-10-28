@@ -1,5 +1,7 @@
 #include "app/RecordWidgets.h"
 
+#include "app/Theme.h"
+
 #include "app/RecordSession.h"
 #include "core/annotation/AnnotationDocument.h"
 #include "core/annotation/Shapes.h"
@@ -84,8 +86,10 @@ RecordToolbar::RecordToolbar(RecordSession* session)
     , m_session(session)
 {
     setAttribute(Qt::WA_ShowWithoutActivating);
+    theme::makeSurface(this);
     auto* outer = new QVBoxLayout(this);
-    outer->setContentsMargins(6, 4, 6, 4);
+    outer->setContentsMargins(6, 6, 6, 6);
+    outer->setSpacing(6);
     auto* row = new QHBoxLayout;
     outer->addLayout(row);
     auto add = [&](const QString& name, const QString& text, auto slot) {

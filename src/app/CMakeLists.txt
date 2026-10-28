@@ -9,6 +9,8 @@ set(APPLIB_SOURCES
     ToolbarTarget.h
     PinWindow.h PinWindow.cpp PinWindowContent.cpp
     Theme.h Theme.cpp
+    ThemeStyle.h ThemeStyle.cpp
+    WindowChrome.h WindowChrome.cpp
     Notification.h Notification.cpp
     FloatingBar.h FloatingBar.cpp
     GroupDialog.h GroupDialog.cpp

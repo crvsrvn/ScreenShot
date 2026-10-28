@@ -1,5 +1,6 @@
 #include "app/RecordPlaybackDialog.h"
 
+#include "app/WindowChrome.h"
 #include "app/OutputActions.h"
 #include "core/config/Settings.h"
 #include "core/output/FileNaming.h"
@@ -55,6 +56,7 @@ RecordPlaybackDialog::RecordPlaybackDialog(std::shared_ptr<FrameStore> store, Se
     connect(&m_timer, &QTimer::timeout, this, &RecordPlaybackDialog::advance);
     buildUi();
     refreshPreview();
+    theme::decorateWindow(this);
 }
 
 RecordPlaybackDialog::~RecordPlaybackDialog() = default;

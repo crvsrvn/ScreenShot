@@ -1,5 +1,6 @@
 #include "app/ActionsDialog.h"
 
+#include "app/WindowChrome.h"
 #include "core/config/Settings.h"
 
 #include <QCheckBox>
@@ -46,6 +47,7 @@ ActionsDialog::ActionsDialog(Settings& settings, QWidget* parent)
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
     layout->addWidget(buttons);
     setActions(actionsFromJson(settings.stringValue(QStringLiteral("actions.list"))));
+    theme::decorateWindow(this);
 }
 
 void ActionsDialog::addRow(const Action& a)

@@ -2,6 +2,7 @@
 // 与 PinWindow.cpp 同属 PinWindow 类，按功能拆文件。
 #include "app/PinWindow.h"
 
+#include "app/WindowChrome.h"
 #include "core/color/ColorFormat.h"
 #include "core/config/Settings.h"
 #include "app/Notification.h"
@@ -15,7 +16,6 @@
 #include <QDir>
 #include <QFileIconProvider>
 #include <QFileInfo>
-#include <QInputDialog>
 #include <QMimeData>
 #include <QUrl>
 
@@ -187,7 +187,7 @@ void PinWindow::copyColorAs(const QString& format)
 void PinWindow::editColorValue()
 {
     bool ok = false;
-    const QString text = QInputDialog::getText(this, tr("Edit color"), tr("Color (#hex, rgb(), name, 3 numbers):"), QLineEdit::Normal, colorFormatLines(m_color).first().text, &ok);
+    const QString text = theme::getText(this, tr("Edit color"), tr("Color (#hex, rgb(), name, 3 numbers):"), colorFormatLines(m_color).first().text, &ok);
     if (!ok)
         return;
     if (const auto c = parseColorText(text))

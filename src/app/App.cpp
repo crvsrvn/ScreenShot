@@ -1,5 +1,6 @@
 #include "app/App.h"
 
+#include "app/WindowChrome.h"
 #include "app/CaptureSession.h"
 #include "app/ActionsDialog.h"
 #include "app/CommandServer.h"
@@ -32,7 +33,6 @@
 #include <QRegularExpression>
 #include <QTimer>
 #include <QGuiApplication>
-#include <QInputDialog>
 #include <QMenu>
 #include <QDateTime>
 #include <QElapsedTimer>
@@ -114,7 +114,7 @@ App::App(Platform platform, Settings& settings, QObject* parent)
     connect(m_pins.get(), &PinManager::codesRequested, this, [this](const QImage& image) {
         const QList<CodeResult> codes = decodeCodes(image);
         if (codes.isEmpty())
-            QMessageBox::information(nullptr, tr("Decode codes"), tr("No QR code or barcode found."));
+            theme::message(nullptr, QMessageBox::Information, tr("Decode codes"), tr("No QR code or barcode found."));
         else
             showCodeResult(codes);
     });
@@ -301,7 +301,7 @@ void App::rebuildGroupMenu()
     m_groupMenu->clear();
     m_groupMenu->addAction(tr("New group..."), this, [this] {
         bool ok = false;
-        const QString name = QInputDialog::getText(nullptr, tr("New pin group"), tr("Group name:"), QLineEdit::Normal, QString(), &ok);
+        const QString name = theme::getText(nullptr, tr("New pin group"), tr("Group name:"), QString(), &ok);
         if (ok)
             m_pins->newGroup(name);
         rebuildGroupMenu();
@@ -792,7 +792,7 @@ void App::decodeCodesFromFile(const QString& pathIn)
         return;
     const QList<CodeResult> codes = decodeCodes(QImage(path));
     if (codes.isEmpty())
-        QMessageBox::information(nullptr, tr("Decode codes in image"), tr("No QR code or barcode found."));
+        theme::message(nullptr, QMessageBox::Information, tr("Decode codes in image"), tr("No QR code or barcode found."));
     else
         showCodeResult(codes);
 }
@@ -809,8 +809,8 @@ void App::onSizeInputRequested()
     // CAP-17：输入宽高
     bool ok = false;
     const QRect sel = m_session->selection();
-    const QString text = QInputDialog::getText(nullptr, tr("Selection size"), tr("Width x Height (pixels)"), QLineEdit::Normal,
-                                               QStringLiteral("%1x%2").arg(sel.width()).arg(sel.height()), &ok);
+    const QString text = theme::getText(nullptr, tr("Selection size"), tr("Width x Height (pixels)"),
+                                        QStringLiteral("%1x%2").arg(sel.width()).arg(sel.height()), &ok);
     if (!ok)
         return;
     const QStringList parts = text.split(QRegularExpression(QStringLiteral("[xX*,\\s]+")), Qt::SkipEmptyParts);
@@ -1014,13 +1014,13 @@ void App::showPreferences()
 
 void App::showAbout()
 {
-    QMessageBox::about(nullptr, tr("About ScreenShot"),
-                       tr("<b>ScreenShot</b><br>Screenshot and pin tool.<br><br>Capture: %1<br>Pin clipboard: %2<br>Hide / show pins: %3<br><br>"
-                          "While capturing: drag to select, Enter / double-click to copy, Ctrl+S to save, Ctrl+Shift+S to quick save, "
-                          "Ctrl+T to pin, Esc to cancel, Tab to switch window / element detection, C to copy the pixel color, "
-                          "WASD and arrow keys to adjust by one pixel, , and . to recall previous captures.")
-                           .arg(m_settings.stringValue(QStringLiteral("hotkey.capture")), m_settings.stringValue(QStringLiteral("hotkey.pin")),
-                                m_settings.stringValue(QStringLiteral("hotkey.togglePins"))));
+    theme::message(nullptr, QMessageBox::NoIcon, tr("About ScreenShot"),
+                   tr("<b>ScreenShot</b><br>Screenshot and pin tool.<br><br>Capture: %1<br>Pin clipboard: %2<br>Hide / show pins: %3<br><br>"
+                      "While capturing: drag to select, Enter / double-click to copy, Ctrl+S to save, Ctrl+Shift+S to quick save, "
+                      "Ctrl+T to pin, Esc to cancel, Tab to switch window / element detection, C to copy the pixel color, "
+                      "WASD and arrow keys to adjust by one pixel, , and . to recall previous captures.")
+                       .arg(m_settings.stringValue(QStringLiteral("hotkey.capture")), m_settings.stringValue(QStringLiteral("hotkey.pin")),
+                            m_settings.stringValue(QStringLiteral("hotkey.togglePins"))));
 }
 
 bool App::hotkeyAllowed(const QKeySequence& seq) const
@@ -1359,7 +1359,7 @@ int App::recoverRecordings()
 {
     int opened = 0;
     for (const QString& dir : unfinishedRecordings()) {
-        const auto answer = QMessageBox::question(nullptr, tr("Recover recording"), tr("A recording was interrupted. Open it now?"), QMessageBox::Yes | QMessageBox::Discard);
+        const auto answer = theme::message(nullptr, QMessageBox::Question, tr("Recover recording"), tr("A recording was interrupted. Open it now?"), QMessageBox::Yes | QMessageBox::Discard);
         if (answer == QMessageBox::Yes && openRecording(dir))
             ++opened;
         else

@@ -1,5 +1,7 @@
 #include "app/FloatingBar.h"
 
+#include "app/Theme.h"
+
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QHBoxLayout>
@@ -16,11 +18,10 @@ FloatingBar::FloatingBar(QWidget* parent)
     setAttribute(Qt::WA_ShowWithoutActivating);
     setAcceptDrops(true);
     setObjectName(QStringLiteral("floatingBar"));
-    setStyleSheet(QStringLiteral("QWidget#floatingBar { background: #2b2b2b; border: 1px solid #555; border-radius: 6px; }"
-                                 "QToolButton { color: white; padding: 4px 8px; border: none; border-radius: 3px; } QToolButton:hover { background: #3d6fb4; }"));
+    theme::makeSurface(this);
     auto* layout = new QHBoxLayout(this);
-    layout->setContentsMargins(6, 4, 6, 4);
-    layout->setSpacing(2);
+    layout->setContentsMargins(6, 6, 6, 6);
+    layout->setSpacing(6);
     auto* grip = new QToolButton(this);
     grip->setText(QStringLiteral("☰"));
     grip->setObjectName(QStringLiteral("grip"));

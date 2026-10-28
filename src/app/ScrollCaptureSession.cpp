@@ -1,5 +1,7 @@
 #include "app/ScrollCaptureSession.h"
 
+#include "app/Theme.h"
+
 #include "core/config/Settings.h"
 #include "core/geometry/VirtualDesktop.h"
 
@@ -85,7 +87,7 @@ public:
         , m_session(session)
     {
         setAttribute(Qt::WA_ShowWithoutActivating);
-        setStyleSheet(QStringLiteral("QWidget { background: #2b2b2b; color: white; } QPushButton { padding: 4px 10px; background: #3d3d3d; border: none; } QPushButton:hover { background: #3d6fb4; }"));
+        theme::makeSurface(this);
         auto* layout = new QVBoxLayout(this);
         m_thumb = new QLabel(this);
         m_thumb->setFixedSize(180, 420);
@@ -136,7 +138,7 @@ public:
         else
             text += QStringLiteral("\n") + QObject::tr("Scroll the content to continue.");
         m_status->setText(text);
-        m_status->setStyleSheet(m_session->lastMatchOk() ? QStringLiteral("color: #8be08b;") : QStringLiteral("color: #ff8a80;"));
+        m_status->setStyleSheet(QStringLiteral("color: %1;").arg((m_session->lastMatchOk() ? theme::colors().muted : theme::colors().danger).name()));
         m_outputs->setVisible(m_session->state() == ScrollCaptureSession::State::Finished);
         adjustSize();
     }
