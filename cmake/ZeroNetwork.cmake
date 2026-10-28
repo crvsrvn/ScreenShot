@@ -22,7 +22,7 @@ function(screenshot_check_zero_network target)
             -DDUMPBIN=${_dumpbin}
             -DBINARY=$<TARGET_FILE:${target}>
             "-DFORBIDDEN=${SCREENSHOT_FORBIDDEN_IMPORTS}"
-            -P ${CMAKE_SOURCE_DIR}/cmake/ZeroNetworkCheck.cmake
+            -P ${SCREENSHOT_ROOT}/cmake/ZeroNetworkCheck.cmake
         COMMENT "零网络检查：${target}"
         VERBATIM)
 endfunction()

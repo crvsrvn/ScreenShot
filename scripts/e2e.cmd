@@ -5,7 +5,8 @@ rem the input scenarios are skipped there.
 rem Usage: scripts\e2e.cmd [preset]   (default: win-release-test)
 rem (ASCII only: cmd parses this file with the OEM code page.)
 setlocal
-cd /d "%~dp0.."
+rem CMakePresets.json is in src
+cd /d "%~dp0..\src"
 set "PRESET=%~1"
 if "%PRESET%"=="" set "PRESET=win-release-test"
 set "KEEP_OPEN="

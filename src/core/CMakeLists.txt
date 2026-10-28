@@ -48,5 +48,5 @@ qt_add_library(screenshot_core STATIC
     video/InputVisualizer.h video/InputVisualizer.cpp
     video/Playback.h video/Playback.cpp
 )
-target_include_directories(screenshot_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(screenshot_core PUBLIC ${SCREENSHOT_ROOT}/src)
 target_link_libraries(screenshot_core PUBLIC Qt6::Core Qt6::Gui Qt6::Concurrent PRIVATE ZXing::ZXing qjs webp libwebpmux)

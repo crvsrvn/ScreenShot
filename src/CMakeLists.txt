@@ -9,6 +9,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+# 本文件在 src/ 下，仓库根目录（cmake/、tests/、tools/、translations/ 所在）是它的上一级
+cmake_path(GET CMAKE_CURRENT_SOURCE_DIR PARENT_PATH SCREENSHOT_ROOT)
+
 option(SCREENSHOT_TEST_BUILD "编译内置测试接口（发布构建必须关闭）" ON)
 option(SCREENSHOT_BUILD_TESTS "编译自动测试与测试驱动" ON)
 
@@ -24,7 +27,7 @@ endif()
 find_package(Qt6 6.12 REQUIRED COMPONENTS Core Gui Widgets Svg PrintSupport Concurrent Test LinguistTools)
 qt_standard_project_setup()
 
-include(cmake/ZeroNetwork.cmake)
+include(${SCREENSHOT_ROOT}/cmake/ZeroNetwork.cmake)
 
 # ---- 第三方：ZXing-C++（二维码 / 条码，REC-06；纯本地库）----
 include(FetchContent)
@@ -77,13 +80,13 @@ foreach(t webp webpdecoder sharpyuv libwebpmux webpdemux)
 endforeach()
 
 # ---- 目标 ------------------------------------------------------------------
-add_subdirectory(src/core)
-add_subdirectory(src/platform)
-add_subdirectory(src/testing)
-add_subdirectory(src/app)
+add_subdirectory(core)
+add_subdirectory(platform)
+add_subdirectory(testing)
+add_subdirectory(app)
 
 if(SCREENSHOT_BUILD_TESTS)
     enable_testing()
-    add_subdirectory(tools/testdriver)
-    add_subdirectory(tests)
+    add_subdirectory(${SCREENSHOT_ROOT}/tools/testdriver tools/testdriver)
+    add_subdirectory(${SCREENSHOT_ROOT}/tests tests)
 endif()

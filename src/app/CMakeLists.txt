@@ -50,8 +50,8 @@ target_link_libraries(screenshot_app PRIVATE screenshot_applib)
 
 # 翻译（GEN-13）：.ts 在仓库里，.qm 构建时生成到 bin/translations
 qt_add_translations(screenshot_app
-    TS_FILES ${CMAKE_SOURCE_DIR}/translations/screenshot_zh_CN.ts ${CMAKE_SOURCE_DIR}/translations/screenshot_en.ts
-    SOURCES ${APPLIB_SOURCES} main.cpp ${CMAKE_SOURCE_DIR}/src/core/config/Settings.cpp ${CMAKE_SOURCE_DIR}/src/core/capture/Magnifier.cpp
+    TS_FILES ${SCREENSHOT_ROOT}/translations/screenshot_zh_CN.ts ${SCREENSHOT_ROOT}/translations/screenshot_en.ts
+    SOURCES ${APPLIB_SOURCES} main.cpp ${SCREENSHOT_ROOT}/src/core/config/Settings.cpp ${SCREENSHOT_ROOT}/src/core/capture/Magnifier.cpp
     QM_FILES_OUTPUT_VARIABLE SS_QM_FILES
     LUPDATE_OPTIONS -no-obsolete)
 add_custom_target(screenshot_translations ALL DEPENDS ${SS_QM_FILES}

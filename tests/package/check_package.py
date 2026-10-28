@@ -40,8 +40,8 @@ def main():
 
     out = pathlib.Path(a.out).resolve()
     if a.version == "auto":
-        # 从 CMakeLists.txt 的 project(... VERSION x.y.z) 取版本
-        text = (pathlib.Path(__file__).resolve().parents[2] / "CMakeLists.txt").read_text(encoding="utf-8")
+        # 从 src/CMakeLists.txt 的 project(... VERSION x.y.z) 取版本
+        text = (pathlib.Path(__file__).resolve().parents[2] / "src" / "CMakeLists.txt").read_text(encoding="utf-8")
         a.version = re.search(r"project\(.*?VERSION\s+([0-9.]+)", text, re.S).group(1)
     staging = out / "portable"
     if staging.exists():

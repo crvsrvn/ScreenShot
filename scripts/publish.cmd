@@ -9,6 +9,8 @@ rem (ASCII only: cmd parses this file with the OEM code page.)
 setlocal
 cd /d "%~dp0.."
 set "ROOT=%CD%"
+rem CMakePresets.json is in src
+cd src
 rem When started by double-click the window would close on exit: keep it open at the end.
 set "KEEP_OPEN="
 echo %cmdcmdline% | find /i "%~f0" >nul && set "KEEP_OPEN=1"

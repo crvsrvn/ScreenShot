@@ -60,8 +60,8 @@ ss_add_qtest(tst_stitch_p2 unit/tst_stitch_p2.cpp unit)
 if(WIN32)
     # 端到端滚动场景的离线复现：拼接器直接吃测试驱动窗口的文档
     ss_add_qtest(tst_stitch_window unit/tst_stitch_window.cpp unit)
-    target_sources(tst_stitch_window PRIVATE ${CMAKE_SOURCE_DIR}/tools/testdriver/ScrollTestWindow.cpp)
-    target_include_directories(tst_stitch_window PRIVATE ${CMAKE_SOURCE_DIR}/tools/testdriver)
+    target_sources(tst_stitch_window PRIVATE ${SCREENSHOT_ROOT}/tools/testdriver/ScrollTestWindow.cpp)
+    target_include_directories(tst_stitch_window PRIVATE ${SCREENSHOT_ROOT}/tools/testdriver)
     target_link_libraries(tst_stitch_window PRIVATE user32 gdi32)
 endif()
 ss_add_qtest(tst_hdr unit/tst_hdr.cpp unit)
@@ -73,7 +73,7 @@ endif()
 target_link_libraries(tst_output_p1 PRIVATE Qt6::PrintSupport)
 ss_add_qtest(tst_preferences component/tst_preferences.cpp component)
 ss_add_qtest(tst_i18n component/tst_i18n.cpp component)
-set_property(TEST tst_i18n tst_annotationeditor APPEND PROPERTY ENVIRONMENT "SS_TRANSLATIONS_DIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/translations" "SS_SOURCE_DIR=${CMAKE_SOURCE_DIR}")
+set_property(TEST tst_i18n tst_annotationeditor APPEND PROPERTY ENVIRONMENT "SS_TRANSLATIONS_DIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/translations" "SS_SOURCE_DIR=${SCREENSHOT_ROOT}")
 add_dependencies(tst_i18n screenshot_translations)
 if(WIN32)
     ss_add_qtest(tst_winsystem unit/tst_winsystem.cpp unit)
@@ -101,10 +101,10 @@ set_tests_properties(zero_network_imports PROPERTIES ENVIRONMENT_MODIFICATION "$
 find_package(Python3 COMPONENTS Interpreter)
 if(Python3_FOUND)
     add_test(NAME coverage_matrix
-        COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_SOURCE_DIR}/tools/coverage/gen_matrix.py
-            --docs ${CMAKE_SOURCE_DIR}/docs/01-requirements.md
-            --tests ${CMAKE_SOURCE_DIR}/tests ${CMAKE_SOURCE_DIR}/tools/testdriver ${CMAKE_SOURCE_DIR}/tools/coverage
-            --scope ${CMAKE_SOURCE_DIR}/tests/delivered_scope.txt
+        COMMAND ${Python3_EXECUTABLE} -I ${SCREENSHOT_ROOT}/tools/coverage/gen_matrix.py
+            --docs ${SCREENSHOT_ROOT}/docs/01-requirements.md
+            --tests ${SCREENSHOT_ROOT}/tests ${SCREENSHOT_ROOT}/tools/testdriver ${SCREENSHOT_ROOT}/tools/coverage
+            --scope ${SCREENSHOT_ROOT}/tests/delivered_scope.txt
             --out ${CMAKE_BINARY_DIR}/test-results/coverage.md)
     set_tests_properties(coverage_matrix PROPERTIES LABELS unit)
 endif()
@@ -113,9 +113,9 @@ endif()
 # 只在非 Debug 配置下跑（Debug 的 Qt 运行时体积不代表发布版）
 if(WIN32 AND Python3_FOUND AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_test(NAME package_portable
-        COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_SOURCE_DIR}/tests/package/check_package.py
+        COMMAND ${Python3_EXECUTABLE} -I ${SCREENSHOT_ROOT}/tests/package/check_package.py
             --exe $<TARGET_FILE:screenshot_app> --windeployqt ${SS_QT_BIN}/windeployqt.exe
             --translations ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/translations --version ${PROJECT_VERSION}
-            --out ${CMAKE_BINARY_DIR}/dist --iss ${CMAKE_SOURCE_DIR}/scripts/installer.iss)
+            --out ${CMAKE_BINARY_DIR}/dist --iss ${SCREENSHOT_ROOT}/scripts/installer.iss)
     set_tests_properties(package_portable PROPERTIES LABELS package TIMEOUT 900 ENVIRONMENT_MODIFICATION "${SS_PATH_MOD}")
 endif()
