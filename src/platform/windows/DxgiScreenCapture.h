@@ -11,6 +11,8 @@ namespace ss::win {
 
 // DXGI 桌面复制：每台显示器各自保持一个复制会话（在所属显卡上创建设备），
 // 画面无变化时复用上一帧；会话失效（ACCESS_LOST）时重建；仍失败则返回空，由上层改走 GDI。
+// 新建的会话在桌面下一次刷新前只交出一张空白（全黑）帧，所以程序启动后预建并常驻会话，
+// 还没有收到真实画面时返回空，由上层改走 GDI。
 class DxgiScreenCapture : public IScreenCapture {
 public:
     DxgiScreenCapture();
@@ -28,11 +30,12 @@ public:
 
 private:
     struct Output;
+    enum class Acquired { Frame, NoImageYet, Lost };
     Output* outputFor(const ScreenInfo& screen);
-    bool acquire(Output& out, QImage& image);
+    Acquired acquire(Output& out, QImage& image);
 
     QHash<QString, std::shared_ptr<Output>> m_outputs;
-    QTimer m_idleRelease; // 空闲一段时间后释放复制会话：桌面复制接口数量有限，常驻会挡住同机的另一个实例或录屏软件
+    QTimer m_warmUp; // 进入事件循环后为所有显示器预建复制会话，第一次截图时就已累积到真实画面
     fx::HdrStrategy m_hdrStrategy = fx::HdrStrategy::PreserveHighlights;
 };
 

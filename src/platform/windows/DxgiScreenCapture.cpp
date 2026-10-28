@@ -23,7 +23,6 @@ struct DxgiScreenCapture::Output {
     QImage lastFrame; // 最近一次成功取到的完整画面
     QSize size;
     qreal scale = 1.0;
-    bool everAcquired = false;
     bool hdr = false;              // 输出处于 HDR 模式：桌面复制交出 scRGB FP16 帧
     float sdrWhiteNits = 80.0f;    // SDR 白电平
 };
@@ -63,9 +62,12 @@ float screenSdrWhiteNits(const QString& deviceName)
 
 DxgiScreenCapture::DxgiScreenCapture()
 {
-    m_idleRelease.setSingleShot(true);
-    m_idleRelease.setInterval(3000);
-    QObject::connect(&m_idleRelease, &QTimer::timeout, [this] { reset(); });
+    m_warmUp.setSingleShot(true);
+    QObject::connect(&m_warmUp, &QTimer::timeout, [this] {
+        for (const ScreenInfo& screen : screens())
+            outputFor(screen);
+    });
+    m_warmUp.start(0);
 }
 DxgiScreenCapture::~DxgiScreenCapture() = default;
 
@@ -151,27 +153,29 @@ DxgiScreenCapture::Output* DxgiScreenCapture::outputFor(const ScreenInfo& screen
     return nullptr;
 }
 
-bool DxgiScreenCapture::acquire(Output& out, QImage& image)
+DxgiScreenCapture::Acquired DxgiScreenCapture::acquire(Output& out, QImage& image)
 {
-    // 第一次取帧要等桌面复制交出完整画面；之后不等待，取不到新帧就用上一帧
-    const UINT timeoutMs = out.everAcquired ? 0 : 500;
+    // 不等待：取不到新画面就用上一帧
+    auto reuseLast = [&] {
+        if (out.lastFrame.isNull())
+            return Acquired::NoImageYet;
+        image = out.lastFrame;
+        return Acquired::Frame;
+    };
     ComPtr<IDXGIResource> resource;
     DXGI_OUTDUPL_FRAME_INFO info{};
-    HRESULT hr = out.duplication->AcquireNextFrame(timeoutMs, &info, &resource);
-    if (hr == DXGI_ERROR_WAIT_TIMEOUT) {
-        if (out.lastFrame.isNull())
-            return false;
-        image = out.lastFrame;
-        return true;
-    }
+    HRESULT hr = out.duplication->AcquireNextFrame(0, &info, &resource);
+    if (hr == DXGI_ERROR_WAIT_TIMEOUT)
+        return reuseLast();
     if (FAILED(hr))
-        return false; // 包括 ACCESS_LOST，由调用方重建
+        return Acquired::Lost; // 包括 ACCESS_LOST，由调用方重建
 
-    // 桌面复制的帧始终是整幅画面（不只是脏区）；累计所有帧直到队列排空，拿最新的一帧
+    // 桌面复制的帧始终是整幅画面（不只是脏区）；累计所有帧直到队列排空，拿最新的一帧。
+    // LastPresentTime 为 0 的帧没有桌面画面（只有指针更新；新会话的第一帧是全黑的空白画面），不采用
     bool copied = false;
     for (;;) {
         ComPtr<ID3D11Texture2D> tex;
-        if (SUCCEEDED(resource.As(&tex))) {
+        if (info.LastPresentTime.QuadPart != 0 && SUCCEEDED(resource.As(&tex))) {
             out.context->CopyResource(out.staging.Get(), tex.Get());
             copied = true;
         }
@@ -182,11 +186,11 @@ bool DxgiScreenCapture::acquire(Output& out, QImage& image)
             break;
     }
     if (!copied)
-        return false;
+        return reuseLast();
 
     D3D11_MAPPED_SUBRESOURCE mapped{};
     if (FAILED(out.context->Map(out.staging.Get(), 0, D3D11_MAP_READ, 0, &mapped)))
-        return false;
+        return Acquired::Lost;
     QImage frame;
     if (out.hdr) {
         frame = fx::toneMapScRgb(static_cast<const uint16_t*>(mapped.pData), out.size.width(), out.size.height(), static_cast<int>(mapped.RowPitch), out.sdrWhiteNits, m_hdrStrategy);
@@ -199,9 +203,8 @@ bool DxgiScreenCapture::acquire(Output& out, QImage& image)
     frame.setDevicePixelRatio(out.scale);
     out.context->Unmap(out.staging.Get(), 0);
     out.lastFrame = frame;
-    out.everAcquired = true;
     image = frame;
-    return true;
+    return Acquired::Frame;
 }
 
 std::optional<ScreenSnapshot> DxgiScreenCapture::capture(const ScreenInfo& screen)
@@ -210,19 +213,20 @@ std::optional<ScreenSnapshot> DxgiScreenCapture::capture(const ScreenInfo& scree
     if (!out)
         return std::nullopt;
     QImage image;
-    if (!acquire(*out, image)) {
-        // 会话失效：重建一次
+    Acquired result = acquire(*out, image);
+    if (result == Acquired::Lost) {
+        // 会话失效：重建一次（新会话通常还没有真实画面，本次多半由上层走 GDI）
         m_outputs.remove(screen.id);
         out = outputFor(screen);
-        if (!out || !acquire(*out, image))
-            return std::nullopt;
+        result = out ? acquire(*out, image) : Acquired::Lost;
     }
+    if (result != Acquired::Frame)
+        return std::nullopt;
     if (image.size() != screen.physicalGeometry.size()) {
         // 分辨率与显示器布局不一致（刚切换模式），放弃，由上层走 GDI
         m_outputs.remove(screen.id);
         return std::nullopt;
     }
-    m_idleRelease.start();
     return ScreenSnapshot{screen, std::move(image), monotonicNs()};
 }
 
