@@ -111,7 +111,7 @@ public:
         auto* out = new QVBoxLayout(m_outputs);
         out->setContentsMargins(0, 0, 0, 0);
         for (const auto& [kind, text] : QList<QPair<QString, QString>>{{QStringLiteral("copy"), QObject::tr("Copy")}, {QStringLiteral("save"), QObject::tr("Save...")},
-                                                                       {QStringLiteral("quickSave"), QObject::tr("Quick save")}, {QStringLiteral("pin"), QObject::tr("Pin (annotate on the pin)")}}) {
+                                                                       {QStringLiteral("pin"), QObject::tr("Pin (annotate on the pin)")}}) {
             auto* b = new QPushButton(text, m_outputs);
             b->setObjectName(kind);
             const QString k = kind;

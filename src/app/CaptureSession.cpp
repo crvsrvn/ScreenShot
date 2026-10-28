@@ -221,67 +221,7 @@ bool CaptureSession::start(qint64 triggerNs, bool showOverlays)
     m_timings.captureDoneNs = monotonicNs();
     m_includeCursor = m_settings.boolValue(QStringLiteral("capture.includeCursor"));
     m_cursorImage = m_capture->captureCursor();
-    m_whiteboard = false;
     return startWithSnapshots(triggerNs, std::move(snapshots), showOverlays);
-}
-
-bool CaptureSession::startTransparentBoard(bool showOverlays)
-{
-    if (isActive() || !m_capture)
-        return false;
-    m_transparentBoard = true;
-    for (auto* w : std::as_const(m_overlays))
-        w->setTransparentMode(true);
-    if (!startWhiteboard(Qt::transparent, false, showOverlays)) {
-        m_transparentBoard = false;
-        for (auto* w : std::as_const(m_overlays))
-            w->setTransparentMode(false);
-        return false;
-    }
-    return true;
-}
-
-bool CaptureSession::startWhiteboard(const QColor& color, bool currentScreenOnly, bool showOverlays)
-{
-    if (isActive() || !m_capture)
-        return false;
-    m_timings = Timings{};
-    m_timings.triggerNs = monotonicNs();
-    const QPoint cursor = m_cursor;
-    QList<ScreenSnapshot> snapshots;
-    const QList<ScreenInfo> screens = m_capture->screens();
-    for (const auto& screen : screens) {
-        if (currentScreenOnly && !screen.physicalGeometry.contains(cursor))
-            continue;
-        QImage canvas(screen.physicalGeometry.size(), color.alpha() == 0 ? QImage::Format_ARGB32_Premultiplied : QImage::Format_RGB32);
-        canvas.fill(color);
-        canvas.setDevicePixelRatio(screen.scale);
-        snapshots.append(ScreenSnapshot{screen, canvas, monotonicNs()});
-    }
-    if (snapshots.isEmpty() && !screens.isEmpty()) {
-        // 光标不在任何显示器上：用主屏
-        for (const auto& screen : screens) {
-            if (!screen.primary && screens.size() > 1)
-                continue;
-            QImage canvas(screen.physicalGeometry.size(), QImage::Format_RGB32);
-            canvas.fill(color);
-            canvas.setDevicePixelRatio(screen.scale);
-            snapshots.append(ScreenSnapshot{screen, canvas, monotonicNs()});
-            break;
-        }
-    }
-    if (snapshots.isEmpty())
-        return false;
-    m_timings.captureDoneNs = monotonicNs();
-    m_includeCursor = false;
-    m_cursorImage.reset();
-    m_whiteboard = true;
-    if (!startWithSnapshots(m_timings.triggerNs, std::move(snapshots), showOverlays))
-        return false;
-    // 整块画布作为选区并直接进入标注
-    setSelection(m_desktop.bounds());
-    setTool(AnnotationEditor::Tool::Pencil);
-    return true;
 }
 
 bool CaptureSession::startWithSnapshots(qint64 triggerNs, QList<ScreenSnapshot> snapshots, bool showOverlays)
@@ -297,7 +237,7 @@ bool CaptureSession::startWithSnapshots(qint64 triggerNs, QList<ScreenSnapshot> 
         }
     }
     if (layoutChanged) {
-        // 按快照建覆盖窗口（白板可能只覆盖部分显示器）
+        // 按快照建覆盖窗口
         QHash<QString, OverlayWindow*> next;
         for (const auto& snap : snapshots) {
             OverlayWindow* w = m_overlays.take(snap.screen.id);
@@ -313,7 +253,7 @@ bool CaptureSession::startWithSnapshots(qint64 triggerNs, QList<ScreenSnapshot> 
     }
 
     m_desktop = VirtualDesktop(std::move(snapshots));
-    m_windowFinder = WindowFinder(m_windows && !m_whiteboard ? m_windows->topLevelWindows() : QList<WindowInfo>{}, m_desktop.bounds());
+    m_windowFinder = WindowFinder(m_windows ? m_windows->topLevelWindows() : QList<WindowInfo>{}, m_desktop.bounds());
     m_selection = QRect();
     m_highlight.reset();
     m_windowHighlight.reset();
@@ -325,7 +265,7 @@ bool CaptureSession::startWithSnapshots(qint64 triggerNs, QList<ScreenSnapshot> 
     m_ratioLocked = false;
     m_fullScreenAll = m_settings.boolValue(QStringLiteral("capture.fullScreenAllMonitors"));
     const QString mode = m_settings.stringValue(QStringLiteral("capture.detectMode"));
-    m_detectMode = m_whiteboard ? DetectMode::Off : mode == QLatin1String("window") ? DetectMode::Window : mode == QLatin1String("off") ? DetectMode::Off : DetectMode::Element;
+    m_detectMode = mode == QLatin1String("window") ? DetectMode::Window : mode == QLatin1String("off") ? DetectMode::Off : DetectMode::Element;
     m_colorFormat = colorFormatFromName(m_settings.stringValue(QStringLiteral("capture.colorFormat")));
     m_shadow = m_settings.boolValue(QStringLiteral("output.shadow"));
     m_border = m_settings.boolValue(QStringLiteral("output.border"));
@@ -348,7 +288,7 @@ bool CaptureSession::startWithSnapshots(qint64 triggerNs, QList<ScreenSnapshot> 
 
 bool CaptureSession::refresh()
 {
-    if (!isActive() || m_whiteboard || !m_capture)
+    if (!isActive() || !m_capture)
         return false;
     // 隐藏覆盖窗口再抓，避免把自己抓进去
     for (auto* w : std::as_const(m_overlays))
@@ -518,22 +458,6 @@ QImage CaptureSession::finalImage() const
     QImage image = currentImage();
     if (image.isNull())
         return image;
-    if (m_transparentBoard && m_capture) {
-        // CAP-51：抓取实时桌面，把透明画布上的标注合成上去
-        auto* self = const_cast<CaptureSession*>(this);
-        self->hideOverlaysTemporarily(true);
-        QCoreApplication::processEvents();
-        const VirtualDesktop live(m_capture->captureAll());
-        QImage base = live.crop(m_selection).convertToFormat(QImage::Format_ARGB32_Premultiplied);
-        if (!base.isNull()) {
-            QPainter p(&base);
-            p.drawImage(0, 0, image);
-            p.end();
-            image = base;
-        }
-        if (isActive())
-            self->hideOverlaysTemporarily(false);
-    }
     if (m_includeCursor && m_cursorImage && m_state != State::History)
         image = composeCursor(image, m_cursorImage->image, m_cursorImage->physicalTopLeft - m_selection.topLeft());
     DecorateOptions o;
@@ -554,8 +478,8 @@ void CaptureSession::runActions(const QStringList& actionsIn)
     if (image.isNull())
         return;
     const QRect region = m_selection;
-    // 固定顺序：复制 → 贴图 → 保存 → 快速保存 → OCR 复制（CAP-04）
-    static const QStringList order{QStringLiteral("copy"), QStringLiteral("pin"), QStringLiteral("save"), QStringLiteral("quickSave"), QStringLiteral("ocrCopy")};
+    // 固定顺序：复制 → 贴图 → 保存 → OCR 复制（CAP-04）
+    static const QStringList order{QStringLiteral("copy"), QStringLiteral("pin"), QStringLiteral("save"), QStringLiteral("ocrCopy")};
     QStringList actions;
     for (const QString& a : order)
         if (actionsIn.contains(a, Qt::CaseInsensitive))
@@ -576,8 +500,6 @@ void CaptureSession::runActions(const QStringList& actionsIn)
             m_output->saveWithDialog(image, nullptr);
             if (isActive())
                 hideOverlaysTemporarily(false);
-        } else if (a == QLatin1String("quickSave") && m_output) {
-            m_output->quickSave(image);
         } else if (a == QLatin1String("ocrCopy")) {
             emit ocrCopyRequested(image);
         }
@@ -912,9 +834,7 @@ bool CaptureSession::handleKeyPress(QKeyEvent* e)
         const QString action = map.actionFor(QStringLiteral("capture"), key, mods);
         if (action == QLatin1String("copy")) { accept(); return true; }
         if (action == QLatin1String("save")) { save(); return true; }
-        if (action == QLatin1String("quickSave")) { quickSave(); return true; }
         if (action == QLatin1String("pin")) { pin(); return true; }
-        if (action == QLatin1String("print")) { print(); return true; }
         if (action == QLatin1String("ocrCopy")) { ocrCopy(); return true; }
         if (action == QLatin1String("scroll")) { startScroll(); return true; }
         if (action == QLatin1String("refresh")) { refresh(); return true; }
@@ -1338,21 +1258,6 @@ void CaptureSession::save()
     finish();
 }
 
-void CaptureSession::quickSave()
-{
-    if (!isActive() || !m_output)
-        return;
-    const QImage image = finalImage();
-    if (image.isNull())
-        return;
-    const QRect region = m_selection;
-    if (m_output->quickSave(image).isEmpty())
-        return;
-    recordHistory(image, region);
-    emit captured(image, region);
-    finish();
-}
-
 std::optional<WindowInfo> CaptureSession::sourceWindow() const
 {
     if (m_selection.isEmpty())
@@ -1380,25 +1285,6 @@ void CaptureSession::previewAndSave()
         m_settings.setValue(QStringLiteral("output.jpegQuality"), dialog.quality());
     }
     save();
-}
-
-void CaptureSession::print()
-{
-    if (!isActive() || !m_output)
-        return;
-    const QImage image = finalImage();
-    if (image.isNull())
-        return;
-    hideOverlaysTemporarily(true);
-    const bool ok = m_output->print(image, nullptr);
-    if (!ok) {
-        if (isActive())
-            hideOverlaysTemporarily(false);
-        return;
-    }
-    recordHistory(image, m_selection);
-    emit captured(image, m_selection);
-    finish();
 }
 
 void CaptureSession::pin()
@@ -1500,11 +1386,6 @@ void CaptureSession::finish()
 {
     m_state = State::Idle;
     m_mode = Mode::Static;
-    if (m_transparentBoard) {
-        m_transparentBoard = false;
-        for (auto* w : std::as_const(m_overlays))
-            w->setTransparentMode(false);
-    }
     m_actionsOverride.clear();
     m_codes.clear();
     ++m_codesVersion;

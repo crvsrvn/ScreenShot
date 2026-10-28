@@ -260,39 +260,6 @@ void AnnotationEditor::setTextPointer(std::optional<QPointF> target)
     }
 }
 
-int AnnotationEditor::addWatermark()
-{
-    removeWatermark();
-    auto w = std::make_unique<WatermarkAnnotation>();
-    w->setCanvasSize(m_doc.size());
-    w->setText(m_settings.stringValue(QStringLiteral("annotation.watermarkText")));
-    w->setPlacement(WatermarkAnnotation::placementFromName(m_settings.stringValue(QStringLiteral("annotation.watermarkPlacement"))));
-    w->setOpacity(m_settings.intValue(QStringLiteral("annotation.watermarkOpacity")));
-    w->setFont(QFont(m_settings.stringValue(QStringLiteral("annotation.watermarkFont")), m_settings.intValue(QStringLiteral("annotation.watermarkSize"))));
-    w->setSpacing(m_settings.intValue(QStringLiteral("annotation.watermarkSpacing")));
-    AnnotationStyle s = m_style;
-    w->setStyle(s);
-    const int id = m_doc.add(std::move(w));
-    emit changed();
-    return id;
-}
-
-void AnnotationEditor::removeWatermark()
-{
-    for (int i = m_doc.count() - 1; i >= 0; --i)
-        if (m_doc.at(i)->type() == QLatin1String("watermark"))
-            m_doc.remove(m_doc.at(i)->id());
-    emit changed();
-}
-
-bool AnnotationEditor::hasWatermark() const
-{
-    for (int i = 0; i < m_doc.count(); ++i)
-        if (m_doc.at(i)->type() == QLatin1String("watermark"))
-            return true;
-    return false;
-}
-
 QList<int> AnnotationEditor::selectedIds() const
 {
     QList<int> ids;
@@ -1122,7 +1089,7 @@ void AnnotationEditor::releaseAt(QPointF p, Qt::MouseButton button)
     case DragMode::Marquee: {
         QList<int> ids;
         for (int i = 0; i < m_doc.count(); ++i)
-            if (m_doc.at(i)->type() != QLatin1String("watermark") && m_marquee.intersects(m_doc.at(i)->rotatedBounds()))
+            if (m_marquee.intersects(m_doc.at(i)->rotatedBounds()))
                 ids.append(m_doc.at(i)->id());
         m_marquee = QRectF();
         selectMany(ids);

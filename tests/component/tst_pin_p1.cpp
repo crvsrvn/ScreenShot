@@ -1,5 +1,5 @@
-// REQ: PIN-05 PIN-06 PIN-07 PIN-11 PIN-21 PIN-27 PIN-29 PIN-30 PIN-31 PIN-32 PIN-36 PIN-53 PIN-60 GRP-01
-// M5 贴图 P1：HTML / 文本选择 / 颜色贴图、替换、吸附、灰度反色、缩略图、显示范围、裁剪、置顶、阴影状态色、关闭确认、多选、分组
+// REQ: PIN-05 PIN-06 PIN-07 PIN-11 PIN-21 PIN-27 PIN-29 PIN-30 PIN-31 PIN-32 PIN-36 PIN-53 PIN-60
+// M5 贴图 P1：HTML / 文本选择 / 颜色贴图、替换、吸附、灰度反色、缩略图、显示范围、裁剪、置顶、阴影状态色、关闭确认、多选
 #include "app/PinManager.h"
 #include "app/PinWindow.h"
 #include "core/config/Settings.h"
@@ -64,7 +64,6 @@ private slots:
     void shadowColorsByState();
     void confirmCloseAndBatch();
     void multiSelectOperations();
-    void groups();
 };
 
 void TestPinP1::htmlPinAndIgnoreFormatting()
@@ -390,11 +389,6 @@ void TestPinP1::shadowColorsByState()
     const QColor selected = pin.shadowColor();
     QVERIFY(selected != inactive && selected != through);
     pin.setSelected(false);
-    pin.setGroupIndex(2);
-    const QColor group = pin.shadowColor();
-    QVERIFY(group != inactive && group != selected);
-    pin.setGroupIndex(3);
-    QVERIFY(pin.shadowColor() != group);
     s.setValue(QStringLiteral("pin.shadow"), false);
     QCOMPARE(pin.shadowColor().alpha(), 0);
     // 关掉阴影后绘制不崩溃
@@ -498,52 +492,6 @@ void TestPinP1::multiSelectOperations()
     QVERIFY(c->selected());
     ctrlClick();
     QVERIFY(!c->selected());
-}
-
-void TestPinP1::groups()
-{
-    Settings s;
-    PinManager m(s, nullptr);
-    QCOMPARE(m.groupNames().size(), 1);
-    PinWindow* a = m.pinImage(testImage(), QPoint(0, 0));
-    QVERIFY(a);
-    a->closePin();
-    QApplication::processEvents();
-    PinWindow* b = m.pinImage(testImage(), QPoint(0, 0));
-    QVERIFY(b && b->isVisible());
-    QCOMPARE(m.closedPins().size(), 1);
-    // 新建组并切换：原组贴图隐藏，新组为空、历史独立
-    const int work = m.newGroup(QStringLiteral("Work"));
-    QCOMPARE(work, 1);
-    QCOMPARE(m.currentGroupName(), QStringLiteral("Work"));
-    QVERIFY(!b->isVisible());
-    QCOMPARE(m.pins().size(), 0);
-    QCOMPARE(m.closedPins().size(), 0);
-    QVERIFY(!m.restoreLastClosed());
-    PinWindow* w = m.pinImage(testImage(), QPoint(0, 0));
-    QVERIFY(w && w->isVisible());
-    QCOMPARE(w->groupIndex(), 1);
-    // 按名称切换、回到上一个、轮换
-    QVERIFY(m.switchToGroupNamed(QStringLiteral("default")));
-    QVERIFY(b->isVisible() && !w->isVisible());
-    QCOMPARE(m.pins().size(), 1);
-    m.previousGroup();
-    QCOMPARE(m.currentGroupIndex(), 1);
-    m.nextGroup();
-    QCOMPARE(m.currentGroupIndex(), 0);
-    m.nextGroup();
-    QCOMPARE(m.currentGroupIndex(), 1);
-    // 关闭 Work 组的贴图进入 Work 组历史；清空组销毁贴图并清空历史
-    w->closePin();
-    QApplication::processEvents();
-    QCOMPARE(m.closedPins().size(), 1);
-    m.pinImage(testImage(), QPoint(0, 0));
-    m.clearCurrentGroup();
-    QCOMPARE(m.pins().size(), 0);
-    QCOMPARE(m.closedPins().size(), 0);
-    m.switchToGroup(0);
-    QCOMPARE(m.pins().size(), 1);
-    QCOMPARE(m.closedPins().size(), 1);
 }
 
 QTEST_MAIN(TestPinP1)

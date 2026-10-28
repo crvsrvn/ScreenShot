@@ -41,7 +41,8 @@ struct Fixture {
     {
         app = std::make_unique<App>(makeFakePlatform(&h), s);
         app->setDataDir(tmp.path());
-        s.setValue(QStringLiteral("output.quickSaveDir"), tmp.filePath(QStringLiteral("out")));
+        QDir().mkpath(tmp.filePath(QStringLiteral("out")));
+        s.setValue(QStringLiteral("output.saveDir"), tmp.filePath(QStringLiteral("out")));
         s.setValue(QStringLiteral("record.fps"), 30);
     }
     RecordSession* begin(const QRect& region = QRect(100, 100, 64, 48))
@@ -236,15 +237,15 @@ void TestRecord::inputEventsAndKeyNames()
     r->setMode(RecordSession::Mode::Quick);
     r->start();
     f.advance(r, 2);
-    // 全局输入经 App 转发（VID-06）：区域外的点击忽略
-    f.app->onGlobalMouse(1, true, QPoint(10, 10));
-    f.app->onGlobalMouse(1, true, QPoint(110, 120));
-    f.app->onGlobalMouse(1, false, QPoint(110, 120));
+    // 全局输入（VID-06）：区域外的点击忽略
+    r->noteMouseButton(1, true, QPoint(10, 10));
+    r->noteMouseButton(1, true, QPoint(110, 120));
+    r->noteMouseButton(1, false, QPoint(110, 120));
     r->noteWheel(120, QPoint(130, 130));
-    f.app->onGlobalKeyDown(0xA2, false, 0); // Ctrl 按下
-    f.app->onGlobalKeyDown(0x43, false, 0); // C
+    r->noteKey(0xA2, true); // Ctrl 按下
+    r->noteKey(0x43, true); // C
     r->noteKey(0xA2, false);
-    f.app->onGlobalKeyDown(0x43, false, 0); // 再按 C：无修饰键
+    r->noteKey(0x43, true); // 再按 C：无修饰键
     QCOMPARE(r->events().size(), 4);
     QCOMPARE(r->events()[0].kind, InputEvent::Kind::Click);
     QCOMPARE(r->events()[0].pos, QPoint(10, 20));
@@ -360,11 +361,6 @@ void TestRecord::playbackSaveCopyDiscard()
     RecordPlaybackDialog* d = f.app->playbackDialog();
     QVERIFY(d);
     d->setFormat(QStringLiteral("gif"));
-    const QString quick = d->quickSave();
-    QVERIFY2(!quick.isEmpty(), qPrintable(d->lastError()));
-    QVERIFY2(quick.startsWith(f.tmp.filePath(QStringLiteral("out"))) && quick.endsWith(QStringLiteral(".gif")), qPrintable(quick));
-    QVERIFY(QFile::exists(quick));
-    QCOMPARE(f.app->recordLastFile(), quick);
     const QString copied = d->copyToClipboard();
     QVERIFY(QFile::exists(copied));
     QCOMPARE(QGuiApplication::clipboard()->mimeData()->urls().first().toLocalFile(), copied);
@@ -372,6 +368,7 @@ void TestRecord::playbackSaveCopyDiscard()
     d->setDialogOverride(chosen);
     QCOMPARE(d->save(), chosen);
     QVERIFY(QFile::exists(chosen));
+    QCOMPARE(f.app->recordLastFile(), chosen);
     const QString dir = d->store()->dir();
     d->discard();
     QVERIFY(!QDir(dir).exists());

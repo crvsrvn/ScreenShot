@@ -24,7 +24,7 @@ endif()
 
 # ---- Qt --------------------------------------------------------------------
 # 零网络原则：这里只允许列出的模块，Qt Network / Qml / Quick 永远不出现。
-find_package(Qt6 6.12 REQUIRED COMPONENTS Core Gui Widgets Svg PrintSupport Concurrent Test LinguistTools)
+find_package(Qt6 6.12 REQUIRED COMPONENTS Core Gui Widgets Svg Concurrent Test LinguistTools)
 qt_standard_project_setup()
 
 include(${SCREENSHOT_ROOT}/cmake/ZeroNetwork.cmake)
@@ -43,18 +43,6 @@ FetchContent_Declare(zxing
     GIT_TAG v2.3.0
     GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(zxing)
-
-# ---- 第三方：QuickJS-ng（脚本，ACT-13；不编译标准库模块，没有文件与网络接口）----
-set(QJS_BUILD_LIBC OFF CACHE BOOL "" FORCE)
-set(QJS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(QJS_BUILD_CLI_STATIC OFF CACHE BOOL "" FORCE)
-set(QJS_BUILD_CLI_WITH_MIMALLOC OFF CACHE BOOL "" FORCE)
-set(QJS_DISABLE_PARSER OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(quickjs
-    GIT_REPOSITORY https://github.com/quickjs-ng/quickjs.git
-    GIT_TAG v0.9.0
-    GIT_SHALLOW TRUE)
-FetchContent_MakeAvailable(quickjs)
 
 # ---- 第三方：libwebp（动画 WebP 导出，VID-03；只编译编码库与 mux，不编译工具与解码扩展）----
 set(WEBP_BUILD_ANIM_UTILS OFF CACHE BOOL "" FORCE)

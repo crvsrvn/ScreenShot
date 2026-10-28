@@ -6,7 +6,6 @@
 
 #include "core/config/Settings.h"
 
-#include <QApplication>
 #include <QCoreApplication>
 #include <QColorDialog>
 #include <QCursor>
@@ -42,7 +41,7 @@ struct ToolDef {
 };
 
 const ToolDef kTools[] = {
-    {AnnotationEditor::Tool::Rect, "rect", QT_TRANSLATE_NOOP("CaptureToolbar", "Rect"), QT_TRANSLATE_NOOP("CaptureToolbar", "Rectangle (Ctrl+1)")},
+    {AnnotationEditor::Tool::Rect, "rect", QT_TRANSLATE_NOOP("CaptureToolbar", "Rect"), QT_TRANSLATE_NOOP("CaptureToolbar", "Rectangle / ellipse (Ctrl+1 / Ctrl+2)")},
     {AnnotationEditor::Tool::Ellipse, "ellipse", QT_TRANSLATE_NOOP("CaptureToolbar", "Ellipse"), QT_TRANSLATE_NOOP("CaptureToolbar", "Ellipse (Ctrl+2)")},
     {AnnotationEditor::Tool::Line, "line", QT_TRANSLATE_NOOP("CaptureToolbar", "Line"), QT_TRANSLATE_NOOP("CaptureToolbar", "Line / polyline (Ctrl+3); Tab switches to arrow")},
     {AnnotationEditor::Tool::Arrow, "arrow", QT_TRANSLATE_NOOP("CaptureToolbar", "Arrow"), QT_TRANSLATE_NOOP("CaptureToolbar", "Arrow (Ctrl+4)")},
@@ -60,6 +59,12 @@ const ToolDef kTools[] = {
 
 const char* const kHeadNames[] = {"none", "triangle", "open", "dot", "bar"};
 
+// 椭圆是框选工具（矩形按钮）的形状选项，没有独立按钮
+AnnotationEditor::Tool buttonTool(AnnotationEditor::Tool tool)
+{
+    return tool == AnnotationEditor::Tool::Ellipse ? AnnotationEditor::Tool::Rect : tool;
+}
+
 // 工具表里的文案按声明时的上下文查翻译
 QString trTool(const char* source) { return QCoreApplication::translate("CaptureToolbar", source); }
 
@@ -72,7 +77,7 @@ void CaptureToolbar::rebuildTools()
     QList<const ToolDef*> ordered;
     for (const QString& name : common)
         for (const auto& d : kTools)
-            if (name.trimmed() == QLatin1String(d.name) && !ordered.contains(&d))
+            if (name.trimmed() == QLatin1String(d.name) && m_toolButtons.contains(name.trimmed()) && !ordered.contains(&d))
                 ordered.append(&d);
     // 先全部摘下，再按常用区顺序插到主栏行首，其余按工具表顺序放进“更多”面板
     auto* moreRow = static_cast<QHBoxLayout*>(m_moreTools->layout());
@@ -84,11 +89,11 @@ void CaptureToolbar::rebuildTools()
     for (const ToolDef* d : ordered)
         row->insertWidget(index++, m_toolButtons.value(QString::fromLatin1(d->name)));
     for (const auto& d : kTools)
-        if (!ordered.contains(&d))
+        if (!ordered.contains(&d) && m_toolButtons.contains(QString::fromLatin1(d.name)))
             moreRow->addWidget(m_toolButtons.value(QString::fromLatin1(d.name)));
     for (QToolButton* b : std::as_const(m_toolButtons))
         b->show(); // 换了父控件的按钮需要重新显示
-    m_moreTools->setVisible(ordered.size() < static_cast<qsizetype>(std::size(kTools)));
+    m_moreTools->setVisible(ordered.size() < m_toolButtons.size());
     m_recentButton->setVisible(false);
     m_recentTool = AnnotationEditor::Tool::None;
     adjustSize();
@@ -136,6 +141,8 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
     layout->addWidget(m_tools, 0, Qt::AlignLeft); // 选项行更宽时不把主栏按钮拉开
     // 自定义工具栏（ANN-14）：常用区按设置顺序；其余折叠进“更多”；最近从折叠区用过的工具有一个浮动按钮
     for (const auto& d : kTools) {
+        if (buttonTool(d.tool) != d.tool)
+            continue;
         QToolButton* b = addButton(m_tools, QString::fromLatin1(d.name), trTool(d.text), trTool(d.tip), true);
         m_toolButtons.insert(QString::fromLatin1(d.name), b);
         const AnnotationEditor::Tool tool = d.tool;
@@ -183,11 +190,6 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
     auto* sep = new QFrame(m_tools);
     sep->setFrameShape(QFrame::VLine);
     row->addWidget(sep);
-    connect(addButton(m_tools, QStringLiteral("undo"), tr("Undo"), tr("Undo (Ctrl+Z)")), &QToolButton::clicked, this, [this] { m_target->editor().undo(); });
-    connect(addButton(m_tools, QStringLiteral("redo"), tr("Redo"), tr("Redo (Ctrl+Y)")), &QToolButton::clicked, this, [this] { m_target->editor().redo(); });
-    auto* sep2 = new QFrame(m_tools);
-    sep2->setFrameShape(QFrame::VLine);
-    row->addWidget(sep2);
     // 主栏只留输出：二维码（检测到才出现）/ 钉图 / 保存 / 取消 / 复制；复制即完成，放在最右（与 Snipaste、微信截图一致）
     QToolButton* codesButton = addButton(m_tools, QStringLiteral("codes"), tr("QR"), tr("Decode QR codes / barcodes in the selection"));
     connect(codesButton, &QToolButton::clicked, this, [this] { m_target->detectCodes(); });
@@ -195,30 +197,12 @@ CaptureToolbar::CaptureToolbar(ToolbarTarget* target)
     QToolButton* pinButton = addButton(m_tools, QStringLiteral("pin"), tr("Pin"), tr("Pin to screen (Ctrl+T)"));
     connect(pinButton, &QToolButton::clicked, this, [this] { m_target->pin(); });
     pinButton->setVisible(target->supportsPin());
-    connect(addButton(m_tools, QStringLiteral("save"), tr("Save"), tr("Save to file (Ctrl+S); Shift+click for quick save")), &QToolButton::clicked, this, [this] {
-        if (QApplication::keyboardModifiers() & Qt::ShiftModifier)
-            m_target->quickSave();
-        else
-            m_target->save();
-    });
+    connect(addButton(m_tools, QStringLiteral("save"), tr("Save"), tr("Save to file (Ctrl+S)")), &QToolButton::clicked, this, [this] { m_target->save(); });
     connect(addButton(m_tools, QStringLiteral("cancel"), tr("Cancel"), tr("Cancel (Esc)")), &QToolButton::clicked, this, [this] { m_target->cancel(); });
     connect(addButton(m_tools, QStringLiteral("copy"), tr("Copy"), tr("Copy to clipboard (Enter)")), &QToolButton::clicked, this, [this] { m_target->copy(); });
 
     // 低频操作收进“更多”面板第二行
     connect(addButton(m_moreActions, QStringLiteral("clear"), tr("Clear"), tr("Remove all annotations (undoable)")), &QToolButton::clicked, this, [this] { m_target->editor().clearAll(); });
-    QToolButton* watermark = addButton(m_moreActions, QStringLiteral("watermark"), tr("Watermark"), tr("Add or remove the watermark (settings: Annotation)"), true);
-    connect(watermark, &QToolButton::clicked, this, [this](bool on) {
-        if (m_syncing)
-            return;
-        if (on)
-            m_target->editor().addWatermark();
-        else
-            m_target->editor().removeWatermark();
-    });
-    connect(addButton(m_moreActions, QStringLiteral("quickSave"), tr("Quick save"), tr("Save to the quick save folder (Ctrl+Shift+S)")), &QToolButton::clicked, this, [this] { m_target->quickSave(); });
-    QToolButton* printButton = addButton(m_moreActions, QStringLiteral("print"), tr("Print"), tr("Print (Ctrl+P)"));
-    connect(printButton, &QToolButton::clicked, this, [this] { m_target->print(); });
-    printButton->setVisible(target->supportsCaptureOptions());
     QToolButton* modeButton = addButton(m_moreActions, QStringLiteral("mode"), tr("Capture"), tr("Mode: capture / scrolling capture / recording (Ctrl+Tab)"));
     connect(modeButton, &QToolButton::clicked, this, [this] { m_target->cycleMode(); });
     modeButton->setVisible(target->supportsCaptureOptions());
@@ -430,7 +414,7 @@ void CaptureToolbar::buildOptions()
     connect(magShadow, &QToolButton::clicked, this, [this](bool on) { m_target->editor().setMagnifierShadow(on); });
     row->addWidget(m_magnifierRow);
 
-    // 形状（荧光笔 / 效果 / 橡皮擦）
+    // 形状（框选 / 荧光笔 / 效果 / 橡皮擦）
     m_shapeRow = new QWidget(m_options);
     auto* shapeLayout = new QHBoxLayout(m_shapeRow);
     shapeLayout->setContentsMargins(0, 0, 0, 0);
@@ -440,7 +424,9 @@ void CaptureToolbar::buildOptions()
         connect(b, &QToolButton::clicked, this, [this, name] {
             AnnotationEditor& e = m_target->editor();
             const int idx = name == QLatin1String("shape_brush") ? 0 : name == QLatin1String("shape_rect") ? 1 : 2;
-            if (e.tool() == AnnotationEditor::Tool::Highlighter)
+            if (buttonTool(e.tool()) == AnnotationEditor::Tool::Rect)
+                m_target->setTool(idx == 2 ? AnnotationEditor::Tool::Ellipse : AnnotationEditor::Tool::Rect);
+            else if (e.tool() == AnnotationEditor::Tool::Highlighter)
                 e.setHighlighterShape(idx == 0 ? HighlighterAnnotation::Shape::Brush : HighlighterAnnotation::Shape::Rect);
             else if (e.tool() == AnnotationEditor::Tool::Eraser)
                 e.setEraserShape(static_cast<EraserAnnotation::Shape>(idx));
@@ -680,17 +666,16 @@ void CaptureToolbar::syncFromEditor()
     const bool annotating = m_target->annotating();
     const AnnotationEditor::Tool tool = e.tool();
     for (auto it = m_toolButtons.cbegin(); it != m_toolButtons.cend(); ++it)
-        it.value()->setChecked(annotating && toolFromName(it.key()) == tool);
+        it.value()->setChecked(annotating && toolFromName(it.key()) == buttonTool(tool));
     // 折叠区工具被使用：显示“最近”浮动按钮（ANN-14）
-    if (tool != AnnotationEditor::Tool::None && m_toolButtons.contains(toolName(tool)) && m_toolButtons.value(toolName(tool))->parentWidget() == m_moreTools) {
-        m_recentTool = tool;
-        m_recentButton->setIcon(toolbarIcon(toolName(tool)));
-        m_recentButton->setToolTip(trTool(kToolText(tool)));
+    const QString shown = toolName(buttonTool(tool));
+    if (tool != AnnotationEditor::Tool::None && m_toolButtons.contains(shown) && m_toolButtons.value(shown)->parentWidget() == m_moreTools) {
+        m_recentTool = buttonTool(tool);
+        m_recentButton->setIcon(toolbarIcon(shown));
+        m_recentButton->setToolTip(trTool(kToolText(m_recentTool)));
         m_recentButton->setVisible(true);
     }
-    m_recentButton->setChecked(annotating && m_recentButton->isVisibleTo(m_tools) && tool == m_recentTool);
-    if (auto* b = button(QStringLiteral("watermark")))
-        b->setChecked(e.hasWatermark());
+    m_recentButton->setChecked(annotating && m_recentButton->isVisibleTo(m_tools) && buttonTool(tool) == m_recentTool);
     if (auto* b = button(QStringLiteral("ratio")))
         b->setChecked(m_target->ratioLocked());
     if (auto* b = button(QStringLiteral("shadow")))
@@ -741,12 +726,15 @@ void CaptureToolbar::syncFromEditor()
         m_zoom->setValue(static_cast<int>(std::round(e.magnifierZoom())));
         m_magnifierRow->findChild<QToolButton*>(QStringLiteral("includeBelow"))->setChecked(e.magnifierIncludeAnnotations());
         m_magnifierRow->findChild<QToolButton*>(QStringLiteral("magShadow"))->setChecked(e.magnifierShadow());
-        const bool shapes = tool == AnnotationEditor::Tool::Highlighter || tool == AnnotationEditor::Tool::Mosaic || tool == AnnotationEditor::Tool::Blur || tool == AnnotationEditor::Tool::Eraser
+        const bool frame = buttonTool(tool) == AnnotationEditor::Tool::Rect;
+        const bool shapes = frame || tool == AnnotationEditor::Tool::Highlighter || tool == AnnotationEditor::Tool::Mosaic || tool == AnnotationEditor::Tool::Blur || tool == AnnotationEditor::Tool::Eraser
             || tool == AnnotationEditor::Tool::Magnifier || tool == AnnotationEditor::Tool::Spotlight || tool == AnnotationEditor::Tool::SmartErase;
         m_shapeRow->setVisible(shapes);
         if (shapes) {
             int idx = 0;
-            if (tool == AnnotationEditor::Tool::Highlighter)
+            if (frame)
+                idx = tool == AnnotationEditor::Tool::Ellipse ? 2 : 1;
+            else if (tool == AnnotationEditor::Tool::Highlighter)
                 idx = e.highlighterShape() == HighlighterAnnotation::Shape::Brush ? 0 : 1;
             else if (tool == AnnotationEditor::Tool::Eraser)
                 idx = static_cast<int>(e.eraserShape());
@@ -760,7 +748,7 @@ void CaptureToolbar::syncFromEditor()
             m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_rect"))->setChecked(idx == 1);
             m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_ellipse"))->setChecked(idx == 2);
             m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_ellipse"))->setVisible(tool != AnnotationEditor::Tool::Highlighter);
-            m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_brush"))->setVisible(tool != AnnotationEditor::Tool::Magnifier && tool != AnnotationEditor::Tool::Spotlight && tool != AnnotationEditor::Tool::SmartErase);
+            m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_brush"))->setVisible(!frame && tool != AnnotationEditor::Tool::Magnifier && tool != AnnotationEditor::Tool::Spotlight && tool != AnnotationEditor::Tool::SmartErase);
         }
         m_strengthRow->setVisible(tool == AnnotationEditor::Tool::Mosaic || tool == AnnotationEditor::Tool::Blur);
         m_strength->setValue(e.effectStrength());

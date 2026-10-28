@@ -62,22 +62,6 @@ QRect OverlayWindow::animatedHighlight() const
     return QRect(lerp(m_animFrom.left(), m_animTo.left()), lerp(m_animFrom.top(), m_animTo.top()), lerp(m_animFrom.width(), m_animTo.width()), lerp(m_animFrom.height(), m_animTo.height()));
 }
 
-void OverlayWindow::setTransparentMode(bool on)
-{
-    if (m_transparent == on)
-        return;
-    m_transparent = on;
-    // 透明属性要在原生窗口创建前设置：销毁后下次显示时重建
-    const bool visible = isVisible();
-    hide();
-    destroy();
-    setAttribute(Qt::WA_TranslucentBackground, on);
-    setAttribute(Qt::WA_OpaquePaintEvent, !on);
-    setAttribute(Qt::WA_NoSystemBackground, !on);
-    if (visible)
-        showOnScreen();
-}
-
 OverlayWindow::OverlayWindow(CaptureSession* session)
     : QWidget(nullptr, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint)
     , m_session(session)
@@ -163,7 +147,7 @@ QRectF OverlayWindow::toLogicalGlobal(const QRect& physical) const
 void OverlayWindow::paintSelection(QPainter& p, const QRect& selection)
 {
     const Settings& st = m_session->settings();
-    const QColor dim = m_transparent ? QColor(0, 0, 0, 0) : QColor::fromString(st.stringValue(QStringLiteral("capture.maskColor")));
+    const QColor dim = QColor::fromString(st.stringValue(QStringLiteral("capture.maskColor")));
     const QRect visible = selection.intersected(m_screen.physicalGeometry);
     if (visible.isEmpty()) {
         p.fillRect(rect(), dim);
@@ -258,8 +242,7 @@ void OverlayWindow::paintContent(QPainter& p)
         p.fillRect(rect(), Qt::black);
         return;
     }
-    if (!m_transparent)
-        p.drawImage(QPointF(0, 0), m_image);
+    p.drawImage(QPointF(0, 0), m_image);
     const auto state = m_session->state();
 
     if (state == CaptureSession::State::History) {
@@ -285,7 +268,7 @@ void OverlayWindow::paintContent(QPainter& p)
             p.restore();
         }
     } else if (state == CaptureSession::State::Detecting) {
-        p.fillRect(rect(), m_transparent ? QColor(0, 0, 0, 0) : QColor::fromString(m_session->settings().stringValue(QStringLiteral("capture.maskColor"))));
+        p.fillRect(rect(), QColor::fromString(m_session->settings().stringValue(QStringLiteral("capture.maskColor"))));
         const auto target = m_session->highlight();
         if (target && *target != m_animTo) {
             m_animFrom = animatedHighlight();
@@ -352,11 +335,6 @@ void OverlayWindow::paintGuides(QPainter& p)
 void OverlayWindow::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
-    if (m_transparent) {
-        painter.setCompositionMode(QPainter::CompositionMode_Source);
-        painter.fillRect(rect(), Qt::transparent);
-        painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-    }
     paintContent(painter);
     painter.end();
     ++m_paintCount;

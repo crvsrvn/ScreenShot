@@ -485,7 +485,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <body>
 <main class="hs-doc" data-toc-levels="2,3">
 <h1 id="top">ScreenShot M0 技术验证报告</h1>
-<p class="hs-meta">v1.0 · 2026-10-23 · 输入：<a href="02-architecture.md">技术架构文档</a> 的 M0 验证清单</p>
+<p class="hs-meta">v1.1 · 2026-10-28 · 输入：<a href="02-architecture.md">技术架构文档</a> 的 M0 验证清单 · v1.1 随需求 v0.6 删除脚本引擎，去掉 <code>R-17</code></p>
 <h2 id="summary"><span class="hs-num">1.</span>结论<a class="hs-anchor" href="#summary" aria-label="本节链接">#</a></h2>
 <p><mark>M0 的工具链、测试框架、内置测试接口已搭好并提交；17 项风险验证中 10 项达标，4 项因测试机锁屏只能等解锁后补测，3 项按计划延后（macOS 设备、HDR 设备）。没有一项需要启用预案。</mark></p>
 <div class="hs-table lead"><table>
@@ -597,13 +597,6 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <td>合成两台 4K（150% / 100%）跨屏裁剪与真实算法逐像素一致</td>
 <td>差异像素 0</td>
 <td><span class="hs-tag" data-kind="ok">达标</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的数据">实测</span></td>
-</tr>
-<tr>
-<td><code>R-17</code></td>
-<td>Qt Qml 是否依赖 Qt Network</td>
-<td><code>Qt6Qml.dll</code> 导入表含 <code>Qt6Network.dll</code></td>
-<td>维持 QuickJS-ng 方案</td>
-<td><span class="hs-tag" data-kind="ok">有结论</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的数据">实测</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -756,11 +749,6 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <td>从 Git Bash 启动程序时 <code>--test-pipe</code> 参数没有生效；pymanager 的 Python 打不开命名管道（<code>ERROR_PATH_NOT_FOUND</code>）</td>
 <td>端到端由 ctest / PowerShell 启动；临时诊断客户端用 PowerShell 的 <code>NamedPipeClientStream</code></td>
 <td>只影响开发期的手工调试</td>
-</tr>
-<tr>
-<td><code>Qt6Qml.dll</code> 直接导入 <code>Qt6Network.dll</code></td>
-<td>脚本引擎维持 QuickJS-ng 方案（<code>R-17</code>）</td>
-<td>不链接 Qt Qml</td>
 </tr>
 </tbody>
 </table></div>

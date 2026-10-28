@@ -39,22 +39,4 @@ void setCursorPhysicalPos(QPoint physical)
     SetCursorPos(physical.x(), physical.y());
 }
 
-bool isWindowTopmost(void* hwnd)
-{
-    return (GetWindowLongPtrW(static_cast<HWND>(hwnd), GWL_EXSTYLE) & WS_EX_TOPMOST) != 0;
-}
-
-bool toggleWindowTopmostAt(QPoint physical)
-{
-    HWND hwnd = WindowFromPoint(POINT{physical.x(), physical.y()});
-    if (!hwnd)
-        return false;
-    hwnd = GetAncestor(hwnd, GA_ROOT);
-    if (!hwnd)
-        return false;
-    const bool topmost = isWindowTopmost(hwnd);
-    SetWindowPos(hwnd, topmost ? HWND_NOTOPMOST : HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    return !topmost;
-}
-
 } // namespace ss::win

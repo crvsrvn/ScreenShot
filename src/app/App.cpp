@@ -2,18 +2,10 @@
 
 #include "app/WindowChrome.h"
 #include "app/CaptureSession.h"
-#include "app/ActionsDialog.h"
 #include "app/CommandServer.h"
-#include "app/FloatingBar.h"
-#include "app/GestureOverlay.h"
-#include "app/GroupDialog.h"
-#include "core/script/ScriptEngine.h"
 #include "core/ocr/OcrFormat.h"
-#include "core/pin/TextPin.h"
-#include "app/Notification.h"
 #include "app/ResultDialogs.h"
 #include "app/Theme.h"
-#include "app/CustomCaptureDialog.h"
 #include "app/OutputActions.h"
 #include "app/PinManager.h"
 #include "app/PinWindow.h"
@@ -26,7 +18,6 @@
 #include "core/util/Clock.h"
 
 #include <QApplication>
-#include <algorithm>
 #include <QClipboard>
 #include <QCursor>
 #include <QDir>
@@ -35,21 +26,15 @@
 #include <QGuiApplication>
 #include <QMenu>
 #include <QDateTime>
-#include <QElapsedTimer>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QMimeData>
-#include <QPainter>
-#include <QProcess>
 #include <QUrl>
-#include <QPixmap>
-#include <QScreen>
 #include <QSystemTrayIcon>
 
 #if defined(Q_OS_WIN)
-#include "platform/windows/WinGlobalHotkey.h"
 #include "platform/windows/WinInputHooks.h"
 #include "platform/windows/WinSystem.h"
 #include "platform/windows/WinWindowTools.h"
@@ -60,25 +45,6 @@
 #endif
 
 namespace ss {
-
-namespace {
-
-QIcon makeTrayIcon(const QColor& color)
-{
-    QPixmap pm(64, 64);
-    pm.fill(Qt::transparent);
-    QPainter p(&pm);
-    p.setRenderHint(QPainter::Antialiasing);
-    p.setPen(QPen(color, 6));
-    p.setBrush(Qt::NoBrush);
-    p.drawRoundedRect(QRectF(8, 8, 48, 48), 8, 8);
-    p.setBrush(color);
-    p.setPen(Qt::NoPen);
-    p.drawEllipse(QPointF(32, 32), 9, 9);
-    return QIcon(pm);
-}
-
-} // namespace
 
 App::App(Platform platform, Settings& settings, QObject* parent)
     : QObject(parent)
@@ -93,11 +59,6 @@ App::App(Platform platform, Settings& settings, QObject* parent)
     m_session->setOutput(m_output.get());
     connect(m_session.get(), &CaptureSession::pinRequested, this, [this](const QImage& image, const QRect& region) {
         pinImage(image, m_pins->resolvePosition(region.topLeft(), image.size(), true)); // PIN-13
-    });
-    connect(m_output.get(), &OutputActions::done, this, [this](OutputActions::Kind kind, const QString& path) {
-        if (path.isEmpty() || (kind != OutputActions::Kind::Save && kind != OutputActions::Kind::QuickSave && kind != OutputActions::Kind::AutoSave))
-            return;
-        notify(kind == OutputActions::Kind::AutoSave ? tr("Auto-saved") : tr("Saved"), QDir::toNativeSeparators(path), path); // GEN-07
     });
     connect(m_session.get(), &CaptureSession::scrollRequested, this, [this](const QRect& region) { startScroll(region); });
     connect(m_session.get(), &CaptureSession::recordRequested, this, [this](const QRect& region) { startRecord(region); });
@@ -119,21 +80,15 @@ App::App(Platform platform, Settings& settings, QObject* parent)
             showCodeResult(codes);
     });
     theme::apply(m_settings);
-    applyFloatingBar();
-    applyInputHooks();
-    connect(&m_hotCornerTimer, &QTimer::timeout, this, [this] { pollHotCorners(cursorPhysical(), QDateTime::currentMSecsSinceEpoch()); });
-    m_hotCornerTimer.start(150);
 #ifdef Q_OS_WIN
     win::setProcessPriority(m_settings.stringValue(QStringLiteral("general.processPriority")));
 #endif
     loadHistoryDir();
     if (m_platform.screenCapture)
         m_platform.screenCapture->configure(QStringLiteral("hdrStrategy"), m_settings.stringValue(QStringLiteral("capture.hdrStrategy")));
-    connect(m_session.get(), &CaptureSession::captured, this, [this](const QImage& image, const QRect& region) {
+    connect(m_session.get(), &CaptureSession::captured, this, [this](const QImage&, const QRect& region) {
         m_settings.setValue(QStringLiteral("capture.lastRegion"), QStringLiteral("%1,%2,%3,%4").arg(region.x()).arg(region.y()).arg(region.width()).arg(region.height()));
-        m_output->autoSave(image); // OUT-09：截图成功时额外存一份
     });
-    m_output->cleanupAutoSave();
     connect(&m_settings, &Settings::changed, this, [this](const QString& key, const QVariant&) { applySetting(key); });
     m_session->prepareOverlays();
     setupTray();
@@ -187,158 +142,23 @@ void App::checkPermissions()
 void App::setupTray()
 {
     m_trayMenu = new QMenu();
-    m_trayMenu->addAction(tr("Capture\tF1"), this, [this] { startCapture(monotonicNs()); });
-    m_trayMenu->addAction(tr("Custom capture..."), this, &App::showCustomCaptureDialog);
-    QMenu* quick = m_trayMenu->addMenu(tr("Quick capture"));
-    quick->addAction(tr("Full screen"), this, [this] { quickCapture(QStringLiteral("full")); });
-    quick->addAction(tr("Last area"), this, [this] { quickCapture(QStringLiteral("last")); });
-    quick->addAction(tr("Active window"), this, [this] { quickCapture(QStringLiteral("activeWindow")); });
-    quick->addAction(tr("Active screen"), this, [this] { quickCapture(QStringLiteral("activeScreen")); });
-    quick->addAction(tr("Screen under cursor"), this, [this] { quickCapture(QStringLiteral("cursorScreen")); });
-    m_trayMenu->addAction(tr("Whiteboard"), this, &App::startWhiteboard);
-    m_trayMenu->addAction(tr("Pin clipboard\tF3"), this, &App::pinFromClipboard);
-    m_togglePinsAction = m_trayMenu->addAction(tr("Hide all pins\tShift+F3"), this, &App::togglePinsHidden);
-    m_trayMenu->addAction(tr("Restore closed pin\tCtrl+3"), this, &App::restoreClosedPin);
-    m_trayMenu->addAction(tr("Restore off-screen pins"), this, &App::restoreOffscreenPins);
-    m_trayMenu->addAction(tr("Pin files selected in Explorer"), this, [this] { m_pins->pinExplorerSelection(cursorPhysical()); });
-    QMenu* all = m_trayMenu->addMenu(tr("All pins"));
-    all->addAction(tr("Thumbnails"), this, [this] { m_pins->setAllThumbnails(true); });
-    all->addAction(tr("Full size"), this, [this] { m_pins->setAllThumbnails(false); });
-    all->addAction(tr("Save all to folder..."), this, [this] {
-        const QString dir = QFileDialog::getExistingDirectory(nullptr, tr("Save all pins"));
-        if (!dir.isEmpty())
-            m_pins->saveAllToFolder(dir);
-    });
-    all->addAction(tr("Solo selected pins"), this, [this](bool on) { m_pins->setSolo(on); })->setCheckable(true);
-    all->addAction(tr("Close all"), this, [this] { m_pins->closeAll(); });
-    all->addAction(tr("Destroy all"), this, [this] { m_pins->destroyAll(); });
-    m_actionsMenu = m_trayMenu->addMenu(tr("Actions"));
-    rebuildActionsMenu();
-    QMenu* recognize = m_trayMenu->addMenu(tr("Recognize"));
-    recognize->addAction(tr("Text in image file (OCR)..."), this, [this] { recognizeTextFromFile(); });
-    recognize->addAction(tr("QR code / barcode in image file..."), this, [this] { decodeCodesFromFile(); });
-    m_groupMenu = m_trayMenu->addMenu(tr("Pin groups"));
-    connect(m_pins.get(), &PinManager::groupChanged, this, [this] { rebuildGroupMenu(); });
-    rebuildGroupMenu();
-    m_trayMenu->addSeparator();
-    m_hotkeysAction = m_trayMenu->addAction(tr("Disable hotkeys"), this, [this](bool checked) { setHotkeysEnabled(!checked); });
-    m_hotkeysAction->setCheckable(true);
-    m_hotkeysAction->setChecked(!hotkeysEnabled());
     m_trayMenu->addAction(tr("Preferences..."), this, &App::showPreferences);
-    QMenu* configMenu = m_trayMenu->addMenu(tr("Settings file"));
-    configMenu->addAction(tr("Export settings..."), this, [this] {
-        const QString path = QFileDialog::getSaveFileName(nullptr, tr("Export settings"), QStringLiteral("screenshot-settings.json"), tr("Settings (*.json)"));
-        if (!path.isEmpty())
-            m_settings.exportTo(path);
-    });
-    configMenu->addAction(tr("Import settings..."), this, [this] {
-        const QString path = QFileDialog::getOpenFileName(nullptr, tr("Import settings"), QString(), tr("Settings (*.json)"));
-        if (!path.isEmpty() && m_settings.importFrom(path))
-            m_settings.saveToFile();
-    });
-    configMenu->addAction(tr("Open settings folder"), this, &App::openSettingsFolder);
-    m_trayMenu->addAction(tr("Help"), this, &App::showAbout);
-    m_trayMenu->addSeparator();
     m_trayMenu->addAction(tr("Quit"), this, &App::quit);
     if (!QSystemTrayIcon::isSystemTrayAvailable())
         return;
-    m_tray = new QSystemTrayIcon(makeTrayIcon(trayIconColor()), this);
+    m_tray = new QSystemTrayIcon(QApplication::windowIcon(), this);
     m_tray->setToolTip(QStringLiteral("ScreenShot"));
     m_tray->setContextMenu(m_trayMenu);
     connect(m_tray, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) { trayActivated(reason); });
-    m_tray->setVisible(!m_settings.boolValue(QStringLiteral("general.trayIconHidden")));
-}
-
-QColor App::trayIconColor() const
-{
-    // GEN-06：跟随系统（深色托盘用浅色图标）/ 浅色 / 深色 / 自定义
-    const QString style = m_settings.stringValue(QStringLiteral("general.trayIconStyle"));
-    if (style == QLatin1String("custom"))
-        return QColor::fromString(m_settings.stringValue(QStringLiteral("general.trayIconColor")));
-    if (style == QLatin1String("light"))
-        return QColor(245, 245, 245);
-    if (style == QLatin1String("dark"))
-        return QColor(40, 40, 40);
-    return theme::resolve(m_settings) == QLatin1String("dark") ? QColor(245, 245, 245) : QColor(40, 120, 220);
-}
-
-void App::applyTrayAppearance()
-{
-    if (!m_tray)
-        return;
-    m_tray->setIcon(makeTrayIcon(trayIconColor()));
-    m_tray->setVisible(!m_settings.boolValue(QStringLiteral("general.trayIconHidden")));
-}
-
-void App::applyFloatingBar()
-{
-    const bool on = m_settings.boolValue(QStringLiteral("general.floatingBar"));
-    if (!on) {
-        m_floatingBar.reset();
-        return;
-    }
-    if (m_floatingBar)
-        return;
-    m_floatingBar = std::make_unique<FloatingBar>();
-    connect(m_floatingBar.get(), &FloatingBar::captureRequested, this, [this] { startCapture(monotonicNs()); });
-    connect(m_floatingBar.get(), &FloatingBar::pinRequested, this, &App::pinFromClipboard);
-    connect(m_floatingBar.get(), &FloatingBar::dropped, this, [this](const QMimeData* mime, QPoint at) { m_pins->pinMime(mime, at); });
-    connect(m_floatingBar.get(), &FloatingBar::moved, this, [this](QPoint pos) {
-        m_settings.setValue(QStringLiteral("general.floatingBarPos"), QStringLiteral("%1,%2").arg(pos.x()).arg(pos.y()));
-    });
-    const QStringList pos = m_settings.stringValue(QStringLiteral("general.floatingBarPos")).split(QLatin1Char(','));
-    if (pos.size() == 2)
-        m_floatingBar->move(pos[0].toInt(), pos[1].toInt());
-    else if (QScreen* s = QGuiApplication::primaryScreen())
-        m_floatingBar->move(s->availableGeometry().right() - m_floatingBar->width() - 20, s->availableGeometry().top() + 20);
-    m_floatingBar->show();
-}
-
-void App::rebuildGroupMenu()
-{
-    if (!m_groupMenu)
-        return;
-    m_groupMenu->clear();
-    m_groupMenu->addAction(tr("New group..."), this, [this] {
-        bool ok = false;
-        const QString name = theme::getText(nullptr, tr("New pin group"), tr("Group name:"), QString(), &ok);
-        if (ok)
-            m_pins->newGroup(name);
-        rebuildGroupMenu();
-    });
-    m_groupMenu->addAction(tr("Next group\tCtrl+Shift+3"), this, [this] { m_pins->nextGroup(); });
-    m_groupMenu->addAction(tr("Previous group"), this, [this] { m_pins->previousGroup(); });
-    m_groupMenu->addAction(tr("Clear this group"), this, [this] { m_pins->clearCurrentGroup(); });
-    m_groupMenu->addAction(tr("Manage groups..."), this, [this] {
-        GroupDialog dialog(*m_pins);
-        dialog.exec();
-        rebuildGroupMenu();
-    });
-    m_groupMenu->addSeparator();
-    const QStringList names = m_pins->groupNames();
-    for (int i = 0; i < names.size(); ++i) {
-        const auto [onScreen, total] = m_pins->groupCounts(i); // GRP-03：屏幕上 / 总数
-        QAction* a = m_groupMenu->addAction(QStringLiteral("%1  (%2 / %3)").arg(names[i]).arg(onScreen).arg(total), this, [this, i] { m_pins->switchToGroup(i); });
-        a->setCheckable(true);
-        a->setChecked(i == m_pins->currentGroupIndex());
-    }
+    m_tray->show();
 }
 
 void App::trayActivated(int reason)
 {
-    QString action;
     if (reason == QSystemTrayIcon::Trigger)
-        action = m_settings.stringValue(QStringLiteral("general.trayLeftClick"));
-    else if (reason == QSystemTrayIcon::MiddleClick)
-        action = m_settings.stringValue(QStringLiteral("general.trayMiddleClick"));
-    else
-        return;
-    if (action == QLatin1String("capture"))
         startCapture(monotonicNs());
-    else if (action == QLatin1String("pin"))
+    else if (reason == QSystemTrayIcon::MiddleClick)
         pinFromClipboard();
-    else if (action == QLatin1String("menu") && m_trayMenu)
-        m_trayMenu->popup(QCursor::pos());
 }
 
 void App::setupHotkeys()
@@ -346,67 +166,31 @@ void App::setupHotkeys()
     if (!m_platform.hotkey)
         return;
     connect(m_platform.hotkey.get(), &IGlobalHotkey::triggered, this, [this](int id, qint64 atNs) {
-        if (hotkeyIgnoredForForeground())
-            return; // ACT-07
-        if (m_settings.boolValue(QStringLiteral("hotkey.ignoreInjected")) && m_hotkeyVk.contains(id) && m_injected.shouldIgnore(m_hotkeyVk.value(id), QDateTime::currentMSecsSinceEpoch()))
-            return; // ACT-15：由模拟按键触发的热键
         switch (id) {
         case HotkeyCapture: startCapture(atNs); break;
         case HotkeyPin: pinFromClipboard(); break;
         case HotkeyTogglePins: togglePinsHidden(); break;
         case HotkeyRestorePin: restoreClosedPin(); break;
         case HotkeyPassthrough: togglePassthroughAtCursor(); break;
-        case HotkeyNextGroup: m_pins->nextGroup(); break;
-        case HotkeyPreviousGroup: m_pins->previousGroup(); break;
-        case HotkeyToggleWindowTopmost:
-#ifdef Q_OS_WIN
-            win::toggleWindowTopmostAt(cursorPhysical()); // ACT-14
-#endif
-            break;
-        case HotkeyPasteAsImage: pasteAs(QStringLiteral("image")); break;
-        case HotkeyPasteAsText: pasteAs(QStringLiteral("text")); break;
-        default:
-            if (id >= HotkeyActionBase) {
-                const QList<Action> list = actions();
-                if (id - HotkeyActionBase < list.size())
-                    runAction(list[id - HotkeyActionBase].name);
-            }
-            break;
+        default: break;
         }
     });
     registerHotkeys();
-}
-
-bool App::hotkeysEnabled() const
-{
-    return m_settings.boolValue(QStringLiteral("hotkey.enabled"));
 }
 
 void App::registerHotkeys()
 {
     if (!m_platform.hotkey)
         return;
-    for (int id = HotkeyActionBase; id < HotkeyActionBase + m_actionHotkeys; ++id)
-        m_platform.hotkey->unregisterHotkey(id);
-    m_actionHotkeys = 0;
-    for (int id : {HotkeyCapture, HotkeyPin, HotkeyTogglePins, HotkeyRestorePin, HotkeyPassthrough, HotkeyNextGroup, HotkeyPreviousGroup, HotkeyToggleWindowTopmost, HotkeyPasteAsImage, HotkeyPasteAsText})
+    for (int id : {HotkeyCapture, HotkeyPin, HotkeyTogglePins, HotkeyRestorePin, HotkeyPassthrough})
         m_platform.hotkey->unregisterHotkey(id);
     m_hotkeyStatus.clear();
-    if (!hotkeysEnabled())
-        return;
     const QList<QPair<int, QString>> keys{{HotkeyCapture, QStringLiteral("hotkey.capture")}, {HotkeyPin, QStringLiteral("hotkey.pin")},
                                           {HotkeyTogglePins, QStringLiteral("hotkey.togglePins")}, {HotkeyRestorePin, QStringLiteral("hotkey.restorePin")},
-                                          {HotkeyPassthrough, QStringLiteral("hotkey.togglePassthrough")}, {HotkeyNextGroup, QStringLiteral("hotkey.nextGroup")},
-                                          {HotkeyPreviousGroup, QStringLiteral("hotkey.previousGroup")}, {HotkeyToggleWindowTopmost, QStringLiteral("hotkey.toggleWindowTopmost")},
-                                          {HotkeyPasteAsImage, QStringLiteral("hotkey.pasteAsImage")}, {HotkeyPasteAsText, QStringLiteral("hotkey.pasteAsText")}};
+                                          {HotkeyPassthrough, QStringLiteral("hotkey.togglePassthrough")}};
     for (const auto& [id, settingKey] : keys) {
         const QKeySequence seq(m_settings.stringValue(settingKey));
-        const bool ok = !seq.isEmpty() && hotkeyAllowed(seq) && m_platform.hotkey->registerHotkey(id, seq);
-#ifdef Q_OS_WIN
-        unsigned mods = 0, vk = 0;
-        if (ok && win::WinGlobalHotkey::toNative(seq, mods, vk))
-            m_hotkeyVk[id] = static_cast<int>(vk);
-#endif
+        const bool ok = !seq.isEmpty() && m_platform.hotkey->registerHotkey(id, seq);
         m_hotkeyStatus[id] = ok;
         if (!ok && !seq.isEmpty()) {
             qWarning("hotkey %s (%s) could not be registered", qPrintable(settingKey), qPrintable(seq.toString()));
@@ -414,27 +198,12 @@ void App::registerHotkeys()
                 m_tray->showMessage(tr("Hotkey conflict"), tr("%1 is already used by another program.").arg(seq.toString(QKeySequence::NativeText)), QSystemTrayIcon::Warning);
         }
     }
-    // 动作热键（ACT-03）
-    const QList<Action> list = actions();
-    for (int i = 0; i < list.size(); ++i) {
-        const QKeySequence seq(list[i].hotkey);
-        if (!seq.isEmpty())
-            m_platform.hotkey->registerHotkey(HotkeyActionBase + i, seq);
-    }
-    m_actionHotkeys = static_cast<int>(list.size());
-}
-
-void App::setHotkeysEnabled(bool enabled)
-{
-    m_settings.setValue(QStringLiteral("hotkey.enabled"), enabled);
 }
 
 void App::applySetting(const QString& key)
 {
     if (key.startsWith(QStringLiteral("hotkey."))) {
         registerHotkeys();
-        if (m_hotkeysAction)
-            m_hotkeysAction->setChecked(!hotkeysEnabled());
     } else if (key == QStringLiteral("capture.historyLimit")) {
         m_history.setLimit(m_settings.intValue(key));
     } else if (key == QStringLiteral("general.autostart") || key == QStringLiteral("general.runAsAdmin")) {
@@ -445,18 +214,8 @@ void App::applySetting(const QString& key)
         win::setAutostart(on && !admin, QCoreApplication::applicationFilePath(), QStringLiteral("ScreenShot"));
         win::setAutostartElevated(on && admin, QCoreApplication::applicationFilePath(), QStringLiteral("ScreenShot"));
 #endif
-    } else if (key == QStringLiteral("actions.list")) {
-        registerHotkeys();
-        rebuildActionsMenu();
     } else if (key.startsWith(QStringLiteral("ui."))) {
         theme::apply(m_settings);
-        applyTrayAppearance();
-    } else if (key.startsWith(QStringLiteral("general.trayIcon"))) {
-        applyTrayAppearance();
-    } else if (key == QStringLiteral("general.floatingBar")) {
-        applyFloatingBar();
-    } else if (key.startsWith(QStringLiteral("globalMouse.")) || key.startsWith(QStringLiteral("hotkey.doubleTap")) || key == QStringLiteral("hotkey.ignoreInjected") || key.startsWith(QStringLiteral("hotCorner."))) {
-        applyInputHooks();
     } else if (key == QStringLiteral("general.processPriority")) {
 #ifdef Q_OS_WIN
         win::setProcessPriority(m_settings.stringValue(key)); // GEN-10
@@ -524,8 +283,8 @@ QString App::runCommand(const QStringList& command, int requestId)
     bool wait = command.contains(QStringLiteral("--wait"));
     QString result = QStringLiteral("ok");
     if (name == QLatin1String("snip")) {
-        // snip [full|last|active-window|active-screen|cursor-screen|custom|whiteboard|x,y,w,h]
-        //      [--size WxH [--pos x,y]] [--delay ms] [--shadow] [--output copy,pin,save,quickSave,ocrCopy] [--edit] [--wait]
+        // snip [full|last|active-window|active-screen|cursor-screen|x,y,w,h]
+        //      [--size WxH [--pos x,y]] [--delay ms] [--shadow] [--output copy,pin,save,ocrCopy] [--edit] [--wait]
         const QString arg = command.value(1);
         const int delay = optionValue(command, QStringLiteral("--delay")).toInt();
         const bool edit = command.contains(QStringLiteral("--edit"));
@@ -565,10 +324,6 @@ QString App::runCommand(const QStringList& command, int requestId)
             edit ? captureRegion(quickRegion(QStringLiteral("activeScreen")), delay, true) : (void)quickCapture(QStringLiteral("activeScreen"));
         else if (arg == QLatin1String("cursor-screen"))
             edit ? captureRegion(quickRegion(QStringLiteral("cursorScreen")), delay, true) : (void)quickCapture(QStringLiteral("cursorScreen"));
-        else if (arg == QLatin1String("custom"))
-            showCustomCaptureDialog();
-        else if (arg == QLatin1String("whiteboard"))
-            startWhiteboard();
         else {
             const QStringList parts = arg.split(QLatin1Char(','));
             if (parts.size() == 4)
@@ -631,19 +386,6 @@ QString App::runCommand(const QStringList& command, int requestId)
         else if (op == QLatin1String("save-all")) result = QString::number(m_pins->saveAllToFolder(command.mid(2).join(QLatin1Char(' '))));
         else if (op == QLatin1String("explorer")) result = m_pins->pinExplorerSelection(cursorPhysical()) ? QStringLiteral("ok") : QStringLiteral("nothing selected");
         else result = QStringLiteral("unknown pins command");
-    } else if (name == QLatin1String("group")) {
-        // group new NAME | switch NAME | next | prev | clear | list
-        const QString op = command.value(1);
-        if (op == QLatin1String("new")) m_pins->newGroup(optionText(command, op).isEmpty() ? command.mid(2).join(QLatin1Char(' ')) : command.mid(2).join(QLatin1Char(' ')));
-        else if (op == QLatin1String("switch")) result = m_pins->switchToGroupNamed(command.mid(2).join(QLatin1Char(' '))) ? QStringLiteral("ok") : QStringLiteral("no such group");
-        else if (op == QLatin1String("next")) m_pins->nextGroup();
-        else if (op == QLatin1String("prev")) m_pins->previousGroup();
-        else if (op == QLatin1String("clear")) m_pins->clearCurrentGroup();
-        else if (op == QLatin1String("list")) result = m_pins->groupNames().join(QLatin1Char('\n'));
-        else result = QStringLiteral("unknown group command");
-        rebuildGroupMenu();
-    } else if (name == QLatin1String("action")) {
-        result = runAction(command.mid(1).join(QLatin1Char(' '))) ? QStringLiteral("ok") : QStringLiteral("no such action");
     } else if (name == QLatin1String("ocr-file")) {
         recognizeTextFromFile(command.value(1));
     } else if (name == QLatin1String("qr-file")) {
@@ -652,21 +394,6 @@ QString App::runCommand(const QStringList& command, int requestId)
         togglePinsHidden();
     } else if (name == QLatin1String("prefs")) {
         showPreferences();
-    } else if (name == QLatin1String("prefs-dir")) {
-        openSettingsFolder();
-    } else if (name == QLatin1String("script")) {
-        bool ok = false;
-        result = runScript(command.mid(1).join(QLatin1Char(' ')), &ok); // ACT-13
-        if (!ok)
-            result = QStringLiteral("script error: ") + result;
-    } else if (name == QLatin1String("script-file")) {
-        QFile f(command.value(1));
-        if (!f.open(QIODevice::ReadOnly))
-            result = QStringLiteral("cannot read script");
-        else
-            result = runScript(QString::fromUtf8(f.readAll()));
-    } else if (name == QLatin1String("paste-as")) {
-        pasteAs(command.value(1));
     } else if (name == QLatin1String("quit")) {
         quit();
     } else if (!name.isEmpty()) {
@@ -675,80 +402,6 @@ QString App::runCommand(const QStringList& command, int requestId)
     }
     finishCommand(requestId, result);
     return result;
-}
-
-QString App::runScript(const QString& source, bool* ok)
-{
-    ScriptHost host;
-    host.command = [this](const QString& line) { return runCommand(splitCommandLine(line)); };
-    host.getClipboard = [] { return QApplication::clipboard()->text(); };
-    host.setClipboard = [](const QString& t) { QApplication::clipboard()->setText(t); };
-    host.sleep = [](int ms) {
-        QElapsedTimer t;
-        t.start();
-        while (t.elapsed() < ms)
-            QApplication::processEvents(QEventLoop::AllEvents, 20);
-    };
-    ScriptEngine engine(host);
-    const ScriptResult r = engine.run(source);
-    if (ok)
-        *ok = r.ok;
-    if (!r.ok)
-        qWarning("script error: %s", qPrintable(r.error));
-    return r.ok ? (r.output.isEmpty() ? r.value : r.output) : r.error;
-}
-
-// ---- 动作（ACT-03）----
-
-QList<Action> App::actions() const
-{
-    return actionsFromJson(m_settings.stringValue(QStringLiteral("actions.list")));
-}
-
-bool App::runAction(const QString& name)
-{
-    for (const Action& a : actions()) {
-        if (a.name.compare(name, Qt::CaseInsensitive) != 0)
-            continue;
-        const QStringList words = splitCommandLine(a.command);
-        if (words.value(0) == QLatin1String("shell")) {
-            QProcess::startDetached(QStringLiteral("cmd.exe"), {QStringLiteral("/c"), a.command.mid(6).trimmed()});
-        } else if (words.value(0) == QLatin1String("run")) {
-            QProcess::startDetached(words.value(1), words.mid(2));
-        } else if (words.value(0) == QLatin1String("script")) {
-            runScript(a.command.mid(7)); // ACT-13：动作绑定脚本文本
-        } else if (words.value(0) == QLatin1String("script-file")) {
-            QFile f(words.value(1));
-            if (f.open(QIODevice::ReadOnly))
-                runScript(QString::fromUtf8(f.readAll()));
-        } else {
-            runCommand(words);
-        }
-        return true;
-    }
-    return false;
-}
-
-void App::showActionsDialog()
-{
-    ActionsDialog dialog(m_settings);
-    dialog.exec();
-}
-
-void App::rebuildActionsMenu()
-{
-    if (!m_actionsMenu)
-        return;
-    m_actionsMenu->clear();
-    m_actionsMenu->addAction(tr("Edit actions..."), this, &App::showActionsDialog);
-    m_actionsMenu->addSeparator();
-    for (const Action& a : actions()) {
-        if (!a.inTray)
-            continue;
-        const QString n = a.name;
-        QAction* act = m_actionsMenu->addAction(a.hotkey.isEmpty() ? a.name : a.name + QLatin1Char('\t') + a.hotkey, this, [this, n] { runAction(n); });
-        Q_UNUSED(act);
-    }
 }
 
 // ---- 识别（REC-01、REC-06）----
@@ -907,24 +560,6 @@ void App::captureRegion(const QRect& physical, int delayMs, bool interactive)
         run();
 }
 
-void App::showCustomCaptureDialog()
-{
-    CustomCaptureDialog dialog(m_settings);
-    const QStringList parts = m_settings.stringValue(QStringLiteral("capture.lastRegion")).split(QLatin1Char(','));
-    if (parts.size() == 4)
-        dialog.setRegion(QRect(parts[0].toInt(), parts[1].toInt(), parts[2].toInt(), parts[3].toInt()));
-    if (dialog.exec() != QDialog::Accepted)
-        return;
-    const auto r = dialog.request();
-    captureRegion(r.region, r.delayMs, true);
-}
-
-void App::startWhiteboard()
-{
-    m_session->startWhiteboard(QColor::fromString(m_settings.stringValue(QStringLiteral("capture.whiteboardColor"))),
-                               m_settings.boolValue(QStringLiteral("capture.whiteboardCurrentScreen")));
-}
-
 void App::startCapture(qint64 triggerNs)
 {
     if (m_scroll && m_scroll->state() == ScrollCaptureSession::State::Running)
@@ -942,15 +577,13 @@ bool App::startScroll(const QRect& physicalRegion, bool showUi)
         m_scrollRegion = region;
     });
     connect(m_scroll.get(), &ScrollCaptureSession::outputRequested, this, [this](const QString& kind) {
-        // CAP-73：完成后复制 / 保存 / 快速保存 / 贴图（贴图上可继续标注）
+        // CAP-73：完成后复制 / 保存 / 贴图（贴图上可继续标注）
         if (m_scrollResult.isNull())
             return;
         if (kind == QLatin1String("copy"))
             m_output->copy(m_scrollResult);
         else if (kind == QLatin1String("save"))
             m_output->saveWithDialog(m_scrollResult, nullptr);
-        else if (kind == QLatin1String("quickSave"))
-            m_output->quickSave(m_scrollResult);
         else if (kind == QLatin1String("pin"))
             pinImage(m_scrollResult, m_scrollRegion.topLeft());
         m_history.add({m_scrollResult, m_scrollRegion, QDateTime::currentDateTime()});
@@ -975,6 +608,10 @@ PinWindow* App::pinImage(const QImage& image, QPoint physicalPos)
 
 void App::pinFromClipboard()
 {
+    if (m_session->isActive()) {
+        m_session->pin(); // 截图中：把当前选区贴到屏幕
+        return;
+    }
     m_pins->pinHotkey(cursorPhysical());
 }
 
@@ -986,8 +623,6 @@ void App::restoreClosedPin()
 void App::togglePinsHidden()
 {
     m_pins->toggleHidden();
-    if (m_togglePinsAction)
-        m_togglePinsAction->setText(m_pins->allHidden() ? tr("Show all pins\tShift+F3") : tr("Hide all pins\tShift+F3"));
 }
 
 void App::togglePassthroughAtCursor()
@@ -1012,223 +647,36 @@ void App::showPreferences()
     m_settings.saveToFile();
 }
 
-void App::showAbout()
-{
-    theme::message(nullptr, QMessageBox::NoIcon, tr("About ScreenShot"),
-                   tr("<b>ScreenShot</b><br>Screenshot and pin tool.<br><br>Capture: %1<br>Pin clipboard: %2<br>Hide / show pins: %3<br><br>"
-                      "While capturing: drag to select, Enter / double-click to copy, Ctrl+S to save, Ctrl+Shift+S to quick save, "
-                      "Ctrl+T to pin, Esc to cancel, Tab to switch window / element detection, C to copy the pixel color, "
-                      "WASD and arrow keys to adjust by one pixel, , and . to recall previous captures.")
-                       .arg(m_settings.stringValue(QStringLiteral("hotkey.capture")), m_settings.stringValue(QStringLiteral("hotkey.pin")),
-                            m_settings.stringValue(QStringLiteral("hotkey.togglePins"))));
-}
-
-bool App::hotkeyAllowed(const QKeySequence& seq) const
-{
-    // ACT-08：单键（无修饰键、非功能键）默认不允许作为全局热键
-    if (seq.isEmpty() || m_settings.boolValue(QStringLiteral("hotkey.allowSingleKey")))
-        return true;
-    const QKeyCombination c = seq[0];
-    const bool hasModifier = c.keyboardModifiers() & (Qt::ControlModifier | Qt::ShiftModifier | Qt::AltModifier | Qt::MetaModifier);
-    const bool functionKey = c.key() >= Qt::Key_F1 && c.key() <= Qt::Key_F35;
-    const bool special = c.key() == Qt::Key_Print || c.key() == Qt::Key_Pause || c.key() == Qt::Key_ScrollLock;
-    return hasModifier || functionKey || special;
-}
-
-bool App::hotkeyIgnoredForForeground() const
-{
-    const QStringList names = m_settings.stringValue(QStringLiteral("hotkey.ignoreProcesses")).split(QLatin1Char(','), Qt::SkipEmptyParts);
-    if (names.isEmpty() || !m_platform.windowDetector)
-        return false;
-    const auto active = m_platform.windowDetector->activeWindow();
-    if (!active)
-        return false;
-    for (const QString& n : names)
-        if (!n.trimmed().isEmpty() && active->processName.compare(n.trimmed(), Qt::CaseInsensitive) == 0)
-            return true;
-    return false;
-}
-
-void App::pasteAs(const QString& kind)
-{
-    // ACT-16：剪贴板转换后模拟 Ctrl+V
-    QClipboard* cb = QApplication::clipboard();
-    const QMimeData* mime = cb->mimeData();
-    if (!mime)
-        return;
-    if (kind == QLatin1String("text")) {
-        if (!mime->hasText())
-            return;
-        cb->setText(mime->text());
-    } else {
-        QImage image;
-        if (mime->hasImage())
-            image = qvariant_cast<QImage>(mime->imageData());
-        else if (mime->hasText()) {
-            TextPinOptions o;
-            o.font = QFont(m_settings.stringValue(QStringLiteral("pin.textFont")), m_settings.intValue(QStringLiteral("pin.textSize")));
-            image = renderTextPin(mime->text(), o);
-        }
-        if (image.isNull())
-            return;
-        cb->setImage(image);
-    }
-    m_pins->markClipboardDirty();
-    if (m_platform.input)
-        m_platform.input->sendKeyCombo(Qt::ControlModifier, Qt::Key_V);
-}
-
-void App::openSettingsFolder()
-{
-    // CFG-08：一键打开配置文件所在目录
-    const QString path = m_settings.filePath().isEmpty() ? m_dataDir : m_settings.filePath();
-    if (!path.isEmpty())
-        NotificationWidget::revealHandler(path);
-}
-
-// ---- 全局输入（ACT-10 / 11 / 12 / 15）----
-
 void App::applyInputHooks()
 {
-    m_doubleTap.setThreshold(m_settings.intValue(QStringLiteral("hotkey.doubleTapMs")));
-    m_hotCorners = HotCornerDetector(3, m_settings.intValue(QStringLiteral("hotCorner.dwellMs")));
 #ifdef Q_OS_WIN
-    const bool needKeyboard = m_settings.stringValue(QStringLiteral("hotkey.doubleTap")) != QLatin1String("none") || m_settings.boolValue(QStringLiteral("hotkey.ignoreInjected"))
-        || m_settings.boolValue(QStringLiteral("globalMouse.enabled")) || m_recordHooks;
-    const bool needMouse = m_settings.boolValue(QStringLiteral("globalMouse.enabled")) || m_recordHooks;
-    if (!needKeyboard && !needMouse) {
+    // 录制时显示点击与按键（VID-06）需要全局钩子，其余时间不装
+    if (!m_recordHooks) {
         m_hooks.reset();
         return;
     }
     if (!m_hooks) {
         m_hooks = std::make_unique<win::WinInputHooks>();
-        connect(m_hooks.get(), &win::WinInputHooks::keyDown, this, &App::onGlobalKeyDown);
+        connect(m_hooks.get(), &win::WinInputHooks::keyDown, this, [this](int vk, bool, qint64) {
+            if (m_record)
+                m_record->noteKey(vk, true);
+        });
         connect(m_hooks.get(), &win::WinInputHooks::keyUp, this, [this](int vk, bool, qint64) {
-            // 修饰键松开：全局鼠标手势的修饰状态
-            static const int modifiers[] = {0x5B, 0x5C, 0x12, 0xA4, 0xA5, 0x11, 0xA2, 0xA3, 0x10, 0xA0, 0xA1}; // Win / Alt / Ctrl / Shift 的虚拟键
-            if (std::find(std::begin(modifiers), std::end(modifiers), vk) != std::end(modifiers))
-                m_gesture.setModifierHeld(false);
             if (m_record)
                 m_record->noteKey(vk, false);
         });
         connect(m_hooks.get(), &win::WinInputHooks::mouseWheel, this, [this](int delta, QPoint pos) {
             if (m_record)
-                m_record->noteWheel(delta, pos); // VID-06
+                m_record->noteWheel(delta, pos);
         });
-        connect(m_hooks.get(), &win::WinInputHooks::mouseButton, this, &App::onGlobalMouse);
-        connect(m_hooks.get(), &win::WinInputHooks::mouseMoved, this, &App::onGlobalMouseMoved);
+        connect(m_hooks.get(), &win::WinInputHooks::mouseButton, this, [this](int button, bool down, QPoint pos) {
+            if (m_record)
+                m_record->noteMouseButton(button, down, pos);
+        });
     }
-    if (needKeyboard)
-        m_hooks->installKeyboard();
-    if (needMouse)
-        m_hooks->installMouse();
+    m_hooks->installKeyboard();
+    m_hooks->installMouse();
 #endif
-}
-
-void App::runNamedAction(const QString& action)
-{
-    if (action == QLatin1String("capture"))
-        startCapture(monotonicNs());
-    else if (action == QLatin1String("pin"))
-        pinFromClipboard();
-    else if (action == QLatin1String("togglePins"))
-        togglePinsHidden();
-    else if (action == QLatin1String("restorePin"))
-        restoreClosedPin();
-}
-
-void App::onGlobalKeyDown(int vk, bool injected, qint64 nowMs)
-{
-    m_injected.keyEvent(vk, injected, nowMs); // ACT-15
-    if (m_record)
-        m_record->noteKey(vk, true); // VID-06
-    // 全局鼠标手势的修饰键
-    const QString mod = m_settings.stringValue(QStringLiteral("globalMouse.modifier"));
-    auto isModifier = [](const QString& name, int key) {
-        if (name == QLatin1String("win")) return key == 0x5B || key == 0x5C;
-        if (name == QLatin1String("alt")) return key == 0x12 || key == 0xA4 || key == 0xA5;
-        if (name == QLatin1String("ctrl")) return key == 0x11 || key == 0xA2 || key == 0xA3;
-        if (name == QLatin1String("shift")) return key == 0x10 || key == 0xA0 || key == 0xA1;
-        return false;
-    };
-    if (m_settings.boolValue(QStringLiteral("globalMouse.enabled")) && isModifier(mod, vk))
-        m_gesture.setModifierHeld(true);
-    // 修饰键双击（ACT-10）
-    const QString tap = m_settings.stringValue(QStringLiteral("hotkey.doubleTap"));
-    if (tap != QLatin1String("none") && !injected) {
-        if (m_doubleTap.keyDown(isModifier(tap, vk), nowMs))
-            runNamedAction(m_settings.stringValue(QStringLiteral("hotkey.doubleTapAction")));
-    }
-}
-
-bool App::globalMouseGestureActive() const
-{
-    return m_gesture.active();
-}
-
-void App::onGlobalMouse(int button, bool down, QPoint physical)
-{
-    if (m_record)
-        m_record->noteMouseButton(button, down, physical); // VID-06
-    if (!m_settings.boolValue(QStringLiteral("globalMouse.enabled")))
-        return;
-    if (down) {
-        if (m_gesture.press(button, physical)) {
-#ifdef Q_OS_WIN
-            if (m_hooks)
-                m_hooks->setSwallowMouse(true);
-#endif
-            if (!m_gestureOverlay)
-                m_gestureOverlay = std::make_unique<GestureOverlay>();
-            m_gestureOverlay->showRegion(m_gesture.currentRegion());
-        }
-        return;
-    }
-    const auto result = m_gesture.release(button, physical);
-    if (!m_gesture.active()) {
-#ifdef Q_OS_WIN
-        if (m_hooks)
-            m_hooks->setSwallowMouse(false);
-#endif
-        if (m_gestureOverlay)
-            m_gestureOverlay->hideRegion();
-    }
-    if (result)
-        finishGlobalMouse(result->region, result->button);
-}
-
-void App::onGlobalMouseMoved(QPoint physical)
-{
-    if (m_gesture.move(physical) && m_gestureOverlay)
-        m_gestureOverlay->showRegion(m_gesture.currentRegion());
-}
-
-void App::finishGlobalMouse(const QRect& region, int button)
-{
-    // ACT-11：按键决定输出
-    const QString key = button == 1 ? QStringLiteral("globalMouse.left") : button == 2 ? QStringLiteral("globalMouse.middle") : QStringLiteral("globalMouse.right");
-    const QString action = m_settings.stringValue(key);
-    if (action == QLatin1String("none") || m_session->isActive())
-        return;
-    m_session->setEnterActionsOverride({action});
-    captureRegion(region, 0, false);
-}
-
-void App::pollHotCorners(QPoint physical, qint64 nowMs)
-{
-    QRect screen;
-    for (QScreen* s : QGuiApplication::screens()) {
-        const QRect g = s->geometry();
-        const QRect phys(g.topLeft(), QSize(qRound(g.width() * s->devicePixelRatio()), qRound(g.height() * s->devicePixelRatio())));
-        if (phys.contains(physical))
-            screen = phys;
-    }
-    if (screen.isNull())
-        return;
-    const auto corner = m_hotCorners.feed(physical, screen, nowMs);
-    if (corner == HotCornerDetector::Corner::None)
-        return;
-    runNamedAction(m_settings.stringValue(QStringLiteral("hotCorner.") + HotCornerDetector::cornerName(corner))); // ACT-12
 }
 
 void App::loadHistoryDir()
@@ -1259,18 +707,7 @@ int App::restorePins()
 {
     if (m_dataDir.isEmpty() || !m_settings.boolValue(QStringLiteral("pin.restoreOnStart")))
         return 0;
-    const int n = m_pins->restoreState(m_dataDir + QStringLiteral("/pins"));
-    rebuildGroupMenu();
-    return n;
-}
-
-NotificationWidget* App::notify(const QString& title, const QString& message, const QString& filePath)
-{
-    if (!m_settings.boolValue(QStringLiteral("general.notifications")))
-        return nullptr;
-    auto* w = new NotificationWidget(title, message, filePath);
-    w->show();
-    return w;
+    return m_pins->restoreState(m_dataDir + QStringLiteral("/pins"));
 }
 
 // ---- 屏幕录制（VID-01 ~ VID-09）----
@@ -1309,16 +746,15 @@ void App::finishRecording()
     m_recordHooks = false;
     applyInputHooks();
     if (m_record->mode() == RecordSession::Mode::Quick) {
-        // 快速录制（VID-03）：文件已写好，移到快速保存目录并复制为文件
+        // 快速录制（VID-03）：文件已写好，移到保存目录并复制为文件
         const QString src = m_record->quickFilePath();
-        QDir().mkpath(m_output->quickSaveDir());
-        const QString dst = uniqueFilePath(m_output->quickSaveDir(), m_output->makeFileName(QImage()), QStringLiteral("mp4"));
+        QDir().mkpath(m_output->defaultSaveDir());
+        const QString dst = uniqueFilePath(m_output->defaultSaveDir(), m_output->makeFileName(QImage()), QStringLiteral("mp4"));
         const bool moved = QFile::rename(src, dst) || (QFile::copy(src, dst) && QFile::remove(src));
         if (moved) {
             auto* mime = new QMimeData;
             mime->setUrls({QUrl::fromLocalFile(dst)});
             QGuiApplication::clipboard()->setMimeData(mime);
-            notify(tr("Recording saved"), dst, dst);
         }
         m_recordLastFile = moved ? dst : src;
     } else if (m_record->store()) {

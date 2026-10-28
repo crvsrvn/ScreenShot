@@ -64,16 +64,11 @@ public:
     // ---- 生命周期 ----
     void prepareOverlays();
     bool start(qint64 triggerNs, bool showOverlays = true);
-    // 白板（CAP-50）：纯色全屏画布，直接进入标注
-    bool startWhiteboard(const QColor& color, bool currentScreenOnly, bool showOverlays = true);
     // 刷新截图（CAP-31）：保留选区重新抓取
     bool refresh();
     // 模式轮换（CAP-07）：Ctrl+Tab；确认时按模式进入滚动截图 / 录制
     Mode mode() const { return m_mode; }
     void setMode(Mode mode);
-    // 透明白板（CAP-51）：在实时桌面上标注，确认时抓取桌面并合成
-    bool startTransparentBoard(bool showOverlays = true);
-    bool transparentBoard() const { return m_transparentBoard; }
     // 尺寸文字（CAP-19）：按设置用物理或逻辑像素
     QString sizeText(const QRect& physical) const;
     bool altHeld() const { return m_altHeld; }
@@ -176,9 +171,7 @@ public:
     QImage accept();             // 复制并结束（OUT-01）
     void copy() override { accept(); }
     void save() override;        // OUT-03
-    void quickSave() override;   // OUT-08
     void pin() override;         // PIN-02
-    void print() override;       // OUT-11
     void previewAndSave();       // OUT-07：预估大小 / 预览编码后保存
     // 截图来源窗口（选区中心所在的窗口），用于文件名变量（OUT-10）
     std::optional<WindowInfo> sourceWindow() const;
@@ -277,8 +270,6 @@ private:
     int m_elementLevel = 0;
     bool m_shadow = false;
     bool m_border = false;
-    bool m_whiteboard = false;
-    bool m_transparentBoard = false;
     Mode m_mode = Mode::Static;
     QString m_cursorProcess; // 光标所在窗口的进程名（检测排除列表用）
     void saveHistoryFile(const QImage& image);

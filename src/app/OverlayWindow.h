@@ -30,9 +30,6 @@ public:
 
     QImage renderToImage(); // 组件测试用，物理像素尺寸
     int paintCount() const { return m_paintCount; }
-    // 透明模式（CAP-51 透明白板）：窗口背景透明，露出实时桌面
-    void setTransparentMode(bool on);
-    bool transparentMode() const { return m_transparent; }
     // 当前（可能在动画中的）检测高亮矩形
     QRect animatedHighlight() const;
 
@@ -65,7 +62,6 @@ private:
     bool m_awaitingFirstPaint = false;
     int m_paintCount = 0;
     QRectF m_sizeLabel; // 尺寸标签的逻辑矩形（点击可输入宽高，CAP-17）
-    bool m_transparent = false;
     // 检测框过渡动画（CAP-20）
     QRect m_animFrom;
     QRect m_animTo;

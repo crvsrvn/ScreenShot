@@ -190,13 +190,13 @@ void TestAnnotationEditor::toolbarIconsAndTranslations()
         ++checked;
     }
     QVERIFY(checked >= 20);
-    for (const char* name : {"rect", "ellipse", "line", "arrow", "pencil", "highlighter", "mosaic", "blur", "text", "eraser", "step", "magnifier", "undo", "redo", "copy", "save", "cancel"}) {
+    for (const char* name : {"rect", "line", "arrow", "pencil", "highlighter", "mosaic", "blur", "text", "eraser", "step", "magnifier", "copy", "save", "cancel"}) {
         QToolButton* b = tb->button(QString::fromLatin1(name));
         QVERIFY2(b && !b->icon().isNull(), name);
         QVERIFY2(hasCjk(b->toolTip()), name);
     }
     // “更多”面板里的按钮也是工具栏的子孙，上面的遍历已检查其提示为中文
-    QVERIFY(tb->button(QStringLiteral("more"))->menu()->isAncestorOf(tb->button(QStringLiteral("step"))));
+    QVERIFY(tb->button(QStringLiteral("more"))->menu()->isAncestorOf(tb->button(QStringLiteral("line"))));
     QCoreApplication::removeTranslator(&zh);
 }
 
@@ -492,7 +492,7 @@ void TestAnnotationEditor::toolbarButtonsDriveEditor()
     f.session->setSelection(f.sel);
     CaptureToolbar* tb = f.session->toolbar();
     QVERIFY(tb);
-    for (const char* name : {"rect", "ellipse", "line", "arrow", "pencil", "highlighter", "mosaic", "blur", "text", "eraser", "undo", "redo", "clear", "copy", "save", "pin", "cancel"})
+    for (const char* name : {"rect", "line", "arrow", "pencil", "highlighter", "mosaic", "blur", "text", "eraser", "clear", "copy", "save", "pin", "cancel"})
         QVERIFY2(tb->button(QString::fromLatin1(name)), name);
     tb->button(QStringLiteral("rect"))->click();
     QCOMPARE(f.session->state(), CaptureSession::State::Annotating);
@@ -501,9 +501,9 @@ void TestAnnotationEditor::toolbarButtonsDriveEditor()
     tb->button(QStringLiteral("fill"))->click();
     QVERIFY(f.editor().style().filled);
     f.drag(QPoint(150, 150), QPoint(200, 200));
-    tb->button(QStringLiteral("undo"))->click();
+    f.editor().undo();
     QCOMPARE(f.editor().document().count(), 0);
-    tb->button(QStringLiteral("redo"))->click();
+    f.editor().redo();
     QCOMPARE(f.editor().document().count(), 1);
     tb->button(QStringLiteral("rect"))->click(); // 再点一次取消工具
     QCOMPARE(f.editor().tool(), Tool::None);

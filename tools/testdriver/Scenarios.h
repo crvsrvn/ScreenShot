@@ -54,7 +54,6 @@ private:
     ScenarioResult r09ElementDetectorHang();
     ScenarioResult r11WindowsOcr();
     ScenarioResult r16FakeMultiScreen();
-    ScenarioResult r17QmlNetworkDependency();
     ScenarioResult hotkeyEndToEnd();
     ScenarioResult m1CaptureFlow();     // 框选 → 快速保存 → 文件与选区一致
     ScenarioResult m1SingleInstance();  // 第二个实例把 snip 转交给运行中的实例

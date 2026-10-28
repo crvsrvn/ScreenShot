@@ -10,9 +10,7 @@ const QList<ShortcutDef>& shortcutDefs()
     static const QList<ShortcutDef> defs{
         {QStringLiteral("capture"), QStringLiteral("copy"), QKeySequence(QStringLiteral("Ctrl+C")), QT_TRANSLATE_NOOP("Shortcuts", "Copy")},
         {QStringLiteral("capture"), QStringLiteral("save"), QKeySequence(QStringLiteral("Ctrl+S")), QT_TRANSLATE_NOOP("Shortcuts", "Save")},
-        {QStringLiteral("capture"), QStringLiteral("quickSave"), QKeySequence(QStringLiteral("Ctrl+Shift+S")), QT_TRANSLATE_NOOP("Shortcuts", "Quick save")},
         {QStringLiteral("capture"), QStringLiteral("pin"), QKeySequence(QStringLiteral("Ctrl+T")), QT_TRANSLATE_NOOP("Shortcuts", "Pin")},
-        {QStringLiteral("capture"), QStringLiteral("print"), QKeySequence(QStringLiteral("Ctrl+P")), QT_TRANSLATE_NOOP("Shortcuts", "Print")},
         {QStringLiteral("capture"), QStringLiteral("ocrCopy"), QKeySequence(QStringLiteral("Shift+C")), QT_TRANSLATE_NOOP("Shortcuts", "Recognize text and copy")},
         {QStringLiteral("capture"), QStringLiteral("scroll"), QKeySequence(QStringLiteral("Ctrl+L")), QT_TRANSLATE_NOOP("Shortcuts", "Scrolling capture")},
         {QStringLiteral("capture"), QStringLiteral("refresh"), QKeySequence(QStringLiteral("F5")), QT_TRANSLATE_NOOP("Shortcuts", "Refresh")},
@@ -22,7 +20,6 @@ const QList<ShortcutDef>& shortcutDefs()
         {QStringLiteral("pin"), QStringLiteral("copy"), QKeySequence(QStringLiteral("Ctrl+C")), QT_TRANSLATE_NOOP("Shortcuts", "Copy")},
         {QStringLiteral("pin"), QStringLiteral("copyOriginal"), QKeySequence(QStringLiteral("Ctrl+Shift+C")), QT_TRANSLATE_NOOP("Shortcuts", "Copy original")},
         {QStringLiteral("pin"), QStringLiteral("save"), QKeySequence(QStringLiteral("Ctrl+S")), QT_TRANSLATE_NOOP("Shortcuts", "Save")},
-        {QStringLiteral("pin"), QStringLiteral("quickSave"), QKeySequence(QStringLiteral("Ctrl+Shift+S")), QT_TRANSLATE_NOOP("Shortcuts", "Quick save")},
         {QStringLiteral("pin"), QStringLiteral("toolbar"), QKeySequence(QStringLiteral("Space")), QT_TRANSLATE_NOOP("Shortcuts", "Annotate")},
         {QStringLiteral("pin"), QStringLiteral("lock"), QKeySequence(QStringLiteral("L")), QT_TRANSLATE_NOOP("Shortcuts", "Lock")},
         {QStringLiteral("pin"), QStringLiteral("topmost"), QKeySequence(QStringLiteral("T")), QT_TRANSLATE_NOOP("Shortcuts", "Always on top")},

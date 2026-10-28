@@ -1,4 +1,4 @@
-// REQ: ANN-04 ANN-08 ANN-12 ANN-14 ANN-15 ANN-16 ANN-22 ANN-24 ANN-26 ANN-30 ANN-31 ANN-34 ANN-38 ANN-39
+// REQ: ANN-04 ANN-08 ANN-12 ANN-14 ANN-15 ANN-16 ANN-22 ANN-24 ANN-26 ANN-30 ANN-31 ANN-34 ANN-38
 // M6 标注 P2：色板编辑 / 透明度、框选多选、新建后自动选中、自定义工具栏、记住工具 / 默认工具、贴图隐藏标注、
 // 扇形 / 弧形、端点与连接样式、箭头注释、智能擦除、自动马赛克、文字换行与指示箭头、聚光灯、水印
 #include "app/AnnotationEditor.h"
@@ -102,7 +102,6 @@ private slots:
     void autoMosaicGroup();
     void textWrapAndPointer();
     void spotlight();
-    void watermark();
 };
 
 void TestAnnotationP2::paletteEditImportExportWheel()
@@ -214,15 +213,29 @@ void TestAnnotationP2::defaultToolbarKeepsCommonOnly()
     f.startWith(Tool::Rect);
     CaptureToolbar* tb = f.session->toolbar();
     QVERIFY(tb->testAttribute(Qt::WA_AlwaysShowToolTips)); // 工具栏不激活，也要显示悬停提示
-    // 主栏只有常用工具与输出按钮
-    for (const char* name : {"rect", "ellipse", "arrow", "pencil", "mosaic", "text", "more", "undo", "redo", "pin", "save", "cancel", "copy"})
+    // 主栏只有常用工具与输出按钮；撤销 / 重做只用快捷键，椭圆是框选工具的形状选项
+    for (const char* name : {"rect", "arrow", "pencil", "mosaic", "text", "step", "more", "pin", "save", "cancel", "copy"})
         QVERIFY2(tb->button(QString::fromLatin1(name))->isVisibleTo(tb), name);
+    for (const char* name : {"ellipse", "undo", "redo"})
+        QVERIFY2(!tb->button(QString::fromLatin1(name)), name);
     // 其余工具和低频操作在“更多”面板里，仍能按名称找到并使用
-    for (const char* name : {"line", "highlighter", "blur", "eraser", "step", "clear", "watermark", "quickSave", "mode", "scroll", "ratio", "shadow", "border"})
+    for (const char* name : {"line", "highlighter", "blur", "eraser", "clear", "mode", "scroll", "ratio", "shadow", "border"})
         QVERIFY2(!tb->button(QString::fromLatin1(name))->isVisibleTo(tb), name);
-    tb->button(QStringLiteral("step"))->click();
-    QCOMPARE(f.editor().tool(), Tool::Step);
+    tb->button(QStringLiteral("line"))->click();
+    QCOMPARE(f.editor().tool(), Tool::Line);
     QVERIFY(tb->button(QStringLiteral("recent"))->isVisibleTo(tb));
+    // 框选工具：形状选项在矩形 / 椭圆之间切换，主栏按钮保持选中
+    tb->button(QStringLiteral("rect"))->click();
+    QCOMPARE(f.editor().tool(), Tool::Rect);
+    QToolButton* ellipse = tb->optionsRow()->findChild<QToolButton*>(QStringLiteral("shape_ellipse"));
+    QVERIFY(ellipse && ellipse->isVisibleTo(tb));
+    QVERIFY(!tb->optionsRow()->findChild<QToolButton*>(QStringLiteral("shape_brush"))->isVisibleTo(tb));
+    ellipse->click();
+    QCOMPARE(f.editor().tool(), Tool::Ellipse);
+    QVERIFY(tb->button(QStringLiteral("rect"))->isChecked());
+    QVERIFY(ellipse->isChecked());
+    tb->optionsRow()->findChild<QToolButton*>(QStringLiteral("shape_rect"))->click();
+    QCOMPARE(f.editor().tool(), Tool::Rect);
 }
 
 void TestAnnotationP2::rememberToolAndDefaultTool()
@@ -544,65 +557,6 @@ void TestAnnotationP2::spotlight()
     QCOMPARE(sp->shape(), SpotlightAnnotation::Shape::Ellipse);
     auto copy = annotationFromJson(sp->toJson());
     QCOMPARE(static_cast<SpotlightAnnotation*>(copy.get())->maskOpacity(), 255);
-}
-
-void TestAnnotationP2::watermark()
-{
-    WatermarkAnnotation w;
-    w.setText(QStringLiteral("Draft {date}"));
-    QVERIFY(w.expandedText().contains(QDate::currentDate().toString(QStringLiteral("yyyy-MM-dd"))));
-    QCOMPARE(WatermarkAnnotation::placementFromName(QStringLiteral("center")), WatermarkAnnotation::Placement::Center);
-    auto render = [](WatermarkAnnotation::Placement pl, int alpha) {
-        QImage img(400, 300, QImage::Format_RGB32);
-        img.fill(Qt::white);
-        WatermarkAnnotation wm;
-        wm.setCanvasSize(img.size());
-        wm.setText(QStringLiteral("MARK"));
-        wm.setPlacement(pl);
-        wm.setOpacity(alpha);
-        wm.setFont(QFont(QStringLiteral("Arial"), 16));
-        AnnotationStyle s;
-        s.stroke = Qt::black;
-        wm.setStyle(s);
-        QPainter p(&img);
-        RenderContext ctx;
-        ctx.below = &img;
-        wm.paint(p, ctx);
-        return img;
-    };
-    auto darkIn = [](const QImage& img, const QRect& r) {
-        int n = 0;
-        for (int y = r.top(); y < r.bottom(); ++y)
-            for (int x = r.left(); x < r.right(); ++x)
-                if (qGray(img.pixel(x, y)) < 250)
-                    ++n;
-        return n;
-    };
-    const QImage br = render(WatermarkAnnotation::Placement::BottomRight, 255);
-    QVERIFY(darkIn(br, QRect(250, 240, 150, 60)) > 20);
-    QCOMPARE(darkIn(br, QRect(0, 0, 200, 150)), 0);
-    const QImage tiled = render(WatermarkAnnotation::Placement::Tiled, 255);
-    QVERIFY(darkIn(tiled, QRect(0, 0, 200, 150)) > 20);
-    QVERIFY(darkIn(tiled, QRect(200, 150, 200, 150)) > 20);
-    // 透明度更低 → 更浅
-    const QImage faint = render(WatermarkAnnotation::Placement::BottomRight, 40);
-    QVERIFY(darkIn(faint, QRect(250, 240, 150, 60)) <= darkIn(br, QRect(250, 240, 150, 60)));
-    // 编辑器：按设置添加 / 移除，工具栏按钮状态，框选不选中水印
-    Fixture f;
-    f.settings.setValue(QStringLiteral("annotation.watermarkText"), QStringLiteral("WM"));
-    f.settings.setValue(QStringLiteral("annotation.watermarkPlacement"), QStringLiteral("tiled"));
-    f.startWith(Tool::Rect);
-    f.session->toolbar()->button(QStringLiteral("watermark"))->click();
-    QVERIFY(f.editor().hasWatermark());
-    QCOMPARE(f.editor().document().count(), 1);
-    QVERIFY(!f.render().isNull());
-    f.session->setTool(Tool::None);
-    f.session->pressAt(QPoint(110, 110), Qt::LeftButton);
-    f.session->dragTo(QPoint(490, 390));
-    f.session->releaseAt(QPoint(490, 390), Qt::LeftButton);
-    QVERIFY(f.editor().selectedIds().isEmpty());
-    f.editor().removeWatermark();
-    QVERIFY(!f.editor().hasWatermark());
 }
 
 QTEST_MAIN(TestAnnotationP2)

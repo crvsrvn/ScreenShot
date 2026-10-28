@@ -2,15 +2,11 @@
 
 #include "core/capture/CaptureHistory.h"
 #include "core/code/CodeDecoder.h"
-#include "core/input/Gestures.h"
 #include "core/ports/IOcrEngine.h"
-
-#include <QTimer>
 
 #ifdef Q_OS_WIN
 namespace ss::win { class WinInputHooks; }
 #endif
-#include "core/config/Actions.h"
 #include "core/ports/Platform.h"
 
 #include <QHash>
@@ -21,7 +17,6 @@ namespace ss::win { class WinInputHooks; }
 
 class QSystemTrayIcon;
 class QMenu;
-class QAction;
 
 namespace ss {
 
@@ -34,8 +29,6 @@ class CommandServer;
 class ScrollCaptureSession;
 class RecordSession;
 class RecordPlaybackDialog;
-class FloatingBar;
-class NotificationWidget;
 
 // 托盘与命令路由：持有平台层、设置、截图会话、输出动作和贴图管理。
 class App : public QObject {
@@ -44,7 +37,7 @@ public:
     App(Platform platform, Settings& settings, QObject* parent = nullptr);
     ~App() override;
 
-    enum HotkeyId { HotkeyCapture = 1, HotkeyPin = 2, HotkeyTogglePins = 3, HotkeyRestorePin = 4, HotkeyPassthrough = 5, HotkeyNextGroup = 6, HotkeyPreviousGroup = 7, HotkeyToggleWindowTopmost = 8, HotkeyPasteAsImage = 9, HotkeyPasteAsText = 10, HotkeyActionBase = 1000 };
+    enum HotkeyId { HotkeyCapture = 1, HotkeyPin = 2, HotkeyTogglePins = 3, HotkeyRestorePin = 4, HotkeyPassthrough = 5 };
 
     Platform& platform() { return m_platform; }
     Settings& settings() { return m_settings; }
@@ -68,68 +61,45 @@ public:
     int recoverRecordings();
     QList<PinWindow*> pins() const;
     QHash<int, bool> hotkeyStatus() const { return m_hotkeyStatus; }
-    bool hotkeysEnabled() const;
     bool pinsHidden() const;
 
     void useScreenCapture(std::unique_ptr<IScreenCapture> capture);
     void startCommandServer(const QString& channelName);
     // 命令行接口（ACT-06）；requestId 非 0 时完成后经 CommandServer::reply 应答
     QString runCommand(const QStringList& command, int requestId = 0);
-    // 脚本（ACT-13）：执行脚本文本，返回输出 / 错误
-    QString runScript(const QString& source, bool* ok = nullptr);
-    // 全局输入事件（钩子或测试喂入）：ACT-10 双击修饰键、ACT-11 全局鼠标、ACT-15 过滤模拟按键
-    void onGlobalKeyDown(int virtualKey, bool injected, qint64 nowMs);
-    void onGlobalMouse(int button, bool down, QPoint physical);
-    void onGlobalMouseMoved(QPoint physical);
-    // 热角（ACT-12）：按当前光标位置检查一次（定时器调用；测试可直接调用）
-    void pollHotCorners(QPoint physical, qint64 nowMs);
-    bool globalMouseGestureActive() const;
-    // 动作（ACT-03）
-    QList<Action> actions() const;
-    bool runAction(const QString& name);
-    void showActionsDialog();
     // 识别（REC-01、REC-06）
     void showOcrResult(const QString& text, const QList<OcrLine>& lines = {});
     QString formatOcr(const OcrResult& r) const;
     OcrResult recognizeLines(const QImage& image);
     void applyOcrOptions();
-    // ACT-16：把剪贴板转为图像 / 纯文本后模拟粘贴
-    void pasteAs(const QString& kind);
     void showCodeResult(const QList<CodeResult>& codes);
     void recognizeTextFromFile(const QString& path = QString());
     void decodeCodesFromFile(const QString& path = QString());
     void notifyCrashDumps(const QStringList& dumps);
     QMenu* trayMenu() const { return m_trayMenu; }
-    void trayActivated(int reason);
+    void trayActivated(int reason); // 左键截图、中键贴图
     void checkPermissions();
     // 数据目录（配置文件所在目录）：贴图恢复（PIN-54）
     void setDataDir(const QString& dir) { m_dataDir = dir; }
     int restorePins();
-    // 通知（GEN-07）；返回显示的窗口（关闭通知时为空）
-    NotificationWidget* notify(const QString& title, const QString& message, const QString& filePath = QString());
     // 当前光标的物理位置（贴图放置位置）
     static QPoint cursorPhysical();
 
     // 快捷截图（CAP-06）：不交互，直接按设置的动作输出。kind：full | last | activeWindow | activeScreen | cursorScreen
     bool quickCapture(const QString& kind);
-    // 指定区域（CAP-05 自定义截图 / 命令行）：delayMs 后截图并输出；interactive=false 时不显示界面
+    // 指定区域（命令行）：delayMs 后截图并输出；interactive=false 时不显示界面
     void captureRegion(const QRect& physical, int delayMs = 0, bool interactive = false);
-    void showCustomCaptureDialog();
-    void startWhiteboard();
 
 public slots:
     void startCapture(qint64 triggerNs);
     PinWindow* pinImage(const QImage& image, QPoint physicalPos);
-    void pinFromClipboard();   // 贴图热键语义：剪贴板有新内容则贴，否则恢复已关闭
+    void pinFromClipboard();   // 贴图热键语义：截图中贴选区；否则剪贴板有新内容则贴，没有则恢复已关闭
     void restoreClosedPin();
     void togglePinsHidden();
     void togglePassthroughAtCursor();
     void restoreOffscreenPins();
     void closeAllPins();
-    void setHotkeysEnabled(bool enabled);
     void showPreferences();
-    void openSettingsFolder();
-    void showAbout();
     void quit();
 
 private:
@@ -139,16 +109,8 @@ private:
     void onOcrCopyRequested(const QImage& image);
     void onCodesRequested(const QList<CodeResult>& codes);
     void registerHotkeys();
-    void rebuildActionsMenu();
-    QColor trayIconColor() const;
-    void applyTrayAppearance();
-    void applyFloatingBar();
     void loadHistoryDir();
-    bool hotkeyAllowed(const QKeySequence& seq) const;
-    bool hotkeyIgnoredForForeground() const;
     void applyInputHooks();
-    void runNamedAction(const QString& action);
-    void finishGlobalMouse(const QRect& region, int button);
     void finishCommand(int requestId, const QString& text);
     void applySetting(const QString& key);
     void finishRecording();
@@ -168,7 +130,6 @@ private:
     QPointer<RecordPlaybackDialog> m_playback;
     QImage m_scrollResult;
 public:
-    FloatingBar* floatingBar() const { return m_floatingBar.get(); }
     QSystemTrayIcon* trayIcon() const { return m_tray; }
 private:
     QRect m_scrollRegion;
@@ -177,27 +138,12 @@ private:
     QHash<int, bool> m_hotkeyStatus;
     QSystemTrayIcon* m_tray = nullptr;
     QMenu* m_trayMenu = nullptr;
-    QAction* m_hotkeysAction = nullptr;
-    QAction* m_togglePinsAction = nullptr;
-    QMenu* m_groupMenu = nullptr;
-    QMenu* m_actionsMenu = nullptr;
     int m_pendingReply = 0; // 等待截图完成后应答的命令
-    int m_actionHotkeys = 0;
     QString m_dataDir;
-    // 全局输入（ACT-10 / 11 / 12 / 15）
-    DoubleTapDetector m_doubleTap;
-    InjectedFilter m_injected;
-    GlobalMouseGesture m_gesture;
-    HotCornerDetector m_hotCorners;
-    QTimer m_hotCornerTimer;
-    std::unique_ptr<class GestureOverlay> m_gestureOverlay;
-    QHash<int, int> m_hotkeyVk; // 热键 id → 虚拟键（ACT-15）
 #ifdef Q_OS_WIN
-    std::unique_ptr<win::WinInputHooks> m_hooks;
+    std::unique_ptr<win::WinInputHooks> m_hooks; // 录制时的输入可视化（VID-06）
 #endif
-    std::unique_ptr<FloatingBar> m_floatingBar;
     QRect quickRegion(const QString& kind);
-    void rebuildGroupMenu();
 };
 
 } // namespace ss

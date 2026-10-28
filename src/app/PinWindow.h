@@ -65,6 +65,8 @@ public:
     void copyFile();
     void copyFilePath();
     void revealFile();
+    // 在资源管理器 / 访达中定位文件；测试可替换
+    static std::function<void(const QString&)> revealHandler;
 
     // ---- 亮度（PIN-28）：7 / 8 ±10%，0 重置全部处理 ----
     int brightness() const { return m_brightness; }
@@ -105,17 +107,12 @@ public:
     void restoreCrop();
     void confirmCrop();
 
-    // ---- 置顶（PIN-32）、阴影（PIN-36）、选中（PIN-60）、分组 ----
+    // ---- 置顶（PIN-32）、阴影（PIN-36）、选中（PIN-60）----
     bool topmost() const { return m_topmost; }
     void setTopmost(bool on);
     QColor shadowColor() const;
     void setSelected(bool on);
     bool selected() const { return m_selected; }
-    void setGroupIndex(int index);
-    int groupIndex() const { return m_groupIndex; }
-    void setGroupColor(const QColor& c) { m_groupColor = c; update(); }
-    // 组列表（右键“移到组”菜单用，GRP-03）
-    void setGroupNames(const QStringList& names) { m_groupNames = names; }
 
     // ---- 吸附（PIN-21）：Shift 拖动时吸附到这些矩形（逻辑桌面坐标）的边 ----
     void setSnapTargets(std::function<QList<QRectF>()> targets) { m_snapTargets = std::move(targets); }
@@ -179,7 +176,6 @@ public:
     void setTool(AnnotationEditor::Tool tool) override;
     void copy() override { copyDisplayed(); }
     void save() override { saveDisplayed(); }
-    void quickSave() override;
     void pin() override;  // 复制为新贴图
     void cancel() override; // 关闭工具栏
     bool supportsPin() const override { return true; }
@@ -211,7 +207,6 @@ signals:
     void groupAction(ss::PinWindow* pin, const QString& action, double arg); // close / destroy / reset / opacity
     void ocrRequested(const QImage& image);    // REC-01：贴图右键识别
     void codesRequested(const QImage& image);  // REC-06：贴图右键识别二维码
-    void moveToGroupRequested(ss::PinWindow* pin, int groupIndex); // GRP-03
     void ocrLinesRequested(ss::PinWindow* pin, const QImage& image);  // REC-04：请求识别图像贴图上的文字行
 
 protected:
@@ -290,9 +285,6 @@ private:
     QRect m_cropRect;
     bool m_topmost = true;
     bool m_selected = false;
-    int m_groupIndex = 0;
-    QColor m_groupColor;
-    QStringList m_groupNames;
     std::function<QList<QRectF>()> m_snapTargets;
     // 右键拖选（PIN-30 / PIN-31）与 Shift 平移
     bool m_rubberActive = false;

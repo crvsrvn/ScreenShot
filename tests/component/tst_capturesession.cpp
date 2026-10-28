@@ -1,4 +1,4 @@
-// REQ: CAP-01 CAP-02 CAP-03 CAP-10 CAP-11 CAP-12 CAP-15 CAP-23 CAP-24 CAP-40 OUT-01 OUT-03 OUT-08 PIN-02 NFR-07 NFR-08 NFR-14 TST-02 TST-03
+// REQ: CAP-01 CAP-02 CAP-03 CAP-10 CAP-11 CAP-12 CAP-15 CAP-23 CAP-24 CAP-40 OUT-01 OUT-03 PIN-02 NFR-07 NFR-08 NFR-14 TST-02 TST-03
 // 组件测试（无显示器）：会话在合成多屏布局上的完整交互
 #include "app/CaptureSession.h"
 #include "app/CaptureToolbar.h"
@@ -85,7 +85,6 @@ private slots:
     void fullScreenToggle();
     void colorPick();
     void historyRecall();
-    void quickSaveWritesFile();
     void saveWithOverriddenDialog();
     void pinRequest();
     void cancelAndRightClick();
@@ -299,24 +298,6 @@ void TestCaptureSession::historyRecall()
     f.settings.setValue(QStringLiteral("capture.historyLimit"), 0);
     f.history.setLimit(0);
     QVERIFY(f.history.isEmpty());
-}
-
-void TestCaptureSession::quickSaveWritesFile()
-{
-    Fixture f;
-    QTemporaryDir dir;
-    f.settings.setValue(QStringLiteral("output.quickSaveDir"), dir.path());
-    f.settings.setValue(QStringLiteral("output.fileNamePattern"), QStringLiteral("shot_{n}"));
-    QVERIFY(f.start());
-    f.session->setSelection(QRect(0, 0, 8, 4));
-    QSignalSpy done(&f.output, &OutputActions::done);
-    f.key(QStringLiteral("Ctrl+Shift+S"));
-    QCOMPARE(done.count(), 1);
-    const QString path = done.at(0).at(1).toString();
-    QVERIFY(path.endsWith(QStringLiteral("shot_1.png")));
-    QImage saved(path);
-    SS_VERIFY_IMAGE(saved, f.expectedCrop(QRect(0, 0, 8, 4)), CompareOptions{}, "quick_save");
-    QVERIFY(!f.session->isActive());
 }
 
 void TestCaptureSession::saveWithOverriddenDialog()

@@ -485,9 +485,9 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <body>
 <main class="hs-doc" data-toc-levels="2,3">
 <h1 id="top">ScreenShot 实现进度与交付报告（M0 ~ M8）</h1>
-<p class="hs-meta">v1.5 · 2026-10-27 · 输入：<a href="01-requirements.md">需求</a>、<a href="02-architecture.md">架构</a>、<a href="03-m0-report.md">M0 报告</a></p>
+<p class="hs-meta">v1.6 · 2026-10-28 · 输入：<a href="01-requirements.md">需求</a>、<a href="02-architecture.md">架构</a>、<a href="03-m0-report.md">M0 报告</a></p>
 <h2 id="summary"><span class="hs-num">1.</span>结论<a class="hs-anchor" href="#summary" aria-label="本节链接">#</a></h2>
-<p><mark>八个里程碑全部实现并逐里程碑本地提交；需求文档 v0.5 删除了公式贴图与公式识别后，现行 244 条需求全部进入交付范围且每条都有自动用例（覆盖矩阵无空项）。Debug 与 Release 两套自动测试全部通过，程序零网络导入。真实桌面端到端 20 个场景经三轮修复后全部通过；macOS 用例已写好，等 Mac 设备后执行。</mark></p>
+<p><mark>八个里程碑全部实现并逐里程碑本地提交；需求文档 v0.5 删除了公式贴图与公式识别、v0.6 精简了非核心功能后，现行 216 条需求全部进入交付范围且每条都有自动用例（覆盖矩阵无空项）。Debug 与 Release 两套自动测试全部通过，程序零网络导入。真实桌面端到端 20 个场景经三轮修复后全部通过；macOS 用例已写好，等 Mac 设备后执行。</mark></p>
 <div class="hs-table lead"><table>
 <caption>里程碑结果</caption>
 <thead>
@@ -501,7 +501,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <tbody>
 <tr>
 <td>M0</td>
-<td>工具链、测试框架、内置测试接口、17 项风险验证</td>
+<td>工具链、测试框架、内置测试接口、16 项风险验证</td>
 <td>见 <a href="03-m0-report.md">M0 报告</a></td>
 <td><span class="hs-tag" data-kind="ok">完成</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
 </tr>
@@ -531,13 +531,13 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td>M5</td>
-<td>各模块 P1：截图后动作、输出路径变量、标注扩展、贴图扩展、OCR / 二维码、动作系统、命令行、HDR</td>
+<td>各模块 P1：截图后动作、输出路径变量、标注扩展、贴图扩展、OCR / 二维码、命令行、HDR</td>
 <td><code>741c45b</code> ~ <code>3f11528</code></td>
 <td><span class="hs-tag" data-kind="ok">完成</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
 </tr>
 <tr>
 <td>M6</td>
-<td>各模块 P2：PixPin 特性、外观、滚动增强、标注 P2、输出 / 贴图 / 分组 P2、识别 / 动作 / 配置 P2</td>
+<td>各模块 P2：PixPin 特性、外观、滚动增强、标注 P2、输出 / 贴图 P2、识别 / 配置 P2</td>
 <td><code>1232b81</code> ~ <code>d8689b5</code></td>
 <td><span class="hs-tag" data-kind="ok">完成</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
 </tr>
@@ -559,7 +559,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <ul>
 <li>Windows 10 IoT Enterprise LTSC 2021（19044）x64，两台 2560×1440（125%）显示器；整个开发期间桌面处于锁屏状态。</li>
 <li>Qt 6.12.0 msvc2022_64，MSVC 14.51（VS 2026 Build Tools），C++20，CMake 3.28 预设 <code>win-debug</code> / <code>win-release-test</code> / <code>win-release</code>。</li>
-<li>第三方（FetchContent，静态链接，构建期联网，运行期零网络）：ZXing-C++ 2.3.0（条码）、QuickJS-ng 0.9.0（脚本）、libwebp 1.6.0（动画 WebP）。MP4 / AAC 用 Media Foundation，声音用 WASAPI，摄像头用 Media Foundation 源读取器，OCR 用 Windows.Media.Ocr，均为系统自带。</li>
+<li>第三方（FetchContent，静态链接，构建期联网，运行期零网络）：ZXing-C++ 2.3.0（条码）、libwebp 1.6.0（动画 WebP）。MP4 / AAC 用 Media Foundation，声音用 WASAPI，摄像头用 Media Foundation 源读取器，OCR 用 Windows.Media.Ocr，均为系统自带。</li>
 <li>打包：windeployqt 收集运行时（含 MSVC 运行库）→ 绿色版 zip；Inno Setup 6（winget 安装）→ 安装包。</li>
 </ul>
 <h2 id="tests"><span class="hs-num">3.</span>测试结果<a class="hs-anchor" href="#tests" aria-label="本节链接">#</a></h2>
@@ -575,18 +575,18 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <tbody>
 <tr>
 <td><code>win-debug</code></td>
-<td>单元 18 + 组件 20 + 覆盖矩阵 + 零网络导入检查</td>
-<td>37 / 37 通过 <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+<td>单元 18（含覆盖矩阵、零网络导入检查）+ 组件 19</td>
+<td>37 / 37 通过（v0.6 精简后复测） <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
 </tr>
 <tr>
 <td><code>win-release-test</code></td>
 <td>同上，另加绿色版 / 安装包打包与体积检查</td>
-<td>38 / 38 通过；绿色版 zip 17 MB，安装包 13 MB <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+<td>v0.6 精简前 38 / 38 通过，精简后未复测；绿色版 zip 17 MB，安装包 13 MB <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
 </tr>
 <tr>
 <td>端到端 <code>e2e_m0</code></td>
 <td>测试驱动启动真实程序；需要真实输入的场景在没有可用桌面时跳过</td>
-<td>控制台会话（真实桌面，两台 2560×1440 @125%）第三轮：20 个场景全部通过，无网络端点。冻结画面 P50 30.5 ms / P95 43.2 ms（DXGI，抓屏 P50 12.8 ms）、真实鼠标框选 3 次逐像素一致、真实热键 20 次首次绘制 P50 35.2 ms、真实窗口自动滚动 26 帧拒绝 0、长图 4320 px 与文档逐像素一致、命令行 <code>--wait</code> 全屏 5120×1440、启动 307 ms、挂起程序检测 7 ms / 308 ms、50 张贴图拖动 147 次/秒、8K 贴图缩放 55 FPS、4K 高斯模糊 54 ms、系统 OCR 中英通过 <span class="hs-tag" data-kind="ok">通过</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
+<td>控制台会话（真实桌面，两台 2560×1440 @125%）第三轮：20 个场景全部通过，无网络端点（v0.6 删除脚本引擎后去掉 <code>R-17</code>，现为 19 个场景；精简后只在 Debug 构建复测，除 Debug 下本就不达标的性能场景 <code>R-05</code> <code>R-06</code> <code>R-07</code> 外全部通过）。冻结画面 P50 30.5 ms / P95 43.2 ms（DXGI，抓屏 P50 12.8 ms）、真实鼠标框选 3 次逐像素一致、真实热键 20 次首次绘制 P50 35.2 ms、真实窗口自动滚动 26 帧拒绝 0、长图 4320 px 与文档逐像素一致、命令行 <code>--wait</code> 全屏 5120×1440、启动 307 ms、挂起程序检测 7 ms / 308 ms、50 张贴图拖动 147 次/秒、8K 贴图缩放 55 FPS、4K 高斯模糊 54 ms、系统 OCR 中英通过 <span class="hs-tag" data-kind="ok">通过</span> <span class="hs-mark" data-kind="ok" title="本机自动测试得到的结果">实测</span></td>
 </tr>
 <tr>
 <td>零网络</td>
@@ -595,7 +595,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 </tbody>
 </table></div>
-<p>需求覆盖矩阵（<code>build/&lt;preset&gt;/test-results/coverage.md</code>）由 <code>tools/coverage/gen_matrix.py</code> 在每次测试运行时生成：扫描所有用例文件开头的 <code>// REQ:</code> 标签，对 <code>tests/delivered_scope.txt</code> 里的每一条需求检查至少有一个用例，否则测试失败（<code>TST-01</code>）。矩阵统计到 253 个编号，其中 9 个只出现在需求文档的修订记录里（v0.2 / v0.5 删除或改名的 <code>LNG-*</code>、<code>REC-05</code>、<code>PIN-10</code>、<code>GEN-11</code>、<code>GEN-12</code>、<code>OUT-15</code>、<code>PIN-09</code>、<code>REC-09</code>），不是现行需求；现行需求 244 条，全部在范围内且有用例。</p>
+<p>需求覆盖矩阵（<code>build/&lt;preset&gt;/test-results/coverage.md</code>）由 <code>tools/coverage/gen_matrix.py</code> 在每次测试运行时生成：扫描所有用例文件开头的 <code>// REQ:</code> 标签，对 <code>tests/delivered_scope.txt</code> 里的每一条需求检查至少有一个用例，否则测试失败（<code>TST-01</code>）。矩阵统计到 252 个编号，其中 36 个只出现在需求文档的修订记录里（v0.2 / v0.5 / v0.6 删除或改名的编号，如 <code>LNG-*</code>、<code>REC-05</code>、<code>PIN-09</code>、<code>GRP-*</code>、<code>ACT-13</code>），不是现行需求；现行需求 216 条，全部在范围内且有用例。</p>
 <blockquote class="hs-callout" data-kind="info">
 <p class="hs-callout-title">覆盖的含义</p>
 <p>“有用例”指该需求的核心行为有自动用例在无显示器（offscreen）或真实桌面上验证；需要真实输入的验收场景（<code>AC-01</code> ~ <code>AC-12</code>）由端到端驱动在解锁桌面后执行，当前只验证了不依赖输入的部分，见 <a href="#pending">5</a>。</p>
@@ -610,17 +610,17 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </ul>
 <h3 id="s4-2"><span class="hs-num">4.2</span>M5 ~ M6（P1 / P2 需求）<a class="hs-anchor" href="#s4-2" aria-label="本节链接">#</a></h3>
 <ul>
-<li>截图：截图后动作组合、自定义截图对话框与预设、快捷截图、层级元素切换、尺寸输入与固定比例、指针截取、圆角 / 阴影 / 边框、白板与透明白板、模式轮换（静态 / 滚动 / 录制）、区域历史、检测排除列表、外观与放大镜设置、辅助线、HDR 色调映射。</li>
-<li>输出：复制为文件、自动质量与透明通道、路径变量与修饰符、自动保存与清理、打印 / PDF 分页、编码预览、保存后复制、元数据、外部命令。</li>
-<li>标注：右键贴合元素、线型与圆角、箭头样式、文字装饰与换行、序号、放大标注、色板、框选多选、自定义工具栏、扇形、端点样式、智能擦除、自动马赛克、聚光灯、水印。</li>
-<li>贴图：HTML / 颜色 / 文件贴图、文字选择与 OCR 可选文字、替换策略、吸附、灰度反色、缩略图、裁剪、分组与组管理、重复贴图策略、亮度、锁定、标题、透明背景、拖出内容、虚拟桌面、独显、重启恢复。</li>
-<li>识别与动作：Windows OCR（语言、精准模式、排版、标点）、表格导出 Excel、二维码 / 条码识别与生成、动作系统与热键、命令行接口与 <code>--wait</code>、QuickJS 脚本、全局鼠标截图、热角、修饰键双击、粘贴为图像 / 纯文本、配置导入导出与高级配置。</li>
+<li>截图：截图后动作组合、快捷截图、层级元素切换、尺寸输入与固定比例、指针截取、圆角 / 阴影 / 边框、模式轮换（静态 / 滚动 / 录制）、区域历史、检测排除列表、外观与放大镜设置、辅助线、HDR 色调映射。</li>
+<li>输出：复制为文件、自动质量与透明通道、路径变量与修饰符、编码预览、保存后复制、元数据。</li>
+<li>标注：右键贴合元素、线型与圆角、箭头样式、文字装饰与换行、序号、放大标注、色板、框选多选、自定义工具栏、扇形、端点样式、智能擦除、自动马赛克、聚光灯。</li>
+<li>贴图：HTML / 颜色 / 文件贴图、文字选择与 OCR 可选文字、替换策略、吸附、灰度反色、缩略图、裁剪、重复贴图策略、亮度、锁定、标题、透明背景、拖出内容、虚拟桌面、独显、重启恢复。</li>
+<li>识别与命令行：Windows OCR（语言、精准模式、排版、标点）、表格导出 Excel、二维码 / 条码识别与生成、命令行接口与 <code>--wait</code>、高级配置。</li>
 </ul>
 <h3 id="s4-3"><span class="hs-num">4.3</span>M7（屏幕录制）<a class="hs-anchor" href="#s4-3" aria-label="本节链接">#</a></h3>
 <ul>
 <li>录制会话：选区边框 + 工具栏（开始 / 暂停 / 继续 / 停止 / 重录 / 计时 / 延迟），帧率 5 ~ 60，画质轻量 / 标准 / 原始，边框、工具栏与标注层不参与捕获。</li>
-<li>普通模式：帧写入磁盘目录（<code>recording.json</code> 索引每 2 s 落盘），停止后进入回放窗口；快速模式：边录边经 Media Foundation 写 MP4，停止后直接快速保存并复制为文件。</li>
-<li>导出：GIF（自研中位切分量化 + LZW）、动画 WebP（libwebp）、MP4（H.264 + AAC）；回放窗口支持播放 / 暂停 / 跳转 / 倍速、裁剪开头结尾、进度条 / 文字 / 倒计时叠加、保存 / 快速保存 / 复制 / 丢弃。</li>
+<li>普通模式：帧写入磁盘目录（<code>recording.json</code> 索引每 2 s 落盘），停止后进入回放窗口；快速模式：边录边经 Media Foundation 写 MP4，停止后直接存到保存目录并复制为文件。</li>
+<li>导出：GIF（自研中位切分量化 + LZW）、动画 WebP（libwebp）、MP4（H.264 + AAC）；回放窗口支持播放 / 暂停 / 跳转 / 倍速、裁剪开头结尾、进度条 / 文字 / 倒计时叠加、保存 / 复制 / 丢弃。</li>
 <li>声音：麦克风与系统声音（WASAPI 环回）分别调音量，统一重采样到 48 kHz 单声道后混合；无播放时补零保持对齐。</li>
 <li>录制中标注（透明标注层，右键撤销）、鼠标点击涟漪 / 滚轮箭头 / 按键标签（动画时长可调，经低级钩子记录）、摄像头画中画（位置与大小可调）。</li>
 <li>崩溃恢复：启动时扫描未完成的录制目录，询问后打开回放窗口；索引落后于磁盘帧时按帧率补齐时间戳。</li>
@@ -630,7 +630,8 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <li>验收与非功能需求的用例：30 步撤销重做无残影（<code>AC-04</code>）、输入法事件输入中文并旋转导出一致（<code>AC-03</code>）、命令行 <code>--wait</code> 场景（<code>AC-12</code>）、启动耗时场景（<code>NFR-03</code>）、系统版本门槛（<code>NFR-11</code>，低于 19041 启动即提示退出）、设置项可访问名称与说明（<code>NFR-14</code>）。</li>
 <li>打包（<code>NFR-12</code>）：<code>tests/package/check_package.py</code> 生成绿色版 zip 与 Inno Setup 安装包并检查 ≤ 50 MB、包内无 Qt Network；只在非 Debug 配置下运行。</li>
 <li>公式贴图 <code>PIN-09</code> 与公式识别 <code>REC-09</code> 按决定从需求中删除（需求文档 v0.5）。</li>
-<li>已实现但此前未纳入范围的需求（各工具记住颜色、形状旋转、工具快捷键、一键禁用热键、选项说明、贴图尺寸限制、屏幕外贴图恢复）补入交付范围并核对用例。</li>
+<li>精简非核心功能（需求文档 v0.6）：删除白板、打印与 PDF、通知、悬浮工具栏、托盘图标样式、自定义截图对话框、水印、快速保存与自动保存、外部命令、贴图组、动作系统、脚本引擎（连同 QuickJS-ng）、热角、全局鼠标、修饰键双击、忽略模拟按键与前台程序、单键热键、切换窗口置顶、粘贴转换、一键禁用热键、配置导入导出、打开配置目录；托盘菜单只留偏好设置和退出，托盘图标改用程序图标；工具栏去掉撤销 / 重做按钮，矩形 / 椭圆合为框选工具，序号进常用区；截图中按贴图热键直接贴当前选区。</li>
+<li>已实现但此前未纳入范围的需求（各工具记住颜色、形状旋转、工具快捷键、选项说明、贴图尺寸限制、屏幕外贴图恢复）补入交付范围并核对用例。</li>
 </ul>
 <h3 id="e2e-fixes"><span class="hs-num">4.5</span>真实桌面端到端失败项与修复<a class="hs-anchor" href="#e2e-fixes" aria-label="本节链接">#</a></h3>
 <div class="hs-table"><table>
@@ -663,7 +664,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <td><code>HOTKEY</code> 真实热键</td>
 <td>第一轮 F1 不触发；第二轮专用组合键注册成功仍不触发</td>
 <td>第一轮：F1 被正在运行的发布版实例占用。第二轮：程序默认忽略模拟按键发出的热键（<code>ACT-15</code>，防宏工具误触），而驱动正是用 SendInput 模拟按键</td>
-<td>场景期间关闭 <code>hotkey.ignoreInjected</code>，结束后恢复</td>
+<td>场景期间关闭 <code>hotkey.ignoreInjected</code>，结束后恢复（v0.6 删除了 <code>ACT-15</code>，场景不再需要这一步）</td>
 <td><span class="hs-tag" data-kind="ok">第三轮通过：20 次 P50 35.2 ms</span></td>
 </tr>
 <tr>

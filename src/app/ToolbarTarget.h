@@ -16,7 +16,6 @@ public:
     virtual void setTool(AnnotationEditor::Tool tool) = 0;
     virtual void copy() = 0;
     virtual void save() = 0;
-    virtual void quickSave() = 0;
     virtual void pin() = 0;                   // 贴图宿主上为“复制为新贴图”
     virtual void cancel() = 0;                // 截图：取消；贴图：关闭工具栏
     virtual bool supportsPin() const { return true; }
@@ -30,7 +29,6 @@ public:
     virtual void setShadowEnabled(bool) {}
     virtual bool borderEnabled() const { return false; }
     virtual void setBorderEnabled(bool) {}
-    virtual void print() {}
     // 二维码 / 条码（REC-06）：截图会话在手动模式提供按钮，自动模式检测到码后显示按钮
     virtual void detectCodes() {}
     // 模式轮换（CAP-07）：截图会话提供

@@ -54,7 +54,6 @@ public:
     // 导出：format = gif | webp | mp4
     bool exportTo(const QString& path, const QString& format);
     QString save();            // 对话框
-    QString quickSave();       // 快速保存目录
     QString copyToClipboard(); // 复制为文件
     void discard();            // 删除帧目录
     QString lastError() const { return m_error; }

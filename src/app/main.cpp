@@ -8,6 +8,7 @@
 #include <QCommandLineParser>
 #include <QDir>
 #include <QFileInfo>
+#include <QIcon>
 #include <QLibraryInfo>
 #include <QLocale>
 #include <QStandardPaths>
@@ -46,6 +47,7 @@ int main(int argc, char* argv[])
     QApplication::setApplicationName(QStringLiteral("ScreenShot"));
     QApplication::setOrganizationName(QStringLiteral("ScreenShot"));
     QApplication::setQuitOnLastWindowClosed(false);
+    QApplication::setWindowIcon(QIcon(QStringLiteral(":/icons/app.ico")));
 
     QCommandLineParser parser;
     parser.setApplicationDescription(QStringLiteral("ScreenShot - screenshot and pin tool"));

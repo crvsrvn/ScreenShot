@@ -485,14 +485,14 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <body>
 <main class="hs-doc" data-toc-levels="2,3">
 <h1 id="top">ScreenShot 需求文档</h1>
-<p class="hs-meta">v0.5 草案 · 2026-10-24 · 依据 Snipaste 2.11.3 与 PixPin 3.5 的公开文档整理</p>
+<p class="hs-meta">v0.6 草案 · 2026-10-28 · 依据 Snipaste 2.11.3 与 PixPin 3.5 的公开文档整理</p>
 <h2 id="s1"><span class="hs-num">1.</span>概述<a class="hs-anchor" href="#s1" aria-label="本节链接">#</a></h2>
 <h3 id="s1-1"><span class="hs-num">1.1</span>背景<a class="hs-anchor" href="#s1-1" aria-label="本节链接">#</a></h3>
-<p>本项目用正向开发的方式，在 Windows 和 macOS 上做一款截图 + 贴图工具：逐项复刻 Snipaste 的功能，补上 PixPin 比 Snipaste 多出的功能，并在截图中加入滚动截图。</p>
+<p>本项目用正向开发的方式，在 Windows 和 macOS 上做一款截图 + 贴图工具：复刻 Snipaste 的核心功能，补上 PixPin 比 Snipaste 多出的实用功能，并在截图中加入滚动截图。非核心的功能和设置不做，保持精简。</p>
 <p><code>ScreenShot</code> 只是代号（取自仓库目录名），正式产品名待定（见 <a href="#questions">12</a>）。</p>
 <h3 id="s1-2"><span class="hs-num">1.2</span>目标<a class="hs-anchor" href="#s1-2" aria-label="本节链接">#</a></h3>
 <ul>
-<li>功能覆盖 Snipaste 2.11.3（免费版 + PRO）的全部公开功能，以及 PixPin 3.5 中 Snipaste 没有的功能，联网类功能除外。</li>
+<li>功能覆盖 Snipaste 2.11.3（免费版 + PRO）与 PixPin 3.5 中截图、标注、贴图、识别、录制的核心能力；联网类功能和非核心功能（白板、打印、通知、贴图组、动作与脚本等，见范围）除外。</li>
 <li>Windows 和 macOS 功能一致，只有系统本身做不到的地方例外（见 <a href="#platform">6</a>）。</li>
 <li>体验不低于 Snipaste：按下热键到可以框选的延迟、常驻内存、截图画质都有量化指标（见 <a href="#nfr">7</a>）。</li>
 <li>滚动截图稳定可用：手动滚动和自动滚动都支持，画面匹配不可靠时宁可不拼也不出错图。</li>
@@ -511,11 +511,11 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <tbody>
 <tr>
 <td>包含</td>
-<td>截图（含滚动截图）、标注、输出、贴图、贴图组、取色、本地识别（OCR / 条码 / 表格 / 公式）、屏幕录制、热键与动作、命令行与脚本、偏好设置、内置自动测试</td>
+<td>截图（含滚动截图）、标注、输出、贴图、取色、本地识别（OCR / 条码 / 表格）、屏幕录制、热键、命令行、偏好设置、内置自动测试</td>
 </tr>
 <tr>
 <td>不包含</td>
-<td>一切联网功能：翻译、在线 OCR、下载网页图片、检查更新、网络代理；付费墙：激活、会员、购买入口、功能限制；账号与云同步；应用商店版本；使用数据统计</td>
+<td>一切联网功能：翻译、在线 OCR、下载网页图片、检查更新、网络代理；非核心功能：白板、打印与 PDF、系统通知、悬浮工具栏、托盘图标样式、贴图组、动作系统与脚本、水印、快速保存与自动保存、热角与全局鼠标等辅助输入、配置导入导出；付费墙：激活、会员、购买入口、功能限制；账号与云同步；应用商店版本；使用数据统计</td>
 </tr>
 <tr>
 <td>平台</td>
@@ -544,7 +544,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <dt>贴图</dt>
 <dd>把图像、文本、颜色、文件等内容变成置顶的浮动窗口钉在屏幕上，也叫图像窗口。</dd>
 <dt>截图成功</dt>
-<dd>截图以复制、保存、贴图、快速保存之一结束。只有成功的截图才进入历史。</dd>
+<dd>截图以复制、保存、贴图之一结束。只有成功的截图才进入历史。</dd>
 <dt>关闭 / 销毁</dt>
 <dd>关闭的贴图进入历史，可以恢复；销毁的贴图不进历史，无法恢复。</dd>
 <dt>UI 元素检测</dt>
@@ -587,13 +587,8 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>S-04</code></td>
-<td>运营在对外截图里打码头像和手机号，加水印</td>
-<td>马赛克、自动马赛克、水印</td>
-</tr>
-<tr>
-<td><code>S-05</code></td>
-<td>学生把论文里的公式截下来转成 LaTeX</td>
-<td>公式识别、公式贴图</td>
+<td>运营在对外截图里打码头像和手机号</td>
+<td>马赛克、自动马赛克</td>
 </tr>
 <tr>
 <td><code>S-06</code></td>
@@ -602,17 +597,17 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>S-07</code></td>
-<td>用脚本或热键一键截取固定区域并存档</td>
-<td>命令行、动作、自动保存、路径变量</td>
+<td>用命令行一键截取固定区域并存档</td>
+<td>命令行、路径变量</td>
 </tr>
 </tbody>
 </table></div>
 <h2 id="s3"><span class="hs-num">3.</span>功能总览<a class="hs-anchor" href="#s3" aria-label="本节链接">#</a></h2>
-<figure><div class="hs-zoom" data-plate="light"><svg role="img" aria-label="功能地图（颜色 = 主要来源）" height="668" width="771" viewBox="0 0 771 668" version="1.1" xmlns="http://www.w3.org/2000/svg"><defs /><g><rect stroke-width="1.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="35.64" width="93.16" y="316.02" x="288.56" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="338.70" x="298.56">ScreenShot</text><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="51.89" y="149.10" x="431.72" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="171.78" x="441.72">截图 </text><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="107.89" y="10" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="32.67" x="543.61">冻结画面框选 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,166.92 L493.61,166.92 C508.61,166.92 508.61,27.82 523.61,27.82 L533.61,27.82" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="119.56" y="65.64" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="88.31" x="543.61">窗口 / 元素检测 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,166.92 L493.61,166.92 C508.61,166.92 508.61,83.46 523.61,83.46 L533.61,83.46" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="107.89" y="121.28" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="143.96" x="543.61">放大镜与取色 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,166.92 L493.61,166.92 C508.61,166.92 508.61,139.10 523.61,139.10 L533.61,139.10" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="79.89" y="176.92" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="199.60" x="543.61">历史回放 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,166.92 L493.61,166.92 C508.61,166.92 508.61,194.74 523.61,194.74 L533.61,194.74" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="51.89" y="232.56" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="255.24" x="543.61">白板 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,166.92 L493.61,166.92 C508.61,166.92 508.61,250.38 523.61,250.38 L533.61,250.38" /><rect stroke-width="1.50" stroke="#181818" fill="#D6E6FB" ry="12.50" rx="12.50" height="35.64" width="79.89" y="288.20" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="310.88" x="543.61">滚动截图 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,166.92 L493.61,166.92 C508.61,166.92 508.61,306.02 523.61,306.02 L533.61,306.02" /><path stroke-width="1" stroke="#181818" fill="#00000000" d="M381.72,333.84 L391.72,333.84 C406.72,333.84 406.72,166.92 421.72,166.92 L431.72,166.92" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="51.89" y="427.30" x="431.72" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="449.98" x="441.72">标注 </text><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="170.90" y="343.84" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="366.52" x="543.61">形状 / 线条 / 箭头 / 文字 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,445.12 L493.61,445.12 C508.61,445.12 508.61,361.66 523.61,361.66 L533.61,361.66" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="105.56" y="399.48" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="422.16" x="543.61">马赛克 / 模糊 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,445.12 L493.61,445.12 C508.61,445.12 508.61,417.30 523.61,417.30 L533.61,417.30" /><rect stroke-width="1.50" stroke="#181818" fill="#FCE8C8" ry="12.50" rx="12.50" height="35.64" width="161.56" y="455.12" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="477.80" x="543.61">智能擦除 / 自动马赛克 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,445.12 L493.61,445.12 C508.61,445.12 508.61,472.95 523.61,472.95 L533.61,472.95" /><rect stroke-width="1.50" stroke="#181818" fill="#FCE8C8" ry="12.50" rx="12.50" height="35.64" width="105.56" y="510.77" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="533.44" x="543.61">聚光灯 / 水印 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,445.12 L493.61,445.12 C508.61,445.12 508.61,528.59 523.61,528.59 L533.61,528.59" /><path stroke-width="1" stroke="#181818" fill="#00000000" d="M381.72,333.84 L391.72,333.84 C406.72,333.84 406.72,445.12 421.72,445.12 L431.72,445.12" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="51.89" y="594.23" x="431.72" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="616.90" x="441.72">输出 </text><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="226.90" y="566.41" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="589.08" x="543.61">复制 / 保存 / 快速保存 / 自动保存 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,612.05 L493.61,612.05 C508.61,612.05 508.61,584.23 523.61,584.23 L533.61,584.23" /><rect stroke-width="1.50" stroke="#181818" fill="#FCE8C8" ry="12.50" rx="12.50" height="35.64" width="94.68" y="622.05" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="644.72" x="543.61">AVIF / PDF </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,612.05 L493.61,612.05 C508.61,612.05 508.61,639.87 523.61,639.87 L533.61,639.87" /><path stroke-width="1" stroke="#181818" fill="#00000000" d="M381.72,333.84 L391.72,333.84 C406.72,333.84 406.72,612.05 421.72,612.05 L431.72,612.05" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="51.89" y="190.83" x="186.67" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="213.51" x="196.67">贴图 </text><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="131.23" y="135.19" x="5.44" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="157.87" x="15.44">图像 / 文本 / 颜色 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M186.67,208.65 L176.67,208.65 C161.67,208.65 161.67,153.01 146.67,153.01 L136.67,153.01" /><rect stroke-width="1.50" stroke="#181818" fill="#FCE8C8" ry="12.50" rx="12.50" height="35.64" width="104.81" y="190.83" x="31.86" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="213.51" x="41.86">文件 / LaTeX </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M186.67,208.65 L176.67,208.65 C161.67,208.65 161.67,208.65 146.67,208.65 L136.67,208.65" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="65.89" y="246.47" x="70.78" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="269.15" x="80.78">贴图组 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M186.67,208.65 L176.67,208.65 C161.67,208.65 161.67,264.29 146.67,264.29 L136.67,264.29" /><path stroke-width="1" stroke="#181818" fill="#00000000" d="M288.56,333.84 L278.56,333.84 C263.56,333.84 263.56,208.65 248.56,208.65 L238.56,208.65" /><rect stroke-width="1.50" stroke="#181818" fill="#FCE8C8" ry="12.50" rx="12.50" height="35.64" width="79.89" y="329.93" x="158.67" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="352.61" x="168.67">本地识别 </text><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="108.67" y="302.11" x="0" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="324.79" x="10">OCR / 二维码 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M158.67,347.75 L148.67,347.75 C133.67,347.75 133.67,319.93 118.67,319.93 L108.67,319.93" /><rect stroke-width="1.50" stroke="#181818" fill="#FCE8C8" ry="12.50" rx="12.50" height="35.64" width="91.56" y="357.75" x="17.11" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="380.43" x="27.11">表格 / 公式 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M158.67,347.75 L148.67,347.75 C133.67,347.75 133.67,375.57 118.67,375.57 L108.67,375.57" /><path stroke-width="1" stroke="#181818" fill="#00000000" d="M288.56,333.84 L278.56,333.84 C263.56,333.84 263.56,347.75 248.56,347.75 L238.56,347.75" /><rect stroke-width="1.50" stroke="#181818" fill="#FCE8C8" ry="12.50" rx="12.50" height="35.64" width="79.89" y="385.57" x="158.67" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="408.25" x="168.67">屏幕录制 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M288.56,333.84 L278.56,333.84 C263.56,333.84 263.56,403.39 248.56,403.39 L238.56,403.39" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="184.90" y="441.21" x="53.66" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="463.89" x="63.66">热键 / 动作 / 命令行 / 脚本 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M288.56,333.84 L278.56,333.84 C263.56,333.84 263.56,459.04 248.56,459.04 L238.56,459.04" /><rect stroke-width="1.50" stroke="#181818" fill="#D6E6FB" ry="12.50" rx="12.50" height="35.64" width="107.89" y="496.86" x="130.67" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="519.53" x="140.67">内置自动测试 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M288.56,333.84 L278.56,333.84 C263.56,333.84 263.56,514.68 248.56,514.68 L238.56,514.68" /></g></svg></div><figcaption><span>功能地图（颜色 = 主要来源）</span></figcaption></figure>
-<p>绿色是 Snipaste 已有的能力，橙色是 PixPin 的扩展，蓝色是本项目的重点新增。PixPin 也有长截图，但本项目额外要求自动滚动和更严格的防错拼，见 <a href="#scroll">5.2.7</a>。</p>
+<figure><div class="hs-zoom" data-plate="light"><svg role="img" aria-label="功能地图（颜色 = 主要来源）" height="613" width="715" viewBox="0 0 715 613" version="1.1" xmlns="http://www.w3.org/2000/svg"><defs /><g><rect stroke-width="1.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="35.64" width="93.16" y="288.20" x="288.56" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="310.88" x="298.56">ScreenShot</text><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="51.89" y="121.28" x="431.72" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="143.96" x="441.72">截图 </text><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="107.89" y="10" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="32.67" x="543.61">冻结画面框选 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,139.10 L493.61,139.10 C508.61,139.10 508.61,27.82 523.61,27.82 L533.61,27.82" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="119.56" y="65.64" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="88.31" x="543.61">窗口 / 元素检测 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,139.10 L493.61,139.10 C508.61,139.10 508.61,83.46 523.61,83.46 L533.61,83.46" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="107.89" y="121.28" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="143.96" x="543.61">放大镜与取色 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,139.10 L493.61,139.10 C508.61,139.10 508.61,139.10 523.61,139.10 L533.61,139.10" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="79.89" y="176.92" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="199.60" x="543.61">历史回放 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,139.10 L493.61,139.10 C508.61,139.10 508.61,194.74 523.61,194.74 L533.61,194.74" /><rect stroke-width="1.50" stroke="#181818" fill="#D6E6FB" ry="12.50" rx="12.50" height="35.64" width="79.89" y="232.56" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="255.24" x="543.61">滚动截图 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,139.10 L493.61,139.10 C508.61,139.10 508.61,250.38 523.61,250.38 L533.61,250.38" /><path stroke-width="1" stroke="#181818" fill="#00000000" d="M381.72,306.02 L391.72,306.02 C406.72,306.02 406.72,139.10 421.72,139.10 L431.72,139.10" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="51.89" y="371.66" x="431.72" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="394.34" x="441.72">标注 </text><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="170.90" y="288.20" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="310.88" x="543.61">形状 / 线条 / 箭头 / 文字 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,389.48 L493.61,389.48 C508.61,389.48 508.61,306.02 523.61,306.02 L533.61,306.02" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="105.56" y="343.84" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="366.52" x="543.61">马赛克 / 模糊 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,389.48 L493.61,389.48 C508.61,389.48 508.61,361.66 523.61,361.66 L533.61,361.66" /><rect stroke-width="1.50" stroke="#181818" fill="#FCE8C8" ry="12.50" rx="12.50" height="35.64" width="161.56" y="399.48" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="422.16" x="543.61">智能擦除 / 自动马赛克 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,389.48 L493.61,389.48 C508.61,389.48 508.61,417.30 523.61,417.30 L533.61,417.30" /><rect stroke-width="1.50" stroke="#181818" fill="#FCE8C8" ry="12.50" rx="12.50" height="35.64" width="65.89" y="455.12" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="477.80" x="543.61">聚光灯 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,389.48 L493.61,389.48 C508.61,389.48 508.61,472.95 523.61,472.95 L533.61,472.95" /><path stroke-width="1" stroke="#181818" fill="#00000000" d="M381.72,306.02 L391.72,306.02 C406.72,306.02 406.72,389.48 421.72,389.48 L431.72,389.48" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="51.89" y="538.59" x="431.72" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="561.26" x="441.72">输出 </text><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="91.56" y="510.77" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="533.44" x="543.61">复制 / 保存 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,556.41 L493.61,556.41 C508.61,556.41 508.61,528.59 523.61,528.59 L533.61,528.59" /><rect stroke-width="1.50" stroke="#181818" fill="#FCE8C8" ry="12.50" rx="12.50" height="35.64" width="55.01" y="566.41" x="533.61" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="589.08" x="543.61">AVIF </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M483.61,556.41 L493.61,556.41 C508.61,556.41 508.61,584.23 523.61,584.23 L533.61,584.23" /><path stroke-width="1" stroke="#181818" fill="#00000000" d="M381.72,306.02 L391.72,306.02 C406.72,306.02 406.72,556.41 421.72,556.41 L431.72,556.41" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="51.89" y="163.01" x="186.67" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="185.69" x="196.67">贴图 </text><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="131.23" y="135.19" x="5.44" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="157.87" x="15.44">图像 / 文本 / 颜色 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M186.67,180.83 L176.67,180.83 C161.67,180.83 161.67,153.01 146.67,153.01 L136.67,153.01" /><rect stroke-width="1.50" stroke="#181818" fill="#FCE8C8" ry="12.50" rx="12.50" height="35.64" width="51.89" y="190.83" x="84.78" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="213.51" x="94.78">文件 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M186.67,180.83 L176.67,180.83 C161.67,180.83 161.67,208.65 146.67,208.65 L136.67,208.65" /><path stroke-width="1" stroke="#181818" fill="#00000000" d="M288.56,306.02 L278.56,306.02 C263.56,306.02 263.56,180.83 248.56,180.83 L238.56,180.83" /><rect stroke-width="1.50" stroke="#181818" fill="#FCE8C8" ry="12.50" rx="12.50" height="35.64" width="79.89" y="274.29" x="158.67" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="296.97" x="168.67">本地识别 </text><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="108.67" y="246.47" x="0" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="269.15" x="10">OCR / 二维码 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M158.67,292.11 L148.67,292.11 C133.67,292.11 133.67,264.29 118.67,264.29 L108.67,264.29" /><rect stroke-width="1.50" stroke="#181818" fill="#FCE8C8" ry="12.50" rx="12.50" height="35.64" width="51.89" y="302.11" x="56.78" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="324.79" x="66.78">表格 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M158.67,292.11 L148.67,292.11 C133.67,292.11 133.67,319.93 118.67,319.93 L108.67,319.93" /><path stroke-width="1" stroke="#181818" fill="#00000000" d="M288.56,306.02 L278.56,306.02 C263.56,306.02 263.56,292.11 248.56,292.11 L238.56,292.11" /><rect stroke-width="1.50" stroke="#181818" fill="#FCE8C8" ry="12.50" rx="12.50" height="35.64" width="79.89" y="329.93" x="158.67" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="352.61" x="168.67">屏幕录制 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M288.56,306.02 L278.56,306.02 C263.56,306.02 263.56,347.75 248.56,347.75 L238.56,347.75" /><rect stroke-width="1.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="35.64" width="105.56" y="385.57" x="133" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="408.25" x="143">热键 / 命令行 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M288.56,306.02 L278.56,306.02 C263.56,306.02 263.56,403.39 248.56,403.39 L238.56,403.39" /><rect stroke-width="1.50" stroke="#181818" fill="#D6E6FB" ry="12.50" rx="12.50" height="35.64" width="107.89" y="441.21" x="130.67" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="463.89" x="140.67">内置自动测试 </text><path stroke-width="1" stroke="#181818" fill="#00000000" d="M288.56,306.02 L278.56,306.02 C263.56,306.02 263.56,459.04 248.56,459.04 L238.56,459.04" /></g></svg></div><figcaption><span>功能地图（颜色 = 主要来源）</span></figcaption></figure>
+<p>绿色是 Snipaste 已有的能力，橙色是 PixPin 的扩展，蓝色是本项目的重点新增。PixPin 也有长截图，但本项目额外要求自动滚动和更严格的防错拼，见 <a href="#scroll">5.2.6</a>。</p>
 <h2 id="s4"><span class="hs-num">4.</span>截图会话与贴图生命周期<a class="hs-anchor" href="#s4" aria-label="本节链接">#</a></h2>
-<figure><div class="hs-zoom" data-plate="light"><svg role="img" aria-label="截图会话状态" height="867" width="944" viewBox="0 0 944 867" version="1.1" xmlns="http://www.w3.org/2000/svg"><defs /><g><g data-source-line="2" id="f2-ent0001" data-qualified-name=".start." class="start_entity"><circle stroke-width="1" stroke="#222222" fill="#222222" r="10" cy="16" cx="519.46" /></g><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="50" y="117" x="494.46" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="141.85" x="505.46">检测</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="52" y="233" x="446.46" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="257.85" x="451.46">框选中</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="52" y="349" x="416.46" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="373.85" x="421.46">已选定</text><g data-source-line="5" id="f2-ent0008" data-qualified-name=".end." class="end_entity"><circle stroke-width="1" stroke="#222222" fill="#00000000" r="11" cy="848" cx="701.46" /><circle stroke-width="1" stroke="#222222" fill="#222222" r="6" cy="848" cx="701.46" /></g><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="52" y="605" x="315.46" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="629.85" x="320.46">标注中</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="50" y="721" x="423.46" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="745.85" x="434.46">输出</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="66" y="465" x="522.46" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="489.85" x="527.46">滚动截图</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="50" y="535" x="655.46" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="559.85" x="666.46">录制</text><g data-link-type="dependency" data-source-line="2" id="f2-lnk3" data-entity-2="ent0002" data-entity-1="ent0001" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M519.46,26.34 C519.46,45.73 519.46,85.73 519.46,111.66" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="519.46,116.66 523.46,107.66 519.46,111.66 515.46,107.66 519.46,116.66" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="68.77" x="520.46">截图热键 / 托盘 / 命令行</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="83.29" x="544.30">（先冻结画面）</text></g><g data-link-type="dependency" data-source-line="3" id="f2-lnk5" data-entity-2="ent0004" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M494.01,153.89 C483.05,162.25 471.41,173.57 465.46,187 C459.07,201.42 460.3497,214.533 464.0697,227.903" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="465.41,232.72 466.85,222.98 464.07,227.90 459.14,225.12 465.41,232.72" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="199.77" x="466.46">按下左键拖动</text></g><g data-link-type="dependency" data-source-line="4" id="f2-lnk7" data-entity-2="ent0006" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M493.99,142.59 C452.41,151.6 371.13,175.94 336.46,233 C307.76,280.24 372.0136,327.3424 411.9436,351.1124" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="416.24,353.67 410.55,345.63 411.94,351.11 406.46,352.50 416.24,353.67" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="257.77" x="337.46">单击窗口或元素</text></g><g data-link-type="dependency" data-source-line="10" id="f2-lnk15" data-entity-2="ent0002" data-entity-1="ent0006" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M468.64,358.04 C486.15,350.06 508.31,337.18 521.46,319 C573.11,247.6 561.62,230.13 549.46,187 C546.49,176.44 543.3401,170.0456 537.5101,161.4656" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="534.70,157.33 536.45,167.02 537.51,161.47 543.07,162.53 534.70,157.33" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="257.77" x="560.81">右键（非编辑状态）</text></g><g data-link-type="dependency" data-source-line="5" id="f2-lnk9" data-entity-2="ent0008" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M544.65,137.99 C608.64,139.42 772.46,152.76 772.46,252 C772.46,252 772.46,252 772.46,742 C772.46,786.23 732.6045,822.6192 713.8045,837.5592" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="709.89,840.67 719.42,838.20 713.80,837.56 714.45,831.94 709.89,840.67" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="489.77" x="773.46">Esc / 右键 / 其他窗口被激活</text></g><g data-link-type="dependency" data-source-line="6" id="f2-lnk10" data-entity-2="ent0006" data-entity-1="ent0004" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M467.37,273.34 C461.86,294.3 454.3711,322.7343 448.8511,343.7343" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="447.58,348.57 453.74,340.88 448.85,343.73 446.00,338.85 447.58,348.57" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="315.77" x="460.26">松开左键</text></g><g data-link-type="dependency" data-source-line="7" id="f2-lnk12" data-entity-2="ent0011" data-entity-1="ent0006" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M416.18,374.69 C374.18,383.75 293.15,408.04 258.46,465 C228.74,513.8 280.5494,570.9898 314.3894,601.3698" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="318.11,604.71 314.09,595.72 314.39,601.37 308.74,601.67 318.11,604.71" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="489.77" x="259.46">选择标注工具</text></g><g data-link-type="dependency" data-source-line="9" id="f2-lnk14" data-entity-2="ent0006" data-entity-1="ent0011" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M347.76,604.7 C357.73,574.57 378.11,514.65 398.46,465 C409.35,438.43 421.3703,412.965 430.6503,393.915" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="432.84,389.42 425.30,395.76 430.65,393.92 432.49,399.26 432.84,389.42" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="489.77" x="399.46">右键结束当前图形</text></g><g data-link-type="dependency" data-source-line="8" id="f2-lnk13" data-entity-2="ent0011" data-entity-1="ent0011" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M367.8,615.08 C385.36,612.29 402.46,615.6 402.46,625 C402.46,634.4 390.2981,638.4946 372.7381,635.7046" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="367.80,634.92 376.06,640.28 372.74,635.70 377.32,632.38 367.80,634.92" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="629.77" x="408.46">绘制 / 二次编辑</text></g><g data-link-type="dependency" data-source-line="11" id="f2-lnk17" data-entity-2="ent0016" data-entity-1="ent0006" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M416.25,373.56 C321.42,387.6 6,444.78 89.46,575 C166.45,695.12 350.3682,728.3531 418.4882,736.8231" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="423.45,737.44 415.01,732.36 418.49,736.82 414.03,740.30 423.45,737.44" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="559.77" x="90.46">复制 / 保存 / 贴图 / 快速保存</text></g><g data-link-type="dependency" data-source-line="12" id="f2-lnk18" data-entity-2="ent0016" data-entity-1="ent0011" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M344.99,645.39 C348.33,659.32 354.52,677.89 365.46,691 C380.8,709.37 400.32,720.5042 418.61,728.5142" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="423.19,730.52 416.55,723.25 418.61,728.51 413.34,730.57 423.19,730.52" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="687.77" x="366.46">复制 / 保存 / 贴图 / 快速保存</text></g><g data-link-type="dependency" data-source-line="13" id="f2-lnk20" data-entity-2="ent0019" data-entity-1="ent0006" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M461.63,389.34 C482.41,410.3 511.8597,440.0193 532.6797,461.0193" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="536.20,464.57 532.70,455.36 532.68,461.02 527.02,460.99 536.20,464.57" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="431.77" x="506.73">滚动截图按钮</text></g><g data-link-type="dependency" data-source-line="14" id="f2-lnk22" data-entity-2="ent0021" data-entity-1="ent0006" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M468.71,373.07 C500.97,377.97 556.01,390.17 593.46,419 C633.9,450.13 659.0567,501.1247 671.2167,530.3047" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="673.14,534.92 673.37,525.07 671.22,530.30 665.99,528.15 673.14,534.92" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="431.77" x="610.64">录制按钮</text></g><g data-link-type="dependency" data-source-line="15" id="f2-lnk23" data-entity-2="ent0011" data-entity-1="ent0019" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M521.98,497.89 C492.04,508.85 450.75,524.92 436.46,535 C416.92,548.79 417.71,558.43 400.46,575 C389.81,585.24 381.1884,592.6667 370.4384,601.3567" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="366.55,604.50 376.06,601.95 370.44,601.36 371.03,595.73 366.55,604.50" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="559.77" x="437.46">完成后进入标注</text></g><g data-link-type="dependency" data-source-line="16" id="f2-lnk24" data-entity-2="ent0016" data-entity-1="ent0019" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M558.8,505.41 C564.38,544.18 571.56,632.52 533.46,691 C519.7,712.12 498.1308,723.4689 478.4308,730.7389" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="473.74,732.47 483.57,733.11 478.43,730.74 480.80,725.60 473.74,732.47" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="629.77" x="562.05">完成后直接输出</text></g><g data-link-type="dependency" data-source-line="17" id="f2-lnk25" data-entity-2="ent0008" data-entity-1="ent0016" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M473.59,759.83 C494.83,774.23 526.5,794.14 556.46,807 C604.46,827.6 661.0458,839.5075 685.6558,844.1275" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="690.57,845.05 682.46,839.46 685.66,844.13 680.99,847.32 690.57,845.05" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="803.77" x="557.46">截图成功，写入历史</text></g><g data-link-type="dependency" data-source-line="18" id="f2-lnk26" data-entity-2="ent0008" data-entity-1="ent0021" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M681.84,575.09 C685.88,631.11 697.2601,788.763 700.3501,831.583" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="700.71,836.57 704.05,827.31 700.35,831.58 696.07,827.88 700.71,836.57" /></g></g></svg></div><figcaption><span>截图会话状态</span></figcaption></figure>
-<figure><div class="hs-zoom" data-plate="light"><svg role="img" aria-label="贴图生命周期" height="563" width="786" viewBox="0 0 786 563" version="1.1" xmlns="http://www.w3.org/2000/svg"><defs /><g><g data-source-line="3" id="f3-ent0001" data-qualified-name=".." class="entity"><path stroke-width="1" stroke="#F1F1F1" fill="#F1F1F1" d="M274.92,102 L429.43,102 A12.50,12.50 0 0 1 441.93,114.50 L441.93,127.64 L262.42,127.64 L262.42,114.50 A12.50,12.50 0 0 1 274.92,102" /><rect stroke-width="0.50" stroke="#181818" fill="#00000000" ry="12.50" rx="12.50" height="238.64" width="179.51" y="102" x="262.42" /><line stroke-width="0.50" stroke="#181818" y2="127.64" x2="441.93" y1="127.64" x1="262.42" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="119.67" x="338.17">显示</text><g data-source-line="4" id="f3-ent0004" data-qualified-name="....start..." class="start_entity"><circle stroke-width="1" stroke="#222222" fill="#222222" r="10" cy="148.64" cx="323.99" /></g><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="50" y="195.64" x="298.99" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="220.49" x="309.99">正常</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="52" y="287.64" x="297.99" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="312.49" x="302.99">缩略图</text><g data-link-type="dependency" data-source-line="4" id="f3-lnk6" data-entity-2="ent0005" data-entity-1="ent0004" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M323.99,158.9506 C323.99,168.3606 323.99,178.1806 323.99,190.1606" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="323.99,195.16 327.99,186.16 323.99,190.16 319.99,186.16 323.99,195.16" /></g><g data-link-type="dependency" data-source-line="5" id="f3-lnk8" data-entity-2="ent0007" data-entity-1="ent0005" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M298.65,231.7506 C291.23,237.5806 284.03,244.9506 279.99,253.6406 C273.42,267.7306 280.8961,278.1461 293.7561,287.9661" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="297.73,291.00 293.00,282.36 293.76,287.97 288.15,288.72 297.73,291.00" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="266.41" x="280.99">Shift + 双击</text></g><g data-link-type="dependency" data-source-line="6" id="f3-lnk9" data-entity-2="ent0005" data-entity-1="ent0007" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M340.02,287.5006 C346.37,277.6306 351.43,265.2606 347.99,253.6406 C346.16,247.4706 345.6569,245.5745 342.1669,240.1545" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="339.46,235.95 340.97,245.68 342.17,240.15 347.70,241.35 339.46,235.95" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="266.41" x="350.10">Shift + 双击</text></g></g><g data-source-line="2" id="f3-ent0002" data-qualified-name=".start." class="start_entity"><circle stroke-width="1" stroke="#222222" fill="#222222" r="10" cy="16" cx="352.18" /></g><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="50" y="416.64" x="87.18" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="441.49" x="98.18">隐藏</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="52" y="416.64" x="477.18" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="441.49" x="482.18">已关闭</text><g data-source-line="12" id="f3-ent0016" data-qualified-name=".end." class="end_entity"><circle stroke-width="1" stroke="#222222" fill="#00000000" r="11" cy="543.64" cx="590.18" /><circle stroke-width="1" stroke="#222222" fill="#222222" r="6" cy="543.64" cx="590.18" /></g><g data-link-type="dependency" data-source-line="2" id="f3-lnk3" data-entity-2="ent0001" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M352.18,26.26 C352.18,40.64 352.18,64.96 352.18,96.55" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="352.18,101.55 356.18,92.55 352.18,96.55 348.18,92.55 352.18,101.55" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="68.77" x="353.18">贴图</text></g><g data-link-type="dependency" data-source-line="8" id="f3-lnk11" data-entity-2="ent0010" data-entity-1="ent0001" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M261.93,235.76 C184.11,252.65 76.28,289.9 24.18,370.64 C6,398.81 49.9411,417.5595 81.9511,427.4095" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="86.73,428.88 79.30,422.41 81.95,427.41 76.95,430.06 86.73,428.88" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="383.41" x="25.18">隐藏全部 / 切换贴图组</text></g><g data-link-type="dependency" data-source-line="9" id="f3-lnk12" data-entity-2="ent0001" data-entity-1="ent0010" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M133.73,416.48 C162.6,390.83 211.843,347.0619 258.393,305.6819" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="262.13,302.36 252.75,305.35 258.39,305.68 258.06,311.33 262.13,302.36" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="383.41" x="184.10">显示全部 / 新建贴图</text></g><g data-link-type="dependency" data-source-line="10" id="f3-lnk14" data-entity-2="ent0013" data-entity-1="ent0001" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M331.99,340.76 C334.13,357.27 339.33,373.17 349.18,386.64 C378.57,426.84 436.2425,434.6917 471.9125,435.8217" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="476.91,435.98 468.04,431.70 471.91,435.82 467.79,439.69 476.91,435.98" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="383.41" x="350.18">Esc / 双击 / Ctrl+W</text></g><g data-link-type="dependency" data-source-line="11" id="f3-lnk15" data-entity-2="ent0001" data-entity-1="ent0013" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M492.27,416.25 C484.72,403.15 474.26,385.59 464.18,370.64 C457.23,360.34 452.759,353.8495 445.209,343.3495" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="442.29,339.29 444.30,348.93 445.21,343.35 450.79,344.26 442.29,339.29" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="383.41" x="475.36">恢复（贴图热键 / Ctrl+3）</text></g><g data-link-type="dependency" data-source-line="12" id="f3-lnk17" data-entity-2="ent0016" data-entity-1="ent0013" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M513.86,457.08 C521.68,470.52 533.02,488.46 545.18,502.64 C556.47,515.81 568.0977,525.6446 577.6477,533.0946" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="581.59,536.17 576.95,527.48 577.65,533.09 572.03,533.79 581.59,536.17" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="499.41" x="546.18">超出历史数量上限</text></g><g data-link-type="dependency" data-source-line="13" id="f3-lnk18" data-entity-2="ent0016" data-entity-1="ent0001" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M442.36,247 C505.55,269.03 586.72,307.75 633.18,370.64 C668.52,418.48 684.19,450.72 655.18,502.64 C643.54,523.46 620.9021,533.2561 605.6521,538.1361" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="600.89,539.66 610.68,540.73 605.65,538.14 608.24,533.11 600.89,539.66" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="441.41" x="671.30">销毁（不可恢复）</text></g></g></svg></div><figcaption><span>贴图生命周期</span></figcaption></figure>
+<figure><div class="hs-zoom" data-plate="light"><svg role="img" aria-label="截图会话状态" height="867" width="860" viewBox="0 0 860 867" version="1.1" xmlns="http://www.w3.org/2000/svg"><defs /><g><g data-source-line="2" id="f2-ent0001" data-qualified-name=".start." class="start_entity"><circle stroke-width="1" stroke="#222222" fill="#222222" r="10" cy="16" cx="434.80" /></g><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="50" y="117" x="409.80" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="141.85" x="420.80">检测</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="52" y="233" x="361.80" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="257.85" x="366.80">框选中</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="52" y="349" x="331.80" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="373.85" x="336.80">已选定</text><g data-source-line="5" id="f2-ent0008" data-qualified-name=".end." class="end_entity"><circle stroke-width="1" stroke="#222222" fill="#00000000" r="11" cy="848" cx="616.80" /><circle stroke-width="1" stroke="#222222" fill="#222222" r="6" cy="848" cx="616.80" /></g><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="52" y="605" x="229.80" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="629.85" x="234.80">标注中</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="50" y="721" x="338.80" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="745.85" x="349.80">输出</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="66" y="465" x="437.80" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="489.85" x="442.80">滚动截图</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="50" y="535" x="576.80" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="559.85" x="587.80">录制</text><g data-link-type="dependency" data-source-line="2" id="f2-lnk3" data-entity-2="ent0002" data-entity-1="ent0001" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M434.8,26.34 C434.8,45.73 434.8,85.73 434.8,111.66" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="434.80,116.66 438.80,107.66 434.80,111.66 430.80,107.66 434.80,116.66" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="68.77" x="435.80">截图热键 / 托盘 / 命令行</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="83.29" x="459.64">（先冻结画面）</text></g><g data-link-type="dependency" data-source-line="3" id="f2-lnk5" data-entity-2="ent0004" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M409.35,153.89 C398.4,162.25 386.75,173.57 380.8,187 C374.41,201.42 375.6897,214.533 379.4097,227.903" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="380.75,232.72 382.19,222.98 379.41,227.90 374.48,225.12 380.75,232.72" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="199.77" x="381.80">按下左键拖动</text></g><g data-link-type="dependency" data-source-line="4" id="f2-lnk7" data-entity-2="ent0006" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M409.33,142.59 C367.75,151.6 286.47,175.94 251.8,233 C223.1,280.24 287.3536,327.3424 327.2836,351.1124" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="331.58,353.67 325.89,345.63 327.28,351.11 321.80,352.50 331.58,353.67" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="257.77" x="252.80">单击窗口或元素</text></g><g data-link-type="dependency" data-source-line="10" id="f2-lnk15" data-entity-2="ent0002" data-entity-1="ent0006" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M383.98,358.04 C401.49,350.06 423.66,337.18 436.8,319 C488.45,247.6 476.96,230.13 464.8,187 C461.83,176.44 458.6801,170.0456 452.8501,161.4656" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="450.04,157.33 451.79,167.02 452.85,161.47 458.41,162.53 450.04,157.33" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="257.77" x="476.15">右键（非编辑状态）</text></g><g data-link-type="dependency" data-source-line="5" id="f2-lnk9" data-entity-2="ent0008" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M459.99,137.99 C523.98,139.42 687.8,152.76 687.8,252 C687.8,252 687.8,252 687.8,742 C687.8,786.23 647.9445,822.6192 629.1445,837.5592" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="625.23,840.67 634.76,838.20 629.14,837.56 629.79,831.94 625.23,840.67" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="489.77" x="688.80">Esc / 右键 / 其他窗口被激活</text></g><g data-link-type="dependency" data-source-line="6" id="f2-lnk10" data-entity-2="ent0006" data-entity-1="ent0004" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M382.71,273.34 C377.2,294.3 369.7111,322.7343 364.1911,343.7343" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="362.92,348.57 369.08,340.88 364.19,343.73 361.34,338.85 362.92,348.57" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="315.77" x="375.60">松开左键</text></g><g data-link-type="dependency" data-source-line="7" id="f2-lnk12" data-entity-2="ent0011" data-entity-1="ent0006" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M331.52,374.69 C289.52,383.75 208.5,408.04 173.8,465 C144.15,513.67 195.4374,570.8998 228.9574,601.3198" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="232.66,604.68 228.68,595.67 228.96,601.32 223.31,601.59 232.66,604.68" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="489.77" x="174.80">选择标注工具</text></g><g data-link-type="dependency" data-source-line="9" id="f2-lnk14" data-entity-2="ent0006" data-entity-1="ent0011" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M262.25,604.71 C272.46,574.59 293.27,514.7 313.8,465 C324.77,438.46 336.7741,412.9869 346.0341,393.9369" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="348.22,389.44 340.69,395.79 346.03,393.94 347.88,399.28 348.22,389.44" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="489.77" x="314.80">右键结束当前图形</text></g><g data-link-type="dependency" data-source-line="8" id="f2-lnk13" data-entity-2="ent0011" data-entity-1="ent0011" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M282.14,615.08 C299.7,612.29 316.8,615.6 316.8,625 C316.8,634.4 304.6381,638.4946 287.0781,635.7046" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="282.14,634.92 290.40,640.28 287.08,635.70 291.66,632.38 282.14,634.92" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="629.77" x="322.80">绘制 / 二次编辑</text></g><g data-link-type="dependency" data-source-line="11" id="f2-lnk17" data-entity-2="ent0016" data-entity-1="ent0006" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M331.37,375.46 C248.99,393.83 6,458.77 67.8,575 C124.01,680.71 273.0066,721.593 333.7566,734.343" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="338.65,735.37 330.66,729.61 333.76,734.34 329.02,737.44 338.65,735.37" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="559.77" x="68.80">复制 / 保存 / 贴图</text></g><g data-link-type="dependency" data-source-line="12" id="f2-lnk18" data-entity-2="ent0016" data-entity-1="ent0011" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M249.27,645.49 C245.9,659.29 244.11,677.66 252.8,691 C271.66,719.94 306.9924,731.0063 333.4924,735.8763" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="338.41,736.78 330.28,731.22 333.49,735.88 328.84,739.09 338.41,736.78" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="687.77" x="253.80">复制 / 保存 / 贴图（含贴图热键）</text></g><g data-link-type="dependency" data-source-line="13" id="f2-lnk20" data-entity-2="ent0019" data-entity-1="ent0006" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M376.97,389.34 C397.75,410.3 427.1997,440.0193 448.0197,461.0193" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="451.54,464.57 448.04,455.36 448.02,461.02 442.36,460.99 451.54,464.57" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="431.77" x="422.07">滚动截图按钮</text></g><g data-link-type="dependency" data-source-line="14" id="f2-lnk22" data-entity-2="ent0021" data-entity-1="ent0006" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M384.19,373.3 C416.34,378.43 471.02,390.83 508.8,419 C550.56,450.13 578.0431,501.2009 591.5231,530.3809" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="593.62,534.92 593.48,525.07 591.52,530.38 586.21,528.43 593.62,534.92" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="431.77" x="526.60">录制按钮</text></g><g data-link-type="dependency" data-source-line="15" id="f2-lnk23" data-entity-2="ent0011" data-entity-1="ent0019" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M437.32,497.89 C407.38,508.85 366.09,524.92 351.8,535 C332.26,548.79 333.12,558.5 315.8,575 C305,585.3 296.1969,592.7723 285.2569,601.4523" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="281.34,604.56 290.88,602.10 285.26,601.45 285.90,595.83 281.34,604.56" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="559.77" x="352.80">完成后进入标注</text></g><g data-link-type="dependency" data-source-line="16" id="f2-lnk24" data-entity-2="ent0016" data-entity-1="ent0019" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M474.14,505.41 C479.72,544.18 486.9,632.52 448.8,691 C435.04,712.12 413.4708,723.4689 393.7708,730.7389" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="389.08,732.47 398.91,733.11 393.77,730.74 396.14,725.60 389.08,732.47" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="629.77" x="477.39">完成后直接输出</text></g><g data-link-type="dependency" data-source-line="17" id="f2-lnk25" data-entity-2="ent0008" data-entity-1="ent0016" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M388.93,759.83 C410.17,774.23 441.84,794.14 471.8,807 C519.8,827.6 576.3858,839.5075 600.9958,844.1275" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="605.91,845.05 597.80,839.46 601.00,844.13 596.33,847.32 605.91,845.05" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="803.77" x="472.80">截图成功，写入历史</text></g><g data-link-type="dependency" data-source-line="18" id="f2-lnk26" data-entity-2="ent0008" data-entity-1="ent0021" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M602.79,575.09 C605.67,631.11 613.8023,788.7566 616.0123,831.5766" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="616.27,836.57 619.80,827.38 616.01,831.58 611.81,827.79 616.27,836.57" /></g></g></svg></div><figcaption><span>截图会话状态</span></figcaption></figure>
+<figure><div class="hs-zoom" data-plate="light"><svg role="img" aria-label="贴图生命周期" height="563" width="703" viewBox="0 0 703 563" version="1.1" xmlns="http://www.w3.org/2000/svg"><defs /><g><g data-source-line="3" id="f3-ent0001" data-qualified-name=".." class="entity"><path stroke-width="1" stroke="#F1F1F1" fill="#F1F1F1" d="M192.08,102 L346.59,102 A12.50,12.50 0 0 1 359.09,114.50 L359.09,127.64 L179.58,127.64 L179.58,114.50 A12.50,12.50 0 0 1 192.08,102" /><rect stroke-width="0.50" stroke="#181818" fill="#00000000" ry="12.50" rx="12.50" height="238.64" width="179.51" y="102" x="179.58" /><line stroke-width="0.50" stroke="#181818" y2="127.64" x2="359.09" y1="127.64" x1="179.58" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="119.67" x="255.33">显示</text><g data-source-line="4" id="f3-ent0004" data-qualified-name="....start..." class="start_entity"><circle stroke-width="1" stroke="#222222" fill="#222222" r="10" cy="148.64" cx="241.15" /></g><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="50" y="195.64" x="216.15" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="220.49" x="227.15">正常</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="52" y="287.64" x="215.15" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="312.49" x="220.15">缩略图</text><g data-link-type="dependency" data-source-line="4" id="f3-lnk6" data-entity-2="ent0005" data-entity-1="ent0004" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M241.15,158.9506 C241.15,168.3606 241.15,178.1806 241.15,190.1606" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="241.15,195.16 245.15,186.16 241.15,190.16 237.15,186.16 241.15,195.16" /></g><g data-link-type="dependency" data-source-line="5" id="f3-lnk8" data-entity-2="ent0007" data-entity-1="ent0005" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M215.81,231.7506 C208.39,237.5806 201.19,244.9506 197.15,253.6406 C190.58,267.7306 198.0561,278.1461 210.9161,287.9661" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="214.89,291.00 210.16,282.36 210.92,287.97 205.31,288.72 214.89,291.00" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="266.41" x="198.15">Shift + 双击</text></g><g data-link-type="dependency" data-source-line="6" id="f3-lnk9" data-entity-2="ent0005" data-entity-1="ent0007" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M257.18,287.5006 C263.53,277.6306 268.59,265.2606 265.15,253.6406 C263.32,247.4706 262.8169,245.5745 259.3269,240.1545" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="256.62,235.95 258.13,245.68 259.33,240.15 264.86,241.35 256.62,235.95" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="266.41" x="267.26">Shift + 双击</text></g></g><g data-source-line="2" id="f3-ent0002" data-qualified-name=".start." class="start_entity"><circle stroke-width="1" stroke="#222222" fill="#222222" r="10" cy="16" cx="269.33" /></g><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="50" y="416.64" x="41.33" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="441.49" x="52.33">隐藏</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="40" width="52" y="416.64" x="394.33" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="14" y="441.49" x="399.33">已关闭</text><g data-source-line="12" id="f3-ent0016" data-qualified-name=".end." class="end_entity"><circle stroke-width="1" stroke="#222222" fill="#00000000" r="11" cy="543.64" cx="507.33" /><circle stroke-width="1" stroke="#222222" fill="#222222" r="6" cy="543.64" cx="507.33" /></g><g data-link-type="dependency" data-source-line="2" id="f3-lnk3" data-entity-2="ent0001" data-entity-1="ent0002" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M269.33,26.26 C269.33,40.64 269.33,64.96 269.33,96.55" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="269.33,101.55 273.33,92.55 269.33,96.55 265.33,92.55 269.33,101.55" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="68.77" x="270.33">贴图</text></g><g data-link-type="dependency" data-source-line="8" id="f3-lnk11" data-entity-2="ent0010" data-entity-1="ent0001" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M179.26,249.19 C121.54,271.62 51.14,309.89 16.33,370.64 C6,388.68 19.699,404.3082 36.829,416.9682" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="40.85,419.94 35.99,411.37 36.83,416.97 31.23,417.81 40.85,419.94" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="383.41" x="17.33">隐藏全部</text></g><g data-link-type="dependency" data-source-line="9" id="f3-lnk12" data-entity-2="ent0001" data-entity-1="ent0010" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M84.54,416.51 C106.08,393.87 140.0832,358.1421 175.6632,320.7521" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="179.11,317.13 170.01,320.89 175.66,320.75 175.80,326.41 179.11,317.13" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="383.41" x="127.32">显示全部 / 新建贴图</text></g><g data-link-type="dependency" data-source-line="10" id="f3-lnk14" data-entity-2="ent0013" data-entity-1="ent0001" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M249.14,340.76 C251.29,357.27 256.48,373.17 266.33,386.64 C295.73,426.84 353.4025,434.6916 389.0625,435.8216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="394.06,435.98 385.19,431.70 389.06,435.82 384.94,439.69 394.06,435.98" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="383.41" x="267.33">Esc / 双击 / Ctrl+W</text></g><g data-link-type="dependency" data-source-line="11" id="f3-lnk15" data-entity-2="ent0001" data-entity-1="ent0013" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M409.42,416.25 C401.88,403.15 391.42,385.59 381.33,370.64 C374.38,360.34 369.9064,353.8513 362.3664,343.3513" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="359.45,339.29 361.45,348.93 362.37,343.35 367.95,344.27 359.45,339.29" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="383.41" x="392.51">恢复（贴图热键 / Ctrl+3）</text></g><g data-link-type="dependency" data-source-line="12" id="f3-lnk17" data-entity-2="ent0016" data-entity-1="ent0013" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M431.01,457.08 C438.84,470.52 450.18,488.46 462.33,502.64 C473.63,515.81 485.2577,525.6446 494.8077,533.0946" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="498.75,536.17 494.11,527.48 494.81,533.09 489.19,533.79 498.75,536.17" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="499.41" x="463.33">超出历史数量上限</text></g><g data-link-type="dependency" data-source-line="13" id="f3-lnk18" data-entity-2="ent0016" data-entity-1="ent0001" class="link"><path stroke-width="1" stroke="#181818" fill="none" d="M359.52,247 C422.71,269.03 503.87,307.75 550.33,370.64 C585.67,418.48 601.35,450.72 572.33,502.64 C560.7,523.46 538.0521,533.2561 522.8021,538.1361" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="518.04,539.66 527.83,540.73 522.80,538.14 525.39,533.11 518.04,539.66" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="13" y="441.41" x="588.46">销毁（不可恢复）</text></g></g></svg></div><figcaption><span>贴图生命周期</span></figcaption></figure>
 <p>穿透、锁定、置顶、灰度等是“显示”状态下的独立属性，可以叠加，不是互斥状态。</p>
 <h2 id="s5"><span class="hs-num">5.</span>功能需求<a class="hs-anchor" href="#s5" aria-label="本节链接">#</a></h2>
 <h3 id="req-gen"><span class="hs-num">5.1</span>常驻与托盘<a class="hs-anchor" href="#req-gen" aria-label="本节链接">#</a></h3>
@@ -635,13 +630,13 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>GEN-02</code></td>
-<td>托盘左键截图、中键贴图、右键弹出菜单；各种点击可改成其他动作（macOS 菜单栏只区分左键和右键）</td>
+<td>托盘左键截图、中键贴图、右键弹出菜单（macOS 菜单栏只区分左键和右键）</td>
 <td><span class="hs-mark" data-kind="info" title="Snipaste PRO 功能">SnipastePro</span></td>
 <td><span class="hs-tag" data-kind="danger">P0</span></td>
 </tr>
 <tr>
 <td><code>GEN-03</code></td>
-<td>托盘菜单：截图、贴图、显示 / 隐藏全部贴图、贴图组、恢复屏幕外贴图、禁用热键、偏好设置、帮助、退出</td>
+<td>托盘菜单只有偏好设置和退出；托盘图标使用程序图标</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="danger">P0</span></td>
 </tr>
@@ -656,24 +651,6 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <td><span class="hs-k">仅 Windows</span> 以管理员身份运行（含开机自启），以便在提权程序上响应热键</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="warn">P1</span></td>
-</tr>
-<tr>
-<td><code>GEN-06</code></td>
-<td>托盘图标样式：跟随系统主题或自定义颜色；可完全隐藏托盘图标</td>
-<td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
-<tr>
-<td><code>GEN-07</code></td>
-<td>系统通知（保存成功等），可关闭；通知上提供定位文件、复制文件、复制路径按钮</td>
-<td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
-<td><span class="hs-tag" data-kind="warn">P1</span></td>
-</tr>
-<tr>
-<td><code>GEN-08</code></td>
-<td>桌面悬浮工具栏：一键截图、贴图，把图片或文字拖到工具栏上直接贴图</td>
-<td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
 </tr>
 <tr>
 <td><code>GEN-09</code></td>
@@ -734,14 +711,8 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>CAP-04</code></td>
-<td>截图后直接执行指定动作：复制、贴图、保存、快速保存、OCR 复制、滚动截图、录制、表格识别；可多个组合，按固定顺序执行</td>
+<td>截图后直接执行指定动作：复制、贴图、保存、OCR 复制、滚动截图、录制、表格识别；可多个组合，按固定顺序执行</td>
 <td><span class="hs-mark" data-kind="info" title="Snipaste PRO 功能">SnipastePro</span></td>
-<td><span class="hs-tag" data-kind="warn">P1</span></td>
-</tr>
-<tr>
-<td><code>CAP-05</code></td>
-<td>自定义截图对话框：输入位置、尺寸和延时；可保存为带名字的预设</td>
-<td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="warn">P1</span></td>
 </tr>
 <tr>
@@ -964,34 +935,8 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 </tbody>
 </table></div>
-<h4 id="s5-2-6"><span class="hs-num">5.2.6</span>白板<a class="hs-anchor" href="#s5-2-6" aria-label="本节链接">#</a></h4>
-<div class="hs-table lead"><table>
-<caption>白板</caption>
-<thead>
-<tr>
-<th>编号</th>
-<th>需求</th>
-<th>来源</th>
-<th>优先级</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>CAP-50</code></td>
-<td>白板模式：纯色全屏画布上标注，颜色可选，可只覆盖当前屏幕</td>
-<td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
-<td><span class="hs-tag" data-kind="warn">P1</span></td>
-</tr>
-<tr>
-<td><code>CAP-51</code></td>
-<td>透明白板：直接在实时桌面上标注</td>
-<td><span class="hs-mark" data-kind="info" title="Snipaste PRO 功能">SnipastePro</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
-</tbody>
-</table></div>
-<h4 id="scroll"><span class="hs-num">5.2.7</span>滚动截图<a class="hs-anchor" href="#scroll" aria-label="本节链接">#</a></h4>
-<figure><div class="hs-zoom" data-plate="light"><svg role="img" aria-label="滚动截图流程" height="773" width="464" viewBox="0 0 464 773" version="1.1" xmlns="http://www.w3.org/2000/svg"><defs /><g><circle stroke-width="1" stroke="#222222" fill="#222222" r="10" cy="15" cx="216" /><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="152" y="45" x="140" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="65.86" x="150">框选区域，点击滚动截图</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="236" y="98.41" x="98" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="119.27" x="108">锁定区域，自身界面设为不参与屏幕捕获</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="152" y="151.81" x="140" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="172.68" x="150">捕获首帧，作为长图开头</text><polygon stroke-width="0.50" stroke="#181818" fill="#F1F1F1" points="188.50,249.22 243.50,249.22 255.50,261.22 243.50,273.22 188.50,273.22 176.50,261.22 188.50,249.22" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="265.03" x="188.50">自动滚动？</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="258.89" x="165.50">是</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="258.89" x="255.50">否</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="116" y="283.22" x="96" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="304.08" x="106">在区域内模拟滚轮</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="92" y="283.22" x="232" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="304.08" x="242">等待用户滚动</text><polygon stroke-width="0.50" stroke="#181818" fill="#F1F1F1" points="216,322.62 228,334.62 216,346.62 204,334.62 216,322.62" /><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="224" y="366.62" x="104" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="387.49" x="114">等待画面稳定（连续两帧相同或超时）</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="80" y="420.03" x="176" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="440.89" x="186">捕获当前帧</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="258.00" y="473.44" x="87.00" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="494.30" x="97.00">识别顶部 / 底部固定区，计算与上一帧的位移</text><polygon stroke-width="0.50" stroke="#181818" fill="#F1F1F1" points="188.50,526.84 243.50,526.84 255.50,538.84 243.50,550.84 188.50,550.84 176.50,538.84 188.50,526.84" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="542.66" x="188.50">位移可信？</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="536.51" x="165.50">是</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="536.51" x="255.50">否</text><rect stroke-width="0.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="33.41" width="200" y="560.84" x="6" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="581.71" x="16">追加新出现的内容，预览显示绿色</text><rect stroke-width="0.50" stroke="#181818" fill="#F8D7D3" ry="12.50" rx="12.50" height="33.41" width="200" y="560.84" x="226" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="581.71" x="236">不追加，预览显示红色并提示原因</text><polygon stroke-width="0.50" stroke="#181818" fill="#F1F1F1" points="216,600.25 228,612.25 216,624.25 204,612.25 216,600.25" /><polygon stroke-width="0.50" stroke="#181818" fill="#F1F1F1" points="216,205.22 228,217.22 216,229.22 204,217.22 216,205.22" /><polygon stroke-width="0.50" stroke="#181818" fill="#F1F1F1" points="166.50,644.25 265.50,644.25 277.50,656.25 265.50,668.25 166.50,668.25 154.50,656.25 166.50,644.25" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="660.06" x="166.50">未停止，且未到底？</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="653.92" x="277.50">继续</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="228.01" y="688.25" x="102.00" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="709.11" x="112.00">复制 / 保存 / 快速保存 / 贴图 / 进入标注</text><circle stroke-width="1" stroke="#222222" fill="#00000000" r="11" cy="752.66" cx="216" /><circle stroke-width="1" stroke="#222222" fill="#222222" r="6" cy="752.66" cx="216" /><line stroke-width="1" stroke="#181818" y2="45" x2="216" y1="25" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,35 216,45 220,35 216,39" /><line stroke-width="1" stroke="#181818" y2="98.41" x2="216" y1="78.41" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,88.41 216,98.41 220,88.41 216,92.41" /><line stroke-width="1" stroke="#181818" y2="151.81" x2="216" y1="131.81" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,141.81 216,151.81 220,141.81 216,145.81" /><line stroke-width="1" stroke="#181818" y2="261.22" x2="154" y1="261.22" x1="176.50" /><line stroke-width="1" stroke="#181818" y2="283.22" x2="154" y1="261.22" x1="154" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="150,273.22 154,283.22 158,273.22 154,277.22" /><line stroke-width="1" stroke="#181818" y2="261.22" x2="278" y1="261.22" x1="255.50" /><line stroke-width="1" stroke="#181818" y2="283.22" x2="278" y1="261.22" x1="278" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="274,273.22 278,283.22 282,273.22 278,277.22" /><line stroke-width="1" stroke="#181818" y2="334.62" x2="154" y1="316.62" x1="154" /><line stroke-width="1" stroke="#181818" y2="334.62" x2="204" y1="334.62" x1="154" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="194,330.62 204,334.62 194,338.62 198,334.62" /><line stroke-width="1" stroke="#181818" y2="334.62" x2="278" y1="316.62" x1="278" /><line stroke-width="1" stroke="#181818" y2="334.62" x2="228" y1="334.62" x1="278" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="238,330.62 228,334.62 238,338.62 234,334.62" /><line stroke-width="1" stroke="#181818" y2="366.62" x2="216" y1="346.62" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,356.62 216,366.62 220,356.62 216,360.62" /><line stroke-width="1" stroke="#181818" y2="420.03" x2="216" y1="400.03" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,410.03 216,420.03 220,410.03 216,414.03" /><line stroke-width="1" stroke="#181818" y2="473.44" x2="216" y1="453.44" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,463.44 216,473.44 220,463.44 216,467.44" /><line stroke-width="1" stroke="#181818" y2="538.84" x2="106" y1="538.84" x1="176.50" /><line stroke-width="1" stroke="#181818" y2="560.84" x2="106" y1="538.84" x1="106" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="102,550.84 106,560.84 110,550.84 106,554.84" /><line stroke-width="1" stroke="#181818" y2="538.84" x2="326" y1="538.84" x1="255.50" /><line stroke-width="1" stroke="#181818" y2="560.84" x2="326" y1="538.84" x1="326" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="322,550.84 326,560.84 330,550.84 326,554.84" /><line stroke-width="1" stroke="#181818" y2="612.25" x2="106" y1="594.25" x1="106" /><line stroke-width="1" stroke="#181818" y2="612.25" x2="204" y1="612.25" x1="106" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="194,608.25 204,612.25 194,616.25 198,612.25" /><line stroke-width="1" stroke="#181818" y2="612.25" x2="326" y1="594.25" x1="326" /><line stroke-width="1" stroke="#181818" y2="612.25" x2="228" y1="612.25" x1="326" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="238,608.25 228,612.25 238,616.25 234,612.25" /><line stroke-width="1" stroke="#181818" y2="526.84" x2="216" y1="506.84" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,516.84 216,526.84 220,516.84 216,520.84" /><line stroke-width="1" stroke="#181818" y2="249.22" x2="216" y1="229.22" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,239.22 216,249.22 220,239.22 216,243.22" /><line stroke-width="1" stroke="#181818" y2="656.25" x2="440" y1="656.25" x1="277.50" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="436,446.73 440,436.73 444,446.73 440,442.73" /><line stroke-width="1" stroke="#181818" y2="656.25" x2="440" y1="217.22" x1="440" /><line stroke-width="1" stroke="#181818" y2="217.22" x2="228" y1="217.22" x1="440" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="238,213.22 228,217.22 238,221.22 234,217.22" /><line stroke-width="1" stroke="#181818" y2="644.25" x2="216" y1="624.25" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,634.25 216,644.25 220,634.25 216,638.25" /><line stroke-width="1" stroke="#181818" y2="205.22" x2="216" y1="185.22" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,195.22 216,205.22 220,195.22 216,199.22" /><line stroke-width="1" stroke="#181818" y2="688.25" x2="216" y1="668.25" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,678.25 216,688.25 220,678.25 216,682.25" /><line stroke-width="1" stroke="#181818" y2="741.66" x2="216" y1="721.66" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,731.66 216,741.66 220,731.66 216,735.66" /></g></svg></div><figcaption><span>滚动截图流程</span></figcaption></figure>
+<h4 id="scroll"><span class="hs-num">5.2.6</span>滚动截图<a class="hs-anchor" href="#scroll" aria-label="本节链接">#</a></h4>
+<figure><div class="hs-zoom" data-plate="light"><svg role="img" aria-label="滚动截图流程" height="773" width="464" viewBox="0 0 464 773" version="1.1" xmlns="http://www.w3.org/2000/svg"><defs /><g><circle stroke-width="1" stroke="#222222" fill="#222222" r="10" cy="15" cx="216" /><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="152" y="45" x="140" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="65.86" x="150">框选区域，点击滚动截图</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="236" y="98.41" x="98" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="119.27" x="108">锁定区域，自身界面设为不参与屏幕捕获</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="152" y="151.81" x="140" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="172.68" x="150">捕获首帧，作为长图开头</text><polygon stroke-width="0.50" stroke="#181818" fill="#F1F1F1" points="188.50,249.22 243.50,249.22 255.50,261.22 243.50,273.22 188.50,273.22 176.50,261.22 188.50,249.22" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="265.03" x="188.50">自动滚动？</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="258.89" x="165.50">是</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="258.89" x="255.50">否</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="116" y="283.22" x="96" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="304.08" x="106">在区域内模拟滚轮</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="92" y="283.22" x="232" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="304.08" x="242">等待用户滚动</text><polygon stroke-width="0.50" stroke="#181818" fill="#F1F1F1" points="216,322.62 228,334.62 216,346.62 204,334.62 216,322.62" /><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="224" y="366.62" x="104" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="387.49" x="114">等待画面稳定（连续两帧相同或超时）</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="80" y="420.03" x="176" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="440.89" x="186">捕获当前帧</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="258.00" y="473.44" x="87.00" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="494.30" x="97.00">识别顶部 / 底部固定区，计算与上一帧的位移</text><polygon stroke-width="0.50" stroke="#181818" fill="#F1F1F1" points="188.50,526.84 243.50,526.84 255.50,538.84 243.50,550.84 188.50,550.84 176.50,538.84 188.50,526.84" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="542.66" x="188.50">位移可信？</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="536.51" x="165.50">是</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="536.51" x="255.50">否</text><rect stroke-width="0.50" stroke="#181818" fill="#D5F0DD" ry="12.50" rx="12.50" height="33.41" width="200" y="560.84" x="6" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="581.71" x="16">追加新出现的内容，预览显示绿色</text><rect stroke-width="0.50" stroke="#181818" fill="#F8D7D3" ry="12.50" rx="12.50" height="33.41" width="200" y="560.84" x="226" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="581.71" x="236">不追加，预览显示红色并提示原因</text><polygon stroke-width="0.50" stroke="#181818" fill="#F1F1F1" points="216,600.25 228,612.25 216,624.25 204,612.25 216,600.25" /><polygon stroke-width="0.50" stroke="#181818" fill="#F1F1F1" points="216,205.22 228,217.22 216,229.22 204,217.22 216,205.22" /><polygon stroke-width="0.50" stroke="#181818" fill="#F1F1F1" points="166.50,644.25 265.50,644.25 277.50,656.25 265.50,668.25 166.50,668.25 154.50,656.25 166.50,644.25" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="660.06" x="166.50">未停止，且未到底？</text><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="11" y="653.92" x="277.50">继续</text><rect stroke-width="0.50" stroke="#181818" fill="#F1F1F1" ry="12.50" rx="12.50" height="33.41" width="170.01" y="688.25" x="131.00" /><text font-family="sans-serif" style="white-space: pre" xml:space="preserve" fill="#000000" font-size="12" y="709.11" x="141.00">复制 / 保存 / 贴图 / 进入标注</text><circle stroke-width="1" stroke="#222222" fill="#00000000" r="11" cy="752.66" cx="216" /><circle stroke-width="1" stroke="#222222" fill="#222222" r="6" cy="752.66" cx="216" /><line stroke-width="1" stroke="#181818" y2="45" x2="216" y1="25" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,35 216,45 220,35 216,39" /><line stroke-width="1" stroke="#181818" y2="98.41" x2="216" y1="78.41" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,88.41 216,98.41 220,88.41 216,92.41" /><line stroke-width="1" stroke="#181818" y2="151.81" x2="216" y1="131.81" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,141.81 216,151.81 220,141.81 216,145.81" /><line stroke-width="1" stroke="#181818" y2="261.22" x2="154" y1="261.22" x1="176.50" /><line stroke-width="1" stroke="#181818" y2="283.22" x2="154" y1="261.22" x1="154" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="150,273.22 154,283.22 158,273.22 154,277.22" /><line stroke-width="1" stroke="#181818" y2="261.22" x2="278" y1="261.22" x1="255.50" /><line stroke-width="1" stroke="#181818" y2="283.22" x2="278" y1="261.22" x1="278" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="274,273.22 278,283.22 282,273.22 278,277.22" /><line stroke-width="1" stroke="#181818" y2="334.62" x2="154" y1="316.62" x1="154" /><line stroke-width="1" stroke="#181818" y2="334.62" x2="204" y1="334.62" x1="154" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="194,330.62 204,334.62 194,338.62 198,334.62" /><line stroke-width="1" stroke="#181818" y2="334.62" x2="278" y1="316.62" x1="278" /><line stroke-width="1" stroke="#181818" y2="334.62" x2="228" y1="334.62" x1="278" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="238,330.62 228,334.62 238,338.62 234,334.62" /><line stroke-width="1" stroke="#181818" y2="366.62" x2="216" y1="346.62" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,356.62 216,366.62 220,356.62 216,360.62" /><line stroke-width="1" stroke="#181818" y2="420.03" x2="216" y1="400.03" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,410.03 216,420.03 220,410.03 216,414.03" /><line stroke-width="1" stroke="#181818" y2="473.44" x2="216" y1="453.44" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,463.44 216,473.44 220,463.44 216,467.44" /><line stroke-width="1" stroke="#181818" y2="538.84" x2="106" y1="538.84" x1="176.50" /><line stroke-width="1" stroke="#181818" y2="560.84" x2="106" y1="538.84" x1="106" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="102,550.84 106,560.84 110,550.84 106,554.84" /><line stroke-width="1" stroke="#181818" y2="538.84" x2="326" y1="538.84" x1="255.50" /><line stroke-width="1" stroke="#181818" y2="560.84" x2="326" y1="538.84" x1="326" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="322,550.84 326,560.84 330,550.84 326,554.84" /><line stroke-width="1" stroke="#181818" y2="612.25" x2="106" y1="594.25" x1="106" /><line stroke-width="1" stroke="#181818" y2="612.25" x2="204" y1="612.25" x1="106" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="194,608.25 204,612.25 194,616.25 198,612.25" /><line stroke-width="1" stroke="#181818" y2="612.25" x2="326" y1="594.25" x1="326" /><line stroke-width="1" stroke="#181818" y2="612.25" x2="228" y1="612.25" x1="326" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="238,608.25 228,612.25 238,616.25 234,612.25" /><line stroke-width="1" stroke="#181818" y2="526.84" x2="216" y1="506.84" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,516.84 216,526.84 220,516.84 216,520.84" /><line stroke-width="1" stroke="#181818" y2="249.22" x2="216" y1="229.22" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,239.22 216,249.22 220,239.22 216,243.22" /><line stroke-width="1" stroke="#181818" y2="656.25" x2="440" y1="656.25" x1="277.50" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="436,446.73 440,436.73 444,446.73 440,442.73" /><line stroke-width="1" stroke="#181818" y2="656.25" x2="440" y1="217.22" x1="440" /><line stroke-width="1" stroke="#181818" y2="217.22" x2="228" y1="217.22" x1="440" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="238,213.22 228,217.22 238,221.22 234,217.22" /><line stroke-width="1" stroke="#181818" y2="644.25" x2="216" y1="624.25" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,634.25 216,644.25 220,634.25 216,638.25" /><line stroke-width="1" stroke="#181818" y2="205.22" x2="216" y1="185.22" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,195.22 216,205.22 220,195.22 216,199.22" /><line stroke-width="1" stroke="#181818" y2="688.25" x2="216" y1="668.25" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,678.25 216,688.25 220,678.25 216,682.25" /><line stroke-width="1" stroke="#181818" y2="741.66" x2="216" y1="721.66" x1="216" /><polygon stroke-width="1" stroke="#181818" fill="#181818" points="212,731.66 216,741.66 220,731.66 216,735.66" /></g></svg></div><figcaption><span>滚动截图流程</span></figcaption></figure>
 <div class="hs-table lead"><table>
 <caption>滚动截图</caption>
 <thead>
@@ -1005,7 +950,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <tbody>
 <tr>
 <td><code>CAP-60</code></td>
-<td>入口：截图界面选区后点“滚动截图”按钮或快捷键；也可由动作或命令行对指定区域直接开始</td>
+<td>入口：截图界面选区后点“滚动截图”按钮或快捷键；也可由命令行对指定区域直接开始</td>
 <td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
 <td><span class="hs-tag" data-kind="danger">P0</span></td>
 </tr>
@@ -1083,7 +1028,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>CAP-73</code></td>
-<td>完成后可复制、保存、快速保存、贴图，或进入标注编辑后再输出</td>
+<td>完成后可复制、保存、贴图，或进入标注编辑后再输出</td>
 <td><span class="hs-mark" data-kind="key" title="两者都没有，本项目新增">新增</span></td>
 <td><span class="hs-tag" data-kind="danger">P0</span></td>
 </tr>
@@ -1128,7 +1073,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>ANN-02</code></td>
-<td>撤销 / 重做（Ctrl+Z / Ctrl+Y）；清除全部标注（本项目要求可撤销）</td>
+<td>撤销 / 重做（Ctrl+Z / Ctrl+Y，工具栏不放按钮）；清除全部标注（本项目要求可撤销）</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="danger">P0</span></td>
 </tr>
@@ -1200,7 +1145,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>ANN-14</code></td>
-<td>自定义工具栏：常用区 / 折叠区 / 最近使用的浮动按钮，可排序、隐藏</td>
+<td>自定义工具栏：常用区 / 折叠区 / 最近使用的浮动按钮，可排序、隐藏；默认常用区为框选、箭头、画笔、马赛克、文字、序号</td>
 <td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
 <td><span class="hs-tag" data-kind="muted">P2</span></td>
 </tr>
@@ -1238,7 +1183,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <tbody>
 <tr>
 <td><code>ANN-20</code></td>
-<td>矩形 / 椭圆：描边或填充</td>
+<td>框选工具：矩形 / 椭圆合为一个工具，在形状选项里切换；描边或填充</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="danger">P0</span></td>
 </tr>
@@ -1350,12 +1295,6 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
 <td><span class="hs-tag" data-kind="muted">P2</span></td>
 </tr>
-<tr>
-<td><code>ANN-39</code></td>
-<td>水印：文字 + 时间变量；平铺或 8 个方位；透明度、大小、间距、字体可调</td>
-<td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
 </tbody>
 </table></div>
 <h3 id="req-out"><span class="hs-num">5.4</span>输出<a class="hs-anchor" href="#req-out" aria-label="本节链接">#</a></h3>
@@ -1384,15 +1323,9 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>OUT-03</code></td>
-<td>保存到文件（Ctrl+S）：PNG、JPG、BMP、WebP</td>
+<td>保存到文件（Ctrl+S）：PNG、JPG、BMP、WebP；装有 AVIF 插件时可存 AVIF</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="danger">P0</span></td>
-</tr>
-<tr>
-<td><code>OUT-04</code></td>
-<td>保存为 AVIF、PDF（页边距、分页）</td>
-<td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
 </tr>
 <tr>
 <td><code>OUT-05</code></td>
@@ -1413,26 +1346,8 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <td><span class="hs-tag" data-kind="muted">P2</span></td>
 </tr>
 <tr>
-<td><code>OUT-08</code></td>
-<td>快速保存（Ctrl+Shift+S 或 Shift+保存按钮）：直接存到指定目录，不弹对话框</td>
-<td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
-<td><span class="hs-tag" data-kind="danger">P0</span></td>
-</tr>
-<tr>
-<td><code>OUT-09</code></td>
-<td>自动保存：截图成功时额外存一份，触发时机可选；自动清理 N 天前的旧文件</td>
-<td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
-<td><span class="hs-tag" data-kind="warn">P1</span></td>
-</tr>
-<tr>
 <td><code>OUT-10</code></td>
 <td>路径与文件名变量：日期时间格式、时间戳、窗口标题、进程名、唯一标识、宽高、计算机名、环境变量；修饰符（截断、去扩展名）；按年月建子目录</td>
-<td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
-<td><span class="hs-tag" data-kind="warn">P1</span></td>
-</tr>
-<tr>
-<td><code>OUT-11</code></td>
-<td>打印（Ctrl+P）</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="warn">P1</span></td>
 </tr>
@@ -1446,12 +1361,6 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <td><code>OUT-13</code></td>
 <td>在图片中写入元数据（来源窗口、时间），可关闭</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
-<tr>
-<td><code>OUT-14</code></td>
-<td>发送到其他程序：截图后执行本机外部命令，传入文件路径</td>
-<td><span class="hs-mark" data-kind="info" title="Snipaste PRO 功能">SnipastePro</span></td>
 <td><span class="hs-tag" data-kind="muted">P2</span></td>
 </tr>
 </tbody>
@@ -1477,7 +1386,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>PIN-02</code></td>
-<td>截图时直接贴图（Ctrl+T、中键、按钮），位置与截图位置重合</td>
+<td>截图时直接贴图（Ctrl+T、贴图热键、中键、按钮），位置与截图位置重合</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="danger">P0</span></td>
 </tr>
@@ -1653,7 +1562,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>PIN-36</code></td>
-<td>窗口阴影可开关；阴影颜色表示状态（激活、非激活、锁定、穿透、所属分组）</td>
+<td>窗口阴影可开关；阴影颜色表示状态（激活、非激活、锁定、穿透、选中）</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="warn">P1</span></td>
 </tr>
@@ -1745,13 +1654,13 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>PIN-54</code></td>
-<td>退出或重启后恢复未关闭的贴图（位置、缩放、透明度、标注、分组）</td>
+<td>退出或重启后恢复未关闭的贴图（位置、缩放、透明度、标注）</td>
 <td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
 <td><span class="hs-tag" data-kind="warn">P1</span></td>
 </tr>
 <tr>
 <td><code>PIN-55</code></td>
-<td>显示器拔插或分辨率变化后不自动挪动贴图；托盘提供“恢复屏幕外贴图”</td>
+<td>显示器拔插或分辨率变化后不自动挪动贴图；命令行提供“恢复屏幕外贴图”</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="warn">P1</span></td>
 </tr>
@@ -1789,45 +1698,13 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>PIN-62</code></td>
-<td>托盘批量：全部转为缩略图 / 取消缩略图、全部保存到文件夹、关闭全部、销毁全部</td>
+<td>批量（命令行）：全部转为缩略图 / 取消缩略图、全部保存到文件夹、关闭全部、销毁全部</td>
 <td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
 <td><span class="hs-tag" data-kind="muted">P2</span></td>
 </tr>
 </tbody>
 </table></div>
-<h3 id="req-grp"><span class="hs-num">5.6</span>贴图组<a class="hs-anchor" href="#req-grp" aria-label="本节链接">#</a></h3>
-<div class="hs-table lead"><table>
-<caption>贴图组</caption>
-<thead>
-<tr>
-<th>编号</th>
-<th>需求</th>
-<th>来源</th>
-<th>优先级</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>GRP-01</code></td>
-<td>默认组；新建组；切换组（热键轮换、按名称切换、回到上一个组）；清空组；每组有独立的屏幕贴图和历史贴图</td>
-<td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
-<td><span class="hs-tag" data-kind="warn">P1</span></td>
-</tr>
-<tr>
-<td><code>GRP-02</code></td>
-<td>组管理器：增删、改名、排序、颜色标签；删除组时可把贴图迁到其他组</td>
-<td><span class="hs-mark" data-kind="info" title="Snipaste PRO 功能">SnipastePro</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
-<tr>
-<td><code>GRP-03</code></td>
-<td>把贴图移到其他组；菜单中显示每组“屏幕上 / 总数”计数</td>
-<td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
-</tbody>
-</table></div>
-<h3 id="req-rec"><span class="hs-num">5.7</span>本地识别<a class="hs-anchor" href="#req-rec" aria-label="本节链接">#</a></h3>
+<h3 id="req-rec"><span class="hs-num">5.6</span>本地识别<a class="hs-anchor" href="#req-rec" aria-label="本节链接">#</a></h3>
 <p>全部在本机离线完成，不上传任何数据。</p>
 <div class="hs-table lead"><table>
 <caption>本地识别</caption>
@@ -1884,7 +1761,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 </tbody>
 </table></div>
-<h3 id="req-vid"><span class="hs-num">5.8</span>屏幕录制<a class="hs-anchor" href="#req-vid" aria-label="本节链接">#</a></h3>
+<h3 id="req-vid"><span class="hs-num">5.7</span>屏幕录制<a class="hs-anchor" href="#req-vid" aria-label="本节链接">#</a></h3>
 <div class="hs-table lead"><table>
 <caption>屏幕录制</caption>
 <thead>
@@ -1940,7 +1817,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>VID-08</code></td>
-<td>回放：播放、暂停、跳转、倍速；剪掉开头和结尾；叠加进度条（文字 / 倒计时）；保存、快速保存、复制</td>
+<td>回放：播放、暂停、跳转、倍速；剪掉开头和结尾；叠加进度条（文字 / 倒计时）；保存、复制</td>
 <td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
 <td><span class="hs-tag" data-kind="muted">P2</span></td>
 </tr>
@@ -1952,9 +1829,9 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 </tbody>
 </table></div>
-<h3 id="req-act"><span class="hs-num">5.9</span>热键、鼠标与动作<a class="hs-anchor" href="#req-act" aria-label="本节链接">#</a></h3>
+<h3 id="req-act"><span class="hs-num">5.8</span>热键与命令行<a class="hs-anchor" href="#req-act" aria-label="本节链接">#</a></h3>
 <div class="hs-table lead"><table>
-<caption>热键、鼠标与动作</caption>
+<caption>热键与命令行</caption>
 <thead>
 <tr>
 <th>编号</th>
@@ -1966,7 +1843,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <tbody>
 <tr>
 <td><code>ACT-01</code></td>
-<td>全局热键：截图、贴图、隐藏 / 显示贴图、截图并复制、自定义截图、切换穿透、切换贴图组、恢复已关闭贴图等；启动时检测冲突并提示</td>
+<td>全局热键：截图、贴图（截图中按下时贴当前选区）、隐藏 / 显示贴图、切换穿透、恢复已关闭贴图；启动时检测冲突并提示</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="danger">P0</span></td>
 </tr>
@@ -1977,18 +1854,6 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <td><span class="hs-tag" data-kind="danger">P0</span></td>
 </tr>
 <tr>
-<td><code>ACT-03</code></td>
-<td>动作系统：任意功能（含命令行命令、脚本）可存为动作，绑定全局热键、放进托盘菜单</td>
-<td><span class="hs-mark" data-kind="info" title="Snipaste PRO 功能">SnipastePro</span></td>
-<td><span class="hs-tag" data-kind="warn">P1</span></td>
-</tr>
-<tr>
-<td><code>ACT-04</code></td>
-<td>一键禁用 / 启用全部全局热键（托盘和命令）</td>
-<td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
-<td><span class="hs-tag" data-kind="warn">P1</span></td>
-</tr>
-<tr>
 <td><code>ACT-05</code></td>
 <td>贴图上的鼠标动作可自定义：双击、中键、Shift+双击、Shift+右键等分别映射到关闭、复制、重置、缩略图、菜单等</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
@@ -1996,21 +1861,9 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>ACT-06</code></td>
-<td>命令行接口：截图（区域、尺寸、全屏、上次、活动窗口、活动屏幕、自定义对话框、延时、阴影、输出组合、截图后保持编辑、调用方等待完成）、贴图（剪贴板、纯文本、HTML、文件、位置）、贴图与贴图组管理、白板、取色、条码识别、打开偏好、退出、指定配置文件</td>
+<td>命令行接口：截图（区域、尺寸、全屏、上次、活动窗口、活动屏幕、延时、阴影、输出组合、截图后保持编辑、调用方等待完成）、贴图（剪贴板、纯文本、HTML、文件、位置）、贴图管理、录制、文字与条码识别、打开偏好、退出、指定配置文件</td>
 <td><span class="hs-mark" data-kind="info" title="Snipaste PRO 功能">SnipastePro</span></td>
 <td><span class="hs-tag" data-kind="warn">P1</span></td>
-</tr>
-<tr>
-<td><code>ACT-07</code></td>
-<td>指定程序在前台时忽略某个热键（按进程名或路径）</td>
-<td><span class="hs-mark" data-kind="info" title="Snipaste PRO 功能">SnipastePro</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
-<tr>
-<td><code>ACT-08</code></td>
-<td>允许单键作为全局热键（默认禁止）</td>
-<td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
 </tr>
 <tr>
 <td><code>ACT-09</code></td>
@@ -2018,51 +1871,9 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <td><span class="hs-mark" data-kind="info" title="Snipaste PRO 功能">SnipastePro</span></td>
 <td><span class="hs-tag" data-kind="muted">P2</span></td>
 </tr>
-<tr>
-<td><code>ACT-10</code></td>
-<td>修饰键双击触发的间隔阈值可设</td>
-<td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
-<tr>
-<td><code>ACT-11</code></td>
-<td>全局鼠标（超级截图）：在任何程序上按住修饰键（Windows 默认 Win，macOS 默认 Option）+ 左 / 中 / 右键拖动，分别截图并贴图 / 复制 / 复制 OCR 文字，可配置</td>
-<td><span class="hs-mark" data-kind="info" title="Snipaste PRO 功能">SnipastePro</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
-<tr>
-<td><code>ACT-12</code></td>
-<td>屏幕热角：鼠标移到屏幕角落执行动作（例如显示 / 隐藏贴图）</td>
-<td><span class="hs-mark" data-kind="info" title="Snipaste PRO 功能">SnipastePro</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
-<tr>
-<td><code>ACT-13</code></td>
-<td>脚本：内嵌脚本引擎，开放截图、贴图、本机命令接口，不开放网络接口；动作可绑定脚本；命令行可执行脚本文本或脚本文件</td>
-<td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
-<tr>
-<td><code>ACT-14</code></td>
-<td><span class="hs-k">仅 Windows</span> 切换鼠标下方任意程序窗口的置顶状态</td>
-<td><span class="hs-mark" data-kind="warn" title="PixPin 有而 Snipaste 没有">PixPin</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
-<tr>
-<td><code>ACT-15</code></td>
-<td>忽略其他程序模拟的复制按键，避免宏工具误触发</td>
-<td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
-<tr>
-<td><code>ACT-16</code></td>
-<td>把剪贴板内容转为图像或纯文本后模拟粘贴</td>
-<td><span class="hs-mark" data-kind="info" title="Snipaste PRO 功能">SnipastePro</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
-</tr>
 </tbody>
 </table></div>
-<h3 id="req-cfg"><span class="hs-num">5.10</span>偏好与外观<a class="hs-anchor" href="#req-cfg" aria-label="本节链接">#</a></h3>
+<h3 id="req-cfg"><span class="hs-num">5.9</span>偏好与外观<a class="hs-anchor" href="#req-cfg" aria-label="本节链接">#</a></h3>
 <div class="hs-table lead"><table>
 <caption>偏好与外观</caption>
 <thead>
@@ -2076,7 +1887,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <tbody>
 <tr>
 <td><code>CFG-01</code></td>
-<td>偏好设置窗口：常规、外观、截图、贴图、标注、输出、控制（热键 / 鼠标 / 动作）、识别、高级</td>
+<td>偏好设置窗口：常规、外观、截图、贴图、标注、输出、控制（热键 / 贴图鼠标动作 / 应用内快捷键）、识别、高级</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="danger">P0</span></td>
 </tr>
@@ -2085,12 +1896,6 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <td>配置存储：便携模式（程序目录）或用户目录；可用命令行指定配置文件；支持符号链接</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="danger">P0</span></td>
-</tr>
-<tr>
-<td><code>CFG-03</code></td>
-<td>导入 / 导出全部配置</td>
-<td><span class="hs-mark" data-kind="key" title="两者都没有，本项目新增">新增</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
 </tr>
 <tr>
 <td><code>CFG-04</code></td>
@@ -2115,12 +1920,6 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <td>设置修改后立即生效，无需重启</td>
 <td><span class="hs-mark" data-kind="key" title="两者都没有，本项目新增">新增</span></td>
 <td><span class="hs-tag" data-kind="warn">P1</span></td>
-</tr>
-<tr>
-<td><code>CFG-08</code></td>
-<td>一键打开配置文件所在目录</td>
-<td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
-<td><span class="hs-tag" data-kind="muted">P2</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -2154,7 +1953,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <tr>
 <td>权限</td>
 <td>普通权限即可；操作管理员窗口需以管理员运行</td>
-<td>屏幕录制（截图、录屏、窗口标题）、辅助功能（元素检测、模拟输入、全局鼠标）需用户授权</td>
+<td>屏幕录制（截图、录屏、窗口标题）、辅助功能（元素检测、模拟输入）需用户授权</td>
 </tr>
 <tr>
 <td>不置顶的贴图</td>
@@ -2178,7 +1977,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td>只在一个平台有的需求</td>
-<td><code>GEN-05</code> <code>GEN-10</code> <code>ACT-14</code></td>
+<td><code>GEN-05</code> <code>GEN-10</code></td>
 <td><code>GEN-14</code></td>
 </tr>
 </tbody>
@@ -2352,8 +2151,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <li>UI 元素检测依赖目标程序提供辅助功能接口；自绘界面的程序只能识别到窗口。</li>
 <li>滚动截图依赖画面内容匹配：动态内容、纯色或大量重复内容、多个滚动区域、滚动过快都可能失败。</li>
 <li>Windows 上普通权限的进程不能给管理员权限的窗口发送输入，所以自动滚动对这类窗口无效，除非本程序也以管理员运行。</li>
-<li>macOS 上没有屏幕录制权限时无法截图；没有辅助功能权限时无法检测元素、模拟输入和使用全局鼠标；macOS 15 起会定期弹出屏幕录制权限的确认。</li>
-<li>macOS 不允许修改其他程序窗口的层级，所以 <code>ACT-14</code> 只在 Windows 提供。</li>
+<li>macOS 上没有屏幕录制权限时无法截图；没有辅助功能权限时无法检测元素和模拟输入；macOS 15 起会定期弹出屏幕录制权限的确认。</li>
 <li>独占全屏的游戏可能截不到画面。</li>
 </ul>
 <h2 id="milestones"><span class="hs-num">10.</span>里程碑<a class="hs-anchor" href="#milestones" aria-label="本节链接">#</a></h2>
@@ -2551,6 +2349,10 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>v0.6</td>
+<td>精简非核心功能：删除托盘图标样式 <code>GEN-06</code>、系统通知 <code>GEN-07</code>、悬浮工具栏 <code>GEN-08</code>、自定义截图对话框 <code>CAP-05</code>、白板 <code>CAP-50</code> <code>CAP-51</code>、水印 <code>ANN-39</code>、PDF 保存 <code>OUT-04</code>（AVIF 并入 <code>OUT-03</code>）、快速保存 <code>OUT-08</code>、自动保存 <code>OUT-09</code>、打印 <code>OUT-11</code>、外部命令 <code>OUT-14</code>、贴图组 <code>GRP-01</code> 到 <code>GRP-03</code>、动作系统 <code>ACT-03</code>、禁用全部热键 <code>ACT-04</code>、前台忽略与单键热键 <code>ACT-07</code> <code>ACT-08</code>、修饰键双击 <code>ACT-10</code>、全局鼠标 <code>ACT-11</code>、热角 <code>ACT-12</code>、脚本 <code>ACT-13</code>、切换窗口置顶 <code>ACT-14</code>、忽略模拟按键 <code>ACT-15</code>、粘贴转换 <code>ACT-16</code>、配置导入导出 <code>CFG-03</code>、打开配置目录 <code>CFG-08</code>；托盘菜单只留偏好设置和退出（<code>GEN-02</code> <code>GEN-03</code>）；矩形 / 椭圆合为框选工具、工具栏去掉撤销 / 重做按钮、序号进常用区（<code>ANN-02</code> <code>ANN-14</code> <code>ANN-20</code>）；截图中按贴图热键贴当前选区（<code>PIN-02</code> <code>ACT-01</code>）；补删 v0.5 遗留的公式场景 <code>S-05</code></td>
+</tr>
 <tr>
 <td>v0.5</td>
 <td>删除公式相关需求：LaTeX 公式贴图 <code>PIN-09</code>、公式识别 <code>REC-09</code>（需要离线公式引擎与模型，不再要求）</td>

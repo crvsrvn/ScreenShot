@@ -1,8 +1,7 @@
-// REQ: GEN-07 CAP-41 PIN-08 PIN-13 PIN-54 AC-07
-// M6 PixPin P1：保存通知、区域历史、文件卡片贴图、新贴图位置策略、重启恢复贴图
+// REQ: CAP-41 PIN-08 PIN-13 PIN-54 AC-07
+// M6 PixPin P1：区域历史、文件卡片贴图、新贴图位置策略、重启恢复贴图
 #include "app/App.h"
 #include "app/CaptureSession.h"
-#include "app/Notification.h"
 #include "app/OutputActions.h"
 #include "app/PinManager.h"
 #include "app/PinWindow.h"
@@ -46,62 +45,11 @@ void key(CaptureSession& s, const QString& seq)
 class TestPixPinP1 : public QObject {
     Q_OBJECT
 private slots:
-    void notificationButtons();
-    void saveNotifiesAndCanBeDisabled();
     void regionHistoryKeys();
     void fileCardPin();
     void newPinPositionPolicy();
     void savesAndRestoresPins();
 };
-
-void TestPixPinP1::notificationButtons()
-{
-    QTemporaryDir dir;
-    const QString path = dir.filePath(QStringLiteral("shot.png"));
-    QVERIFY(testImage().save(path));
-    QString revealed;
-    NotificationWidget::revealHandler = [&revealed](const QString& p) { revealed = p; };
-    auto* n = new NotificationWidget(QStringLiteral("Saved"), path, path, 60000);
-    n->show();
-    QVERIFY(n->findChild<QLabel*>(QStringLiteral("message")));
-    n->findChild<QPushButton*>(QStringLiteral("copyPath"))->click();
-    QCOMPARE(QApplication::clipboard()->text(), QDir::toNativeSeparators(path));
-    auto* n2 = new NotificationWidget(QStringLiteral("Saved"), path, path, 60000);
-    n2->show();
-    n2->findChild<QPushButton*>(QStringLiteral("copyFile"))->click();
-    QVERIFY(QApplication::clipboard()->mimeData()->hasUrls());
-    QCOMPARE(QApplication::clipboard()->mimeData()->urls().first().toLocalFile(), path);
-    auto* n3 = new NotificationWidget(QStringLiteral("Saved"), path, path, 60000);
-    n3->show();
-    n3->findChild<QPushButton*>(QStringLiteral("reveal"))->click();
-    QCOMPARE(revealed, path);
-    // 自动消失
-    QPointer<NotificationWidget> n4 = new NotificationWidget(QStringLiteral("x"), QStringLiteral("y"), QString(), 50);
-    n4->show();
-    QTRY_VERIFY(n4.isNull());
-}
-
-void TestPixPinP1::saveNotifiesAndCanBeDisabled()
-{
-    FakePlatformHandles h;
-    Settings s;
-    QTemporaryDir dir;
-    s.setValue(QStringLiteral("output.quickSaveDir"), dir.path());
-    App app(makeFakePlatform(&h), s);
-    QVERIFY(app.session().start(1, false));
-    app.session().setSelection(QRect(0, 0, 20, 20));
-    app.session().quickSave();
-    QTRY_VERIFY(!QApplication::topLevelWidgets().isEmpty());
-    NotificationWidget* shown = nullptr;
-    for (QWidget* w : QApplication::topLevelWidgets())
-        if (auto* n = qobject_cast<NotificationWidget*>(w))
-            shown = n;
-    QVERIFY(shown);
-    QVERIFY(shown->filePath().endsWith(QStringLiteral(".png")));
-    shown->close();
-    s.setValue(QStringLiteral("general.notifications"), false);
-    QVERIFY(!app.notify(QStringLiteral("a"), QStringLiteral("b")));
-}
 
 void TestPixPinP1::regionHistoryKeys()
 {
@@ -221,17 +169,13 @@ void TestPixPinP1::savesAndRestoresPins()
         a->editor().releaseAt(QPointF(20, 20), Qt::LeftButton);
         a->toggleToolbar();
         m.pinText(QStringLiteral("hello"), QPoint(300, 300));
-        m.newGroup(QStringLiteral("Work"));
         m.pinColor(QColor(1, 2, 3), QPoint(50, 50));
-        m.switchToGroup(0);
         QVERIFY(m.saveState(dir.path()));
         QVERIFY(QFile::exists(dir.filePath(QStringLiteral("pins.json"))));
     }
     PinManager r(s, nullptr);
     QCOMPARE(r.restoreState(dir.path()), 3);
-    QCOMPARE(r.groupNames(), (QStringList{r.groupNames().first(), QStringLiteral("Work")}));
-    QCOMPARE(r.currentGroupIndex(), 0);
-    QCOMPARE(r.pins().size(), 2);
+    QCOMPARE(r.pins().size(), 3);
     PinWindow* a = r.pins().first();
     QCOMPARE(a->physicalTopLeft(), QPoint(120, 100)); // 旋转围绕中心，保存的是旋转后的左上角
     QCOMPARE(a->scale(), 2.0);
@@ -239,13 +183,19 @@ void TestPixPinP1::savesAndRestoresPins()
     QCOMPARE(a->originalImage().size(), QSize(40, 60)); // 旋转后的显示图作为底图
     QCOMPARE(a->rotation(), 0);
     QCOMPARE(a->displayedImage().pixel(10, 10), qRgb(255, 0, 0)); // 标注保留
-    QCOMPARE(r.pins().last()->contentKind(), PinWindow::ContentKind::Text);
-    QCOMPARE(r.pins().last()->textPlain(), QStringLiteral("hello"));
-    QVERIFY(r.pins().last()->isVisible());
-    r.switchToGroup(1);
-    QCOMPARE(r.pins().size(), 1);
-    QCOMPARE(r.pins().first()->contentKind(), PinWindow::ContentKind::Color);
-    QCOMPARE(r.pins().first()->color(), QColor(1, 2, 3));
+    QCOMPARE(r.pins().at(1)->contentKind(), PinWindow::ContentKind::Text);
+    QCOMPARE(r.pins().at(1)->textPlain(), QStringLiteral("hello"));
+    QVERIFY(r.pins().at(1)->isVisible());
+    QCOMPARE(r.pins().last()->contentKind(), PinWindow::ContentKind::Color);
+    QCOMPARE(r.pins().last()->color(), QColor(1, 2, 3));
+    // 旧版按贴图组保存的文件：各组贴图都恢复
+    QTemporaryDir legacy;
+    QFile lf(legacy.filePath(QStringLiteral("pins.json")));
+    QVERIFY(lf.open(QIODevice::WriteOnly));
+    lf.write(R"({"groups":[{"name":"Default","pins":[{"text":"a","x":0,"y":0}]},{"name":"Work","pins":[{"color":"#010203","x":9,"y":9}]}],"current":1})");
+    lf.close();
+    PinManager old(s, nullptr);
+    QCOMPARE(old.restoreState(legacy.path()), 2);
     // App 层：退出时保存，启动时恢复（可关闭）
     FakePlatformHandles h;
     QTemporaryDir data;

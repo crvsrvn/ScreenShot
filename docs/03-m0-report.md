@@ -1,6 +1,6 @@
 ---
 title: ScreenShot M0 技术验证报告
-meta: v1.0 · 2026-10-23 · 输入：[技术架构文档](02-architecture.md) 的 M0 验证清单
+meta: v1.1 · 2026-10-28 · 输入：[技术架构文档](02-architecture.md) 的 M0 验证清单 · v1.1 随需求 v0.6 删除脚本引擎，去掉 `R-17`
 toc: [2, 3]
 marks:
   实测: {kind: ok, title: 本机自动测试得到的数据}
@@ -32,7 +32,6 @@ Table: M0 验证清单结果 {.lead}
 | `R-12` | 双显卡笔记本捕获 | 测试机单显卡（RTX 4060） | 代码已按显卡分别创建设备 | :muted[延后]（无设备） |
 | `R-13` `R-14` `R-15` | macOS 三项 | 没有 Mac 设备 | macOS 平台层已编写、未编译 | :muted[延后] |
 | `R-16` | 测试替身覆盖多屏用例 | 合成两台 4K（150% / 100%）跨屏裁剪与真实算法逐像素一致 | 差异像素 0 | :ok[达标] :m[实测] |
-| `R-17` | Qt Qml 是否依赖 Qt Network | `Qt6Qml.dll` 导入表含 `Qt6Network.dll` | 维持 QuickJS-ng 方案 | :ok[有结论] :m[实测] |
 
 > [!warn] 锁屏导致的待测项
 > 整个端到端测试期间测试机处于锁屏状态（失败截图里是锁屏时钟）。`SendInput` 的鼠标、键盘到不了锁屏后面的窗口，DXGI 桌面复制也会因桌面切换失效。测试驱动现已用 WTS 会话状态检测锁屏并把 `R-02` `R-03` `HOTKEY` `R-09` 标为跳过。解锁后运行下面的命令即可补齐：
@@ -92,7 +91,6 @@ Table: 发现与处理 {.lead}
 | Windows OCR 把中文逐字当“单词”，行文本字与字之间带空格 | 平台层合并 CJK 字符之间的空格 | `REC-03` 的排版选项以此为基础 |
 | 锁屏时 `OpenInputDesktop` 仍能打开 Default 桌面（Windows 10 的锁屏画在上面），不能用来判断锁屏 | 改用 `WTSQuerySessionInformation` 的会话锁定标志 | 测试驱动能正确跳过真实输入场景 |
 | 从 Git Bash 启动程序时 `--test-pipe` 参数没有生效；pymanager 的 Python 打不开命名管道（`ERROR_PATH_NOT_FOUND`） | 端到端由 ctest / PowerShell 启动；临时诊断客户端用 PowerShell 的 `NamedPipeClientStream` | 只影响开发期的手工调试 |
-| `Qt6Qml.dll` 直接导入 `Qt6Network.dll` | 脚本引擎维持 QuickJS-ng 方案（`R-17`） | 不链接 Qt Qml |
 
 ### 关于内存口径 {#memory}
 

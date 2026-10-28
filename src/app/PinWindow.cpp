@@ -467,12 +467,6 @@ void PinWindow::saveDisplayed()
         m_output->saveWithDialog(displayedImage(), nullptr);
 }
 
-void PinWindow::quickSave()
-{
-    if (m_output)
-        m_output->quickSave(displayedImage());
-}
-
 void PinWindow::pin()
 {
     emit pinRequested(displayedImage(), physicalTopLeft() + QPoint(30, 30));
@@ -769,10 +763,6 @@ QColor PinWindow::shadowColor() const
         return QColor(160, 60, 220, 170);
     if (m_selected)
         return QColor(60, 190, 90, 180);
-    if (m_groupColor.isValid())
-        return QColor(m_groupColor.red(), m_groupColor.green(), m_groupColor.blue(), 170); // 组的颜色标签（GRP-02）
-    if (m_groupIndex > 0)
-        return QColor::fromHsv((m_groupIndex * 67) % 360, 200, 220, 170); // 每个分组一种色相
     if (!isActiveWindow())
         return QColor(0, 0, 0, 150);
     QColor accent = theme::accent(m_settings);
@@ -785,12 +775,6 @@ void PinWindow::setSelected(bool on)
     if (m_selected == on)
         return;
     m_selected = on;
-    update();
-}
-
-void PinWindow::setGroupIndex(int index)
-{
-    m_groupIndex = index;
     update();
 }
 
@@ -892,7 +876,6 @@ QMenu* PinWindow::buildMenu()
     menu->addAction(tr("Copy image"), this, &PinWindow::copyDisplayed);
     menu->addAction(tr("Copy original image"), this, &PinWindow::copyOriginal);
     menu->addAction(tr("Save as..."), this, &PinWindow::saveDisplayed);
-    menu->addAction(tr("Quick save"), this, &PinWindow::quickSave);
     menu->addSeparator();
     menu->addAction(m_annotating ? tr("Hide toolbar\tSpace") : tr("Annotate\tSpace"), this, &PinWindow::toggleToolbar);
     menu->addSeparator();
@@ -941,13 +924,6 @@ QMenu* PinWindow::buildMenu()
     menu->addAction(tr("Brighter\t8"), this, [this] { setBrightness(m_brightness + 10); });
     menu->addAction(tr("Darker\t7"), this, [this] { setBrightness(m_brightness - 10); });
     menu->addAction(tr("Reset image processing\t0"), this, &PinWindow::resetProcessing);
-    if (m_groupNames.size() > 1) {
-        QMenu* groups = menu->addMenu(tr("Move to group"));
-        for (int i = 0; i < m_groupNames.size(); ++i) {
-            QAction* a = groups->addAction(m_groupNames[i], this, [this, i] { emit moveToGroupRequested(this, i); });
-            a->setEnabled(i != m_groupIndex);
-        }
-    }
     menu->addSeparator();
     menu->addAction(tr("Close\tEsc"), this, [this] { closePin(true); });
     menu->addAction(tr("Destroy\tShift+Esc"), this, [this] { destroyPin(true); });
@@ -1447,7 +1423,6 @@ void PinWindow::keyPressEvent(QKeyEvent* event)
         if (action == QLatin1String("copy")) { copyDisplayed(); return; }
         if (action == QLatin1String("copyOriginal")) { copyOriginal(); return; }
         if (action == QLatin1String("save")) { saveDisplayed(); return; }
-        if (action == QLatin1String("quickSave")) { quickSave(); return; }
         if (action == QLatin1String("toolbar")) { toggleToolbar(); return; }
         if (action == QLatin1String("lock")) { setLocked(!m_locked); return; }
         if (action == QLatin1String("topmost")) { setTopmost(!m_topmost); return; }
@@ -1481,7 +1456,7 @@ void PinWindow::keyPressEvent(QKeyEvent* event)
             return;
         }
         break;
-    case Qt::Key_S: if (m_annotating && ctrl && shift) { quickSave(); return; } if (m_annotating && ctrl) { saveDisplayed(); return; } break;
+    case Qt::Key_S: if (m_annotating && ctrl) { saveDisplayed(); return; } break;
     case Qt::Key_Plus: case Qt::Key_Equal:
         if (ctrl && m_selected) emit groupAction(this, QStringLiteral("opacity"), opacityStep);
         else ctrl ? adjustOpacity(opacityStep) : zoomStep(1, QPointF(width() / 2.0, height() / 2.0));

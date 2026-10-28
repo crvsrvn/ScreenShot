@@ -14,16 +14,16 @@ class QComboBox;
 
 namespace ss {
 
-// 标注工具栏（ANN-01）：第一行是常用标注工具 + “更多” + 撤销 / 重做 + 输出按钮，
-// 其余工具和低频操作（清除、水印、打印、模式、比例、阴影 / 边框等）收在“更多”弹出面板里；
-// 第二行是当前工具的选项（颜色、笔宽、填充、形状、强度、字体），没有工具时隐藏。
+// 标注工具栏（ANN-01）：第一行是常用标注工具 + “更多” + 输出按钮（撤销 / 重做只用 Ctrl+Z / Ctrl+Y），
+// 其余工具和低频操作（清除、模式、比例、阴影 / 边框等）收在“更多”弹出面板里；
+// 第二行是当前工具的选项（颜色、笔宽、填充、形状、强度、字体），没有工具时隐藏。矩形 / 椭圆合为一个框选工具，在形状选项里切换。
 // 独立的置顶工具窗口，浮在覆盖窗口 / 贴图之上，不夺取焦点。宿主经 ToolbarTarget 接入。
 class CaptureToolbar : public QWidget {
     Q_OBJECT
 public:
     explicit CaptureToolbar(ToolbarTarget* target);
 
-    QToolButton* button(const QString& name) const; // 工具名或 copy / save / quickSave / pin / cancel / undo / redo / clear（含“更多”面板里的按钮）
+    QToolButton* button(const QString& name) const; // 工具名或 copy / save / pin / cancel / clear（含“更多”面板里的按钮）
     QWidget* optionsRow() const { return m_options; }
     void syncFromEditor();
     static QString toolName(AnnotationEditor::Tool tool);

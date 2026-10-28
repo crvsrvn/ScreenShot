@@ -1,8 +1,7 @@
-// REQ: OUT-04 OUT-07 OUT-12 OUT-13 OUT-14 PIN-12 PIN-14 PIN-23 PIN-28 PIN-34 PIN-35 PIN-37 PIN-40 PIN-43 PIN-56 PIN-61 PIN-62 GRP-02 GRP-03
-// M6 输出 / 贴图 / 分组 P2：PDF 保存、编码预览、保存后复制、元数据、外部命令、资源管理器选中文件、重复贴图策略、缩放细节、亮度、
-// 锁定、标题、透明背景、拖出内容、手势缩放、所有虚拟桌面、独显、托盘批量、组管理器、移到组与计数
+// REQ: OUT-07 OUT-12 OUT-13 PIN-12 PIN-14 PIN-23 PIN-28 PIN-34 PIN-35 PIN-37 PIN-40 PIN-43 PIN-56 PIN-61 PIN-62
+// M6 输出 / 贴图 P2：编码预览、保存后复制、元数据、资源管理器选中文件、重复贴图策略、缩放细节、亮度、
+// 锁定、标题、透明背景、拖出内容、手势缩放、所有虚拟桌面、独显、托盘批量
 #include "app/EncodePreviewDialog.h"
-#include "app/GroupDialog.h"
 #include "app/OutputActions.h"
 #include "app/PinManager.h"
 #include "app/PinWindow.h"
@@ -51,9 +50,8 @@ class TestM6D : public QObject {
     Q_OBJECT
 private slots:
     void initTestCase() { PinWindow::confirmHandler = [](QWidget*, const QString&) { return true; }; }
-    void pdfSaveWithMarginsAndPages();
     void encodePreviewEstimates();
-    void copyAfterSaveMetadataAndPostCommand();
+    void copyAfterSaveAndMetadata();
     void explorerSelectionAndAllDesktopsDoNotCrash();
     void duplicateBehavior();
     void zoomAnchorFineStepSmooth();
@@ -62,44 +60,7 @@ private slots:
     void titleAndAlphaBackground();
     void dragMimeAndGesture();
     void soloAndBatch();
-    void groupManager();
-    void movePinToGroupAndCounts();
 };
-
-void TestM6D::pdfSaveWithMarginsAndPages()
-{
-    Settings s;
-    OutputActions out(s);
-    QTemporaryDir dir;
-    QVERIFY(OutputActions::saveFormats().contains(QStringLiteral("pdf")));
-    const QString one = dir.filePath(QStringLiteral("one.pdf"));
-    QVERIFY(out.writeImage(testImage(400, 300), one, QStringLiteral("pdf")));
-    QFile f(one);
-    QVERIFY(f.open(QIODevice::ReadOnly));
-    const QByteArray bytes = f.readAll();
-    QVERIFY(bytes.startsWith("%PDF"));
-    QCOMPARE(bytes.count("/Type /Page\n") + bytes.count("/Type /Page\r"), 1);
-    // 超长图分页
-    const QString tall = dir.filePath(QStringLiteral("tall.pdf"));
-    s.setValue(QStringLiteral("output.pdfPaginate"), true);
-    QVERIFY(out.writeImage(testImage(400, 6000), tall, QStringLiteral("pdf")));
-    QFile t(tall);
-    QVERIFY(t.open(QIODevice::ReadOnly));
-    const QByteArray tb = t.readAll();
-    QVERIFY(tb.count("/Type /Page\n") + tb.count("/Type /Page\r") >= 3);
-    // 不分页：一页
-    s.setValue(QStringLiteral("output.pdfPaginate"), false);
-    const QString single = dir.filePath(QStringLiteral("single.pdf"));
-    QVERIFY(out.writeImage(testImage(400, 6000), single, QStringLiteral("pdf")));
-    QFile sf(single);
-    QVERIFY(sf.open(QIODevice::ReadOnly));
-    const QByteArray sb = sf.readAll();
-    QCOMPARE(sb.count("/Type /Page\n") + sb.count("/Type /Page\r"), 1);
-    // 对话框保存 pdf 不改默认格式
-    out.setDialogOverride(dir.filePath(QStringLiteral("dlg.pdf")));
-    QVERIFY(!out.saveWithDialog(testImage(), nullptr).isEmpty());
-    QCOMPARE(s.stringValue(QStringLiteral("output.saveFormat")), QStringLiteral("png"));
-}
 
 void TestM6D::encodePreviewEstimates()
 {
@@ -124,15 +85,18 @@ void TestM6D::encodePreviewEstimates()
     QCOMPARE(dialog.estimatedBytes(), png);
 }
 
-void TestM6D::copyAfterSaveMetadataAndPostCommand()
+void TestM6D::copyAfterSaveAndMetadata()
 {
     Settings s;
     QTemporaryDir dir;
-    s.setValue(QStringLiteral("output.quickSaveDir"), dir.path());
     OutputActions out(s);
     out.setSource(QStringLiteral("My Window"), QStringLiteral("app.exe"));
+    auto save = [&](const QImage& image, const QString& name) {
+        out.setDialogOverride(dir.filePath(name));
+        return out.saveWithDialog(image, nullptr);
+    };
     // 元数据
-    const QString path = out.quickSave(testImage());
+    const QString path = save(testImage(), QStringLiteral("a.png"));
     QVERIFY(!path.isEmpty());
     QImageReader reader(path);
     QVERIFY(reader.textKeys().contains(QStringLiteral("Source")));
@@ -140,23 +104,13 @@ void TestM6D::copyAfterSaveMetadataAndPostCommand()
     QCOMPARE(reader.text(QStringLiteral("Process")), QStringLiteral("app.exe"));
     QVERIFY(reader.textKeys().contains(QStringLiteral("CreationTime")));
     s.setValue(QStringLiteral("output.metadata"), false);
-    const QString plain = out.quickSave(testImage());
+    const QString plain = save(testImage(), QStringLiteral("b.png"));
     QVERIFY(!QImageReader(plain).textKeys().contains(QStringLiteral("Source")));
     // 保存后复制
     QApplication::clipboard()->clear();
     s.setValue(QStringLiteral("output.copyAfterSave"), true);
-    out.quickSave(testImage(30, 20));
+    save(testImage(30, 20), QStringLiteral("c.png"));
     QCOMPARE(QApplication::clipboard()->image().size(), QSize(30, 20));
-    // 外部命令：把路径写进标记文件
-#if defined(Q_OS_WIN)
-    const QString marker = QDir::toNativeSeparators(dir.filePath(QStringLiteral("marker.txt")));
-    s.setValue(QStringLiteral("output.postCommand"), QStringLiteral("echo {path} > \"%1\"").arg(marker));
-    const QString saved = out.quickSave(testImage());
-    QTRY_VERIFY(QFile::exists(marker));
-    QFile mf(marker);
-    QVERIFY(mf.open(QIODevice::ReadOnly));
-    QVERIFY(QString::fromLocal8Bit(mf.readAll()).contains(QFileInfo(saved).fileName()));
-#endif
 }
 
 void TestM6D::explorerSelectionAndAllDesktopsDoNotCrash()
@@ -414,60 +368,6 @@ void TestM6D::soloAndBatch()
     m.closeAll();
     QApplication::processEvents();
     QCOMPARE(m.pins().size(), 0);
-}
-
-void TestM6D::groupManager()
-{
-    Settings s;
-    PinManager m(s, nullptr);
-    PinWindow* a = m.pinImage(testImage(), QPoint(0, 0));
-    m.newGroup(QStringLiteral("Work"));
-    PinWindow* w = m.pinImage(testImage(), QPoint(0, 0));
-    m.newGroup(QStringLiteral("Play"));
-    QCOMPARE(m.groupNames(), (QStringList{m.groupNames().first(), QStringLiteral("Work"), QStringLiteral("Play")}));
-    QVERIFY(m.renameGroup(2, QStringLiteral("Games")));
-    QCOMPARE(m.groupNames()[2], QStringLiteral("Games"));
-    m.setGroupColor(1, QColor(255, 0, 0));
-    QCOMPARE(m.groupColor(1), QColor(255, 0, 0));
-    QCOMPARE(w->shadowColor().rgb(), QColor(255, 0, 0).rgb());
-    // 排序
-    QVERIFY(m.moveGroup(2, 0));
-    QCOMPARE(m.groupNames()[0], QStringLiteral("Games"));
-    QCOMPARE(m.currentGroupIndex(), 0);
-    QCOMPARE(w->groupIndex(), 2);
-    // 删除 Work，贴图迁到 Default（索引 1）
-    QVERIFY(m.removeGroup(2, 1));
-    QCOMPARE(m.groupNames().size(), 2);
-    QCOMPARE(m.groupIndexOf(w), 1);
-    QCOMPARE(m.groupIndexOf(a), 1);
-    QVERIFY(!m.removeGroup(0, 0));
-    // 对话框
-    GroupDialog dialog(m);
-    QCOMPARE(dialog.findChild<QListWidget*>()->count(), 2);
-    dialog.moveCurrent(1);
-    QCOMPARE(m.groupNames()[1], QStringLiteral("Games"));
-}
-
-void TestM6D::movePinToGroupAndCounts()
-{
-    Settings s;
-    PinManager m(s, nullptr);
-    PinWindow* a = m.pinImage(testImage(), QPoint(0, 0));
-    PinWindow* b = m.pinImage(testImage(), QPoint(300, 0));
-    m.newGroup(QStringLiteral("Work"));
-    m.switchToGroup(0);
-    b->hide();
-    QCOMPARE(m.groupCounts(0), std::make_pair(1, 2));
-    QCOMPARE(m.groupCounts(1), std::make_pair(0, 0));
-    emit a->moveToGroupRequested(a, 1); // 右键菜单“移到组”
-    QCOMPARE(m.groupIndexOf(a), 1);
-    QVERIFY(!a->isVisible()); // 目标组不是当前组
-    QCOMPARE(m.groupCounts(0), std::make_pair(0, 1));
-    QCOMPARE(m.groupCounts(1), std::make_pair(0, 1));
-    m.switchToGroup(1);
-    QVERIFY(a->isVisible());
-    QCOMPARE(a->groupIndex(), 1);
-    QVERIFY(!m.movePinToGroup(a, 1));
 }
 
 QTEST_MAIN(TestM6D)

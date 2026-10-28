@@ -52,8 +52,6 @@ public:
     // 导出 / 导入全部（CFG-03）
     QVariantMap toMap() const;
     void fromMap(const QVariantMap& map);
-    bool exportTo(const QString& path) const;
-    bool importFrom(const QString& path);
 
 signals:
     void changed(const QString& key, const QVariant& value);

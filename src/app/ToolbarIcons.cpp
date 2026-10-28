@@ -102,23 +102,6 @@ void drawMore(QPainter& p, const QColor& c)
     for (int i = 0; i < 3; ++i)
         p.drawEllipse(QPointF(5 + i * 5, 10), 1.6, 1.6);
 }
-void drawUndo(QPainter& p, const QColor&)
-{
-    QPainterPath path(QPointF(5, 8));
-    path.cubicTo(QPointF(8, 4), QPointF(15, 5), QPointF(16, 11));
-    path.cubicTo(QPointF(16, 14), QPointF(13, 16), QPointF(9, 16));
-    p.drawPath(path);
-    p.drawLine(QPointF(5, 8), QPointF(5, 3));
-    p.drawLine(QPointF(5, 8), QPointF(10, 8));
-}
-void drawRedo(QPainter& p, const QColor& c)
-{
-    p.save();
-    p.translate(20, 0);
-    p.scale(-1, 1);
-    drawUndo(p, c);
-    p.restore();
-}
 void drawClear(QPainter& p, const QColor&)
 {
     p.drawLine(QPointF(4, 6), QPointF(16, 6));
@@ -126,15 +109,6 @@ void drawClear(QPainter& p, const QColor&)
     p.drawLine(QPointF(6, 6), QPointF(7, 17));
     p.drawLine(QPointF(14, 6), QPointF(13, 17));
     p.drawLine(QPointF(7, 17), QPointF(13, 17));
-}
-void drawWatermark(QPainter& p, const QColor& c)
-{
-    QColor faint = c;
-    faint.setAlphaF(0.4f);
-    p.setPen(QPen(faint, 2));
-    p.drawRect(QRectF(3, 3, 14, 14));
-    p.setPen(QPen(c, 2));
-    p.drawLine(QPointF(5, 15), QPointF(15, 5));
 }
 void drawCopy(QPainter& p, const QColor&)
 {
@@ -147,24 +121,11 @@ void drawSave(QPainter& p, const QColor& c)
     p.fillRect(QRectF(6, 3, 8, 5), c);
     p.drawRect(QRectF(6, 11, 8, 6));
 }
-void drawQuickSave(QPainter& p, const QColor& c)
-{
-    drawSave(p, c);
-    p.setPen(QPen(theme::colors().accentText, 2));
-    p.drawLine(QPointF(15, 12), QPointF(12, 17));
-    p.drawLine(QPointF(12, 17), QPointF(18, 15));
-}
 void drawPin(QPainter& p, const QColor& c)
 {
     p.setBrush(c);
     p.drawEllipse(QPointF(10, 7), 4, 4);
     p.drawLine(QPointF(10, 11), QPointF(10, 18));
-}
-void drawPrint(QPainter& p, const QColor&)
-{
-    p.drawRect(QRectF(3, 8, 14, 7));
-    p.drawRect(QRectF(6, 3, 8, 5));
-    p.drawRect(QRectF(6, 13, 8, 5));
 }
 void drawCodes(QPainter& p, const QColor& c)
 {
@@ -241,8 +202,8 @@ const Entry kEntries[] = {
     {"rect", drawRect}, {"ellipse", drawEllipse}, {"line", drawLine}, {"arrow", drawArrow}, {"pencil", drawPencil},
     {"highlighter", drawHighlighter}, {"mosaic", drawMosaic}, {"blur", drawBlur}, {"text", drawText}, {"eraser", drawEraser},
     {"step", drawStep}, {"magnifier", drawMagnifier}, {"spotlight", drawSpotlight}, {"smartErase", drawSmartErase},
-    {"more", drawMore}, {"recent", drawRecent}, {"undo", drawUndo}, {"redo", drawRedo}, {"clear", drawClear}, {"watermark", drawWatermark},
-    {"copy", drawCopy}, {"save", drawSave}, {"quickSave", drawQuickSave}, {"pin", drawPin}, {"print", drawPrint}, {"codes", drawCodes},
+    {"more", drawMore}, {"recent", drawRecent}, {"clear", drawClear},
+    {"copy", drawCopy}, {"save", drawSave}, {"pin", drawPin}, {"codes", drawCodes},
     {"mode", drawModeCapture}, {"modeStatic", drawModeCapture}, {"modeScroll", drawScroll}, {"modeRecord", drawRecord},
     {"scroll", drawScroll}, {"ratio", drawRatio}, {"shadow", drawShadow}, {"border", drawBorder}, {"cancel", drawCancel},
 };

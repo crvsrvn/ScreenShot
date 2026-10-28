@@ -35,13 +35,10 @@ qt_add_library(screenshot_core STATIC
     stitch/Stitcher.h stitch/Stitcher.cpp
     code/CodeDecoder.h code/CodeDecoder.cpp
     fx/HdrToneMap.h fx/HdrToneMap.cpp
-    config/Actions.h config/Actions.cpp
     config/Shortcuts.h config/Shortcuts.cpp
     ocr/OcrFormat.h ocr/OcrFormat.cpp
     ocr/TableExtract.h ocr/TableExtract.cpp
     output/XlsxWriter.h output/XlsxWriter.cpp
-    input/Gestures.h input/Gestures.cpp
-    script/ScriptEngine.h script/ScriptEngine.cpp
     video/Recording.h video/Recording.cpp
     video/GifEncoder.h video/GifEncoder.cpp
     video/WebpAnimEncoder.h video/WebpAnimEncoder.cpp
@@ -49,4 +46,4 @@ qt_add_library(screenshot_core STATIC
     video/Playback.h video/Playback.cpp
 )
 target_include_directories(screenshot_core PUBLIC ${SCREENSHOT_ROOT}/src)
-target_link_libraries(screenshot_core PUBLIC Qt6::Core Qt6::Gui Qt6::Concurrent PRIVATE ZXing::ZXing qjs webp libwebpmux)
+target_link_libraries(screenshot_core PUBLIC Qt6::Core Qt6::Gui Qt6::Concurrent PRIVATE ZXing::ZXing webp libwebpmux)

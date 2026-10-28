@@ -1,9 +1,7 @@
-// REQ: REC-02 REC-03 REC-04 REC-07 REC-08 ACT-07 ACT-08 ACT-09 ACT-14 ACT-16 CFG-03 CFG-06 CFG-08
-// M6 识别 / 动作 / 配置 P2：OCR 语言与模式、结果排版、图像贴图可选文字、工业条码、表格导出、热键忽略前台程序、单键热键、
-// 应用内快捷键、切换窗口置顶、粘贴为图像 / 纯文本、配置导入导出、高级配置、打开配置目录
+// REQ: REC-02 REC-03 REC-04 REC-07 REC-08 ACT-09 CFG-06
+// M6 识别 / 配置 P2：OCR 语言与模式、结果排版、图像贴图可选文字、工业条码、表格导出、应用内快捷键、高级配置
 #include "app/App.h"
 #include "app/CaptureSession.h"
-#include "app/Notification.h"
 #include "app/OutputActions.h"
 #include "app/PinManager.h"
 #include "app/PinWindow.h"
@@ -30,11 +28,6 @@
 #include <QListWidget>
 #include <QTemporaryDir>
 #include <QTest>
-
-#if defined(Q_OS_WIN)
-#include "platform/windows/WinWindowTools.h"
-#include <windows.h>
-#endif
 
 using namespace ss;
 using namespace ss::testing;
@@ -79,14 +72,8 @@ private slots:
     void imagePinSelectableText();
     void industrialBarcodes();
     void tableExtractAndXlsx();
-    void hotkeyIgnoredForForegroundProcess();
-    void singleKeyHotkeyPolicy();
     void inAppShortcutsRemap();
-    void toggleWindowTopmost();
-    void pasteAsImageAndText();
-    void settingsImportExport();
     void hiddenAdvancedSettings();
-    void openSettingsFolder();
 };
 
 void TestM6E::ocrOptionsApplied()
@@ -214,35 +201,6 @@ void TestM6E::tableExtractAndXlsx()
     QVERIFY(QFileInfo(path).size() > 500);
 }
 
-void TestM6E::hotkeyIgnoredForForegroundProcess()
-{
-    FakePlatformHandles h;
-    Settings s;
-    s.setValue(QStringLiteral("hotkey.ignoreProcesses"), QStringLiteral("game.exe, other.exe"));
-    App app(makeFakePlatform(&h), s);
-    h.windowDetector->setActiveWindow(WindowInfo{1, QStringLiteral("Game"), QStringLiteral("Game.exe"), QRect(0, 0, 100, 100), 0});
-    h.hotkey->trigger(App::HotkeyCapture);
-    QVERIFY(!app.session().isActive());
-    h.windowDetector->setActiveWindow(WindowInfo{2, QStringLiteral("Editor"), QStringLiteral("editor.exe"), QRect(0, 0, 100, 100), 0});
-    h.hotkey->trigger(App::HotkeyCapture);
-    QVERIFY(app.session().isActive());
-    app.session().cancel();
-}
-
-void TestM6E::singleKeyHotkeyPolicy()
-{
-    FakePlatformHandles h;
-    Settings s;
-    App app(makeFakePlatform(&h), s);
-    s.setValue(QStringLiteral("hotkey.capture"), QStringLiteral("A")); // 单键：默认拒绝
-    QVERIFY(!h.hotkey->isRegistered(App::HotkeyCapture));
-    s.setValue(QStringLiteral("hotkey.capture"), QStringLiteral("F9")); // 功能键总是允许
-    QVERIFY(h.hotkey->isRegistered(App::HotkeyCapture));
-    s.setValue(QStringLiteral("hotkey.capture"), QStringLiteral("A"));
-    s.setValue(QStringLiteral("hotkey.allowSingleKey"), true);
-    QVERIFY(h.hotkey->isRegistered(App::HotkeyCapture));
-}
-
 void TestM6E::inAppShortcutsRemap()
 {
     ShortcutMap defaults;
@@ -250,14 +208,12 @@ void TestM6E::inAppShortcutsRemap()
     QCOMPARE(defaults.actionFor(QStringLiteral("pin"), Qt::Key_W, Qt::ControlModifier), QStringLiteral("close"));
     QVERIFY(defaults.actionFor(QStringLiteral("pin"), Qt::Key_W, Qt::NoModifier).isEmpty());
     ShortcutMap custom;
-    custom.set(QStringLiteral("capture"), QStringLiteral("quickSave"), QKeySequence(QStringLiteral("Ctrl+K")));
+    custom.set(QStringLiteral("capture"), QStringLiteral("copy"), QKeySequence(QStringLiteral("Ctrl+K")));
     const ShortcutMap reloaded(custom.toJson());
-    QCOMPARE(reloaded.actionFor(QStringLiteral("capture"), Qt::Key_K, Qt::ControlModifier), QStringLiteral("quickSave"));
-    // 截图：Ctrl+K 快速保存
+    QCOMPARE(reloaded.actionFor(QStringLiteral("capture"), Qt::Key_K, Qt::ControlModifier), QStringLiteral("copy"));
+    // 截图：Ctrl+K 复制
     FakePlatformHandles h;
     Settings s;
-    QTemporaryDir dir;
-    s.setValue(QStringLiteral("output.quickSaveDir"), dir.path());
     s.setValue(QStringLiteral("shortcuts.map"), reloaded.toJson());
     App app(makeFakePlatform(&h), s);
     QSignalSpy done(&app.output(), &OutputActions::done);
@@ -265,7 +221,7 @@ void TestM6E::inAppShortcutsRemap()
     app.session().setSelection(QRect(0, 0, 30, 30));
     key(app.session(), QStringLiteral("Ctrl+K"));
     QCOMPARE(done.count(), 1);
-    QCOMPARE(done.at(0).at(0).value<OutputActions::Kind>(), OutputActions::Kind::QuickSave);
+    QCOMPARE(done.at(0).at(0).value<OutputActions::Kind>(), OutputActions::Kind::Copy);
     // 贴图：把“锁定”改到 Ctrl+Shift+L；图像贴图的灰度改到 G
     ShortcutMap pinMap;
     pinMap.set(QStringLiteral("pin"), QStringLiteral("lock"), QKeySequence(QStringLiteral("Ctrl+Shift+L")));
@@ -280,70 +236,10 @@ void TestM6E::inAppShortcutsRemap()
     QVERIFY(pin->grayscale());
 }
 
-void TestM6E::toggleWindowTopmost()
-{
-#if defined(Q_OS_WIN)
-    if (QGuiApplication::platformName() == QLatin1String("offscreen"))
-        QSKIP("needs real windows");
-    QWidget w;
-    w.resize(200, 200);
-    w.show();
-    QVERIFY(QTest::qWaitForWindowExposed(&w));
-    void* hwnd = reinterpret_cast<void*>(w.winId());
-    QVERIFY(!win::isWindowTopmost(hwnd));
-    // offscreen 平台没有真实窗口位置：直接对句柄切换两次
-    SetWindowPos(static_cast<HWND>(hwnd), HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    QVERIFY(win::isWindowTopmost(hwnd));
-    SetWindowPos(static_cast<HWND>(hwnd), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    QVERIFY(!win::isWindowTopmost(hwnd));
-    win::toggleWindowTopmostAt(QPoint(-100000, -100000)); // 没有窗口：不崩溃
-#else
-    QSKIP("Windows only");
-#endif
-}
-
-void TestM6E::pasteAsImageAndText()
-{
-    FakePlatformHandles h;
-    Settings s;
-    App app(makeFakePlatform(&h), s);
-    auto* mime = new QMimeData;
-    mime->setText(QStringLiteral("plain words"));
-    mime->setHtml(QStringLiteral("<b>plain</b> words"));
-    QApplication::clipboard()->setMimeData(mime);
-    app.pasteAs(QStringLiteral("text"));
-    QVERIFY(!QApplication::clipboard()->mimeData()->hasHtml());
-    QCOMPARE(QApplication::clipboard()->text(), QStringLiteral("plain words"));
-    QCOMPARE(h.input->keyCombos().size(), 1);
-    QCOMPARE(h.input->keyCombos().first().second, Qt::Key_V);
-    app.pasteAs(QStringLiteral("image"));
-    QVERIFY(!QApplication::clipboard()->image().isNull()); // 文本渲染成图像
-    QCOMPARE(h.input->keyCombos().size(), 2);
-    app.runCommand({QStringLiteral("paste-as"), QStringLiteral("text")});
-    QCOMPARE(h.input->keyCombos().size(), 2); // 剪贴板是图像、没有文本：不粘贴
-}
-
-void TestM6E::settingsImportExport()
-{
-    Settings a;
-    a.setValue(QStringLiteral("pin.zoomStep"), 33);
-    a.setValue(QStringLiteral("general.language"), QStringLiteral("en"));
-    QTemporaryDir dir;
-    const QString path = dir.filePath(QStringLiteral("export.json"));
-    QVERIFY(a.exportTo(path));
-    Settings b;
-    QCOMPARE(b.intValue(QStringLiteral("pin.zoomStep")), 10);
-    QVERIFY(b.importFrom(path));
-    QCOMPARE(b.intValue(QStringLiteral("pin.zoomStep")), 33);
-    QCOMPARE(b.stringValue(QStringLiteral("general.language")), QStringLiteral("en"));
-    QVERIFY(!b.importFrom(dir.filePath(QStringLiteral("missing.json"))));
-}
-
 void TestM6E::hiddenAdvancedSettings()
 {
     Settings s;
     QVERIFY(s.boolValue(QStringLiteral("advanced.animations")));
-    QCOMPARE(s.intValue(QStringLiteral("advanced.notificationMs")), 5000);
     QVERIFY(settingSpec(QStringLiteral("advanced.elementTimeoutMs")));
     PreferencesDialog dialog(s);
     auto* nav = dialog.findChild<QListWidget*>(QStringLiteral("nav"));
@@ -353,26 +249,11 @@ void TestM6E::hiddenAdvancedSettings()
     // 配置文件里仍可改
     QTemporaryDir dir;
     const QString path = dir.filePath(QStringLiteral("s.json"));
-    s.setValue(QStringLiteral("advanced.notificationMs"), 900);
+    s.setValue(QStringLiteral("advanced.elementTimeoutMs"), 900);
     QVERIFY(s.save(path));
     Settings t;
     QVERIFY(t.load(path));
-    QCOMPARE(t.intValue(QStringLiteral("advanced.notificationMs")), 900);
-}
-
-void TestM6E::openSettingsFolder()
-{
-    QString revealed;
-    NotificationWidget::revealHandler = [&revealed](const QString& p) { revealed = p; };
-    FakePlatformHandles h;
-    Settings s;
-    QTemporaryDir dir;
-    s.setFilePath(dir.filePath(QStringLiteral("settings.json")));
-    App app(makeFakePlatform(&h), s);
-    app.openSettingsFolder();
-    QCOMPARE(revealed, dir.filePath(QStringLiteral("settings.json")));
-    app.runCommand({QStringLiteral("prefs-dir")});
-    QCOMPARE(revealed, dir.filePath(QStringLiteral("settings.json")));
+    QCOMPARE(t.intValue(QStringLiteral("advanced.elementTimeoutMs")), 900);
 }
 
 QTEST_MAIN(TestM6E)

@@ -3,8 +3,6 @@
 #include "platform/windows/WinPipeServer.h"
 #include "platform/windows/WinSystem.h"
 
-#include "core/config/Actions.h"
-
 #include <QMetaObject>
 #include <condition_variable>
 
@@ -19,7 +17,32 @@ struct CommandServer::Pending {
 
 namespace {
 constexpr int kWaitTimeoutMs = 10 * 60 * 1000;
+
+// 命令行切分：支持双引号包住含空格的参数
+QStringList splitCommandLine(const QString& line)
+{
+    QStringList out;
+    QString cur;
+    bool quoted = false, has = false;
+    for (const QChar ch : line) {
+        if (ch == QLatin1Char('"')) {
+            quoted = !quoted;
+            has = true;
+        } else if (ch.isSpace() && !quoted) {
+            if (has)
+                out.append(cur);
+            cur.clear();
+            has = false;
+        } else {
+            cur.append(ch);
+            has = true;
+        }
+    }
+    if (has)
+        out.append(cur);
+    return out;
 }
+} // namespace
 
 CommandServer::CommandServer(const QString& channelName, QObject* parent)
     : QObject(parent)

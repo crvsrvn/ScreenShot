@@ -1,10 +1,9 @@
-// REQ: GEN-06 GEN-08 GEN-10 CAP-07 CAP-14 CAP-19 CAP-20 CAP-22 CAP-25 CAP-42 CAP-43 CAP-51 CAP-71
-// M6 通用 / 截图 P2：托盘图标样式、悬浮工具栏、进程优先级、模式轮换、检测排除列表、尺寸单位、外观、放大镜外观、辅助线、
-// 取消也进历史、历史目录、透明白板、滚动区域控制
+// REQ: GEN-10 CAP-07 CAP-14 CAP-19 CAP-20 CAP-22 CAP-25 CAP-42 CAP-43 CAP-71
+// M6 通用 / 截图 P2：进程优先级、模式轮换、检测排除列表、尺寸单位、外观、放大镜外观、辅助线、
+// 取消也进历史、历史目录、滚动区域控制
 #include "app/App.h"
 #include "app/CaptureSession.h"
 #include "app/CaptureToolbar.h"
-#include "app/FloatingBar.h"
 #include "app/OverlayWindow.h"
 #include "app/PinWindow.h"
 #include "app/ScrollCaptureSession.h"
@@ -62,8 +61,6 @@ int countColor(const QImage& img, QRgb color)
 class TestM6B : public QObject {
     Q_OBJECT
 private slots:
-    void trayIconStyleAndHidden();
-    void floatingBarButtonsAndDrop();
     void processPriority();
     void modeCycling();
     void detectExcludeAndConservative();
@@ -73,56 +70,8 @@ private slots:
     void guides();
     void cancelledCapturesInHistory();
     void historyDirectory();
-    void transparentBoard();
     void scrollRegionControl();
 };
-
-void TestM6B::trayIconStyleAndHidden()
-{
-    FakePlatformHandles h;
-    Settings s;
-    App app(makeFakePlatform(&h), s);
-    if (!app.trayIcon())
-        QSKIP("no system tray on this platform");
-    s.setValue(QStringLiteral("general.trayIconStyle"), QStringLiteral("custom"));
-    s.setValue(QStringLiteral("general.trayIconColor"), QStringLiteral("#ff00ff00"));
-    const QImage icon = app.trayIcon()->icon().pixmap(64, 64).toImage();
-    QCOMPARE(icon.pixel(32, 32), qRgb(0, 255, 0));
-    s.setValue(QStringLiteral("general.trayIconStyle"), QStringLiteral("dark"));
-    QVERIFY(app.trayIcon()->icon().pixmap(64, 64).toImage().pixel(32, 32) != qRgb(0, 255, 0));
-    s.setValue(QStringLiteral("general.trayIconHidden"), true);
-    QVERIFY(!app.trayIcon()->isVisible());
-    s.setValue(QStringLiteral("general.trayIconHidden"), false);
-    QVERIFY(app.trayIcon()->isVisible());
-}
-
-void TestM6B::floatingBarButtonsAndDrop()
-{
-    FakePlatformHandles h;
-    Settings s;
-    App app(makeFakePlatform(&h), s);
-    QVERIFY(!app.floatingBar());
-    s.setValue(QStringLiteral("general.floatingBar"), true);
-    QVERIFY(app.floatingBar());
-    QVERIFY(app.floatingBar()->isVisible());
-    app.floatingBar()->findChild<QToolButton*>(QStringLiteral("capture"))->click();
-    QVERIFY(app.session().isActive());
-    app.session().cancel();
-    // 拖入文本 → 贴图
-    QMimeData mime;
-    mime.setText(QStringLiteral("dropped"));
-    emit app.floatingBar()->dropped(&mime, QPoint(100, 100));
-    QCOMPARE(app.pins().size(), 1);
-    QCOMPARE(app.pins().first()->textPlain(), QStringLiteral("dropped"));
-    // 位置记忆
-    app.floatingBar()->move(123, 45);
-    emit app.floatingBar()->moved(QPoint(123, 45));
-    QCOMPARE(s.stringValue(QStringLiteral("general.floatingBarPos")), QStringLiteral("123,45"));
-    s.setValue(QStringLiteral("general.floatingBar"), false);
-    QVERIFY(!app.floatingBar());
-    s.setValue(QStringLiteral("general.floatingBar"), true);
-    QCOMPARE(app.floatingBar()->pos(), QPoint(123, 45));
-}
 
 void TestM6B::processPriority()
 {
@@ -408,36 +357,6 @@ void TestM6B::historyDirectory()
     App app2(makeFakePlatform(&h), s);
     QCOMPARE(app2.history().size(), 2);
     QCOMPARE(app2.history().at(0).image.size(), QSize(22, 20)); // 最新的在前
-}
-
-void TestM6B::transparentBoard()
-{
-    FakePlatformHandles h;
-    Settings s;
-    App app(makeFakePlatform(&h), s);
-    CaptureSession& session = app.session();
-    QVERIFY(session.startTransparentBoard(false));
-    QVERIFY(session.transparentBoard());
-    QCOMPARE(session.state(), CaptureSession::State::Annotating);
-    for (auto* w : session.overlays())
-        QVERIFY(w->transparentMode());
-    session.editor().setColor(Qt::red);
-    session.editor().setFilled(true);
-    session.setTool(AnnotationEditor::Tool::Rect);
-    session.pressAt(QPoint(100, 100), Qt::LeftButton);
-    session.dragTo(QPoint(150, 150));
-    session.releaseAt(QPoint(150, 150), Qt::LeftButton);
-    QCOMPARE(session.editor().document().count(), 1);
-    QSignalSpy captured(&session, &CaptureSession::captured);
-    session.accept();
-    QCOMPARE(captured.count(), 1);
-    const QImage out = captured.at(0).at(0).value<QImage>();
-    // 实时桌面（合成画面）在底，标注在上
-    QCOMPARE(out.pixel(120, 120), qRgb(255, 0, 0));
-    QCOMPARE(out.pixel(10, 10), FakeScreenCapture::patternPixel(0, 10, 10));
-    QVERIFY(!session.transparentBoard());
-    for (auto* w : session.overlays())
-        QVERIFY(!w->transparentMode());
 }
 
 void TestM6B::scrollRegionControl()

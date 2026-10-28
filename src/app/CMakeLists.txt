@@ -11,19 +11,13 @@ set(APPLIB_SOURCES
     Theme.h Theme.cpp
     ThemeStyle.h ThemeStyle.cpp
     WindowChrome.h WindowChrome.cpp
-    Notification.h Notification.cpp
-    FloatingBar.h FloatingBar.cpp
-    GroupDialog.h GroupDialog.cpp
-    GestureOverlay.h GestureOverlay.cpp
     EncodePreviewDialog.h EncodePreviewDialog.cpp
     ResultDialogs.h ResultDialogs.cpp
-    ActionsDialog.h ActionsDialog.cpp
     PinManager.h PinManager.cpp
     ScrollCaptureSession.h ScrollCaptureSession.cpp
     RecordSession.h RecordSession.cpp
     RecordWidgets.h RecordWidgets.cpp
     RecordPlaybackDialog.h RecordPlaybackDialog.cpp
-    CustomCaptureDialog.h CustomCaptureDialog.cpp
     OutputActions.h OutputActions.cpp
     PreferencesDialog.h PreferencesDialog.cpp
     PreferencesWidgets.h PreferencesWidgets.cpp
@@ -34,7 +28,7 @@ if(SCREENSHOT_TEST_BUILD)
 endif()
 
 qt_add_library(screenshot_applib STATIC ${APPLIB_SOURCES})
-target_link_libraries(screenshot_applib PUBLIC screenshot_core Qt6::Widgets Qt6::PrintSupport)
+target_link_libraries(screenshot_applib PUBLIC screenshot_core Qt6::Widgets)
 if(WIN32)
     target_link_libraries(screenshot_applib PUBLIC platform_windows)
 elseif(APPLE)
@@ -47,6 +41,12 @@ endif()
 
 qt_add_executable(screenshot_app WIN32 main.cpp)
 target_link_libraries(screenshot_app PRIVATE screenshot_applib)
+
+# 程序图标：exe 资源里的给系统用，qrc 里的作为窗口图标（标题栏、Alt+Tab）
+if(WIN32)
+    target_sources(screenshot_app PRIVATE app.rc)
+endif()
+qt_add_resources(screenshot_app "app_icon" PREFIX "/" FILES icons/app.ico)
 
 # 翻译（GEN-13）：.ts 在仓库里，.qm 构建时生成到 bin/translations
 qt_add_translations(screenshot_app

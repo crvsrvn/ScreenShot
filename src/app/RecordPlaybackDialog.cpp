@@ -139,9 +139,6 @@ void RecordPlaybackDialog::buildUi()
     auto* save = new QPushButton(tr("Save..."), this);
     connect(save, &QPushButton::clicked, this, &RecordPlaybackDialog::save);
     options->addWidget(save);
-    auto* quick = new QPushButton(tr("Quick save"), this);
-    connect(quick, &QPushButton::clicked, this, &RecordPlaybackDialog::quickSave);
-    options->addWidget(quick);
     auto* copy = new QPushButton(tr("Copy"), this);
     connect(copy, &QPushButton::clicked, this, &RecordPlaybackDialog::copyToClipboard);
     options->addWidget(copy);
@@ -330,11 +327,6 @@ QString RecordPlaybackDialog::save()
     if (path.isEmpty())
         return {};
     return exportTo(path, format()) ? path : QString();
-}
-
-QString RecordPlaybackDialog::quickSave()
-{
-    return exportToDir(m_output.quickSaveDir());
 }
 
 QString RecordPlaybackDialog::copyToClipboard()

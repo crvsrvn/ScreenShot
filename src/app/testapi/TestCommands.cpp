@@ -524,22 +524,6 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
         }
         return ok({{QStringLiteral("pins"), arr}, {QStringLiteral("closed"), static_cast<int>(app.pinManager().closedPins().size())}, {QStringLiteral("hidden"), app.pinsHidden()}});
     }
-    if (cmd == QStringLiteral("pinGroups")) {
-        // {action: new|switch|next|previous|clear, name}
-        PinManager& m = app.pinManager();
-        const QString action = req.value(QStringLiteral("action")).toString();
-        if (action == QLatin1String("new"))
-            m.newGroup(req.value(QStringLiteral("name")).toString());
-        else if (action == QLatin1String("switch"))
-            m.switchToGroupNamed(req.value(QStringLiteral("name")).toString());
-        else if (action == QLatin1String("next"))
-            m.nextGroup();
-        else if (action == QLatin1String("previous"))
-            m.previousGroup();
-        else if (action == QLatin1String("clear"))
-            m.clearCurrentGroup();
-        return ok({{QStringLiteral("groups"), QJsonArray::fromStringList(m.groupNames())}, {QStringLiteral("current"), m.currentGroupIndex()}, {QStringLiteral("pins"), static_cast<int>(m.pins().size())}});
-    }
     if (cmd == QStringLiteral("pinAction")) {
         const int index = req.value(QStringLiteral("index")).toInt(0);
         const QString action = req.value(QStringLiteral("action")).toString();
@@ -652,9 +636,6 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
         for (const CodeResult& c : decodeCodes(QImage(req.value(QStringLiteral("path")).toString())))
             arr.append(QJsonObject{{QStringLiteral("text"), c.text}, {QStringLiteral("format"), c.format}});
         return ok({{QStringLiteral("codes"), arr}});
-    }
-    if (cmd == QStringLiteral("runAction")) {
-        return app.runAction(req.value(QStringLiteral("name")).toString()) ? ok() : fail(QStringLiteral("no such action"));
     }
     if (cmd == QStringLiteral("ocrSelfTest"))
         return cmdOcrSelfTest(app);
@@ -791,10 +772,6 @@ QJsonObject handleTestCommand(App& app, const QJsonObject& req)
     }
     if (cmd == QStringLiteral("quickCapture"))
         return app.quickCapture(req.value(QStringLiteral("kind")).toString()) ? ::ss::ok() : fail(QStringLiteral("quick capture failed"));
-    if (cmd == QStringLiteral("whiteboard")) {
-        app.startWhiteboard();
-        return ::ss::ok({{QStringLiteral("state"), stateName(session.state())}});
-    }
     if (cmd == QStringLiteral("cursorToggle")) {
         session.setIncludeCursor(!session.includeCursor());
         return ::ss::ok({{QStringLiteral("includeCursor"), session.includeCursor()}});

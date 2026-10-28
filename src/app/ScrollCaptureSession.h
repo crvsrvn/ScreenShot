@@ -63,7 +63,7 @@ signals:
     void statusChanged();
     void finished(const QImage& image, const QRect& physicalRegion);
     void cancelled();
-    void outputRequested(const QString& kind); // copy / save / quickSave / pin
+    void outputRequested(const QString& kind); // copy / save / pin
 
 private:
     QImage grabRegion();

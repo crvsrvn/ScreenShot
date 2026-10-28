@@ -1,9 +1,8 @@
-// REQ: CAP-04 CAP-05 CAP-06 CAP-13 CAP-16 CAP-17 CAP-18 CAP-30 CAP-31 CAP-32 CAP-33 CAP-50
-// M5 截图 P1：截图后动作、自定义截图预设、快捷截图、层级元素、Space 移动、尺寸输入、固定比例、指针、刷新、圆角、阴影 / 边框、白板
+// REQ: CAP-04 CAP-06 CAP-13 CAP-16 CAP-17 CAP-18 CAP-30 CAP-31 CAP-32 CAP-33
+// M5 截图 P1：截图后动作、快捷截图、层级元素、Space 移动、尺寸输入、固定比例、指针、刷新、圆角、阴影 / 边框
 #include "app/App.h"
 #include "app/CaptureSession.h"
 #include "app/CaptureToolbar.h"
-#include "app/CustomCaptureDialog.h"
 #include "app/OutputActions.h"
 #include "app/PinManager.h"
 #include "core/config/Settings.h"
@@ -68,8 +67,6 @@ private slots:
     void elementChainWheel();
     void enterActionsOrder();
     void quickCaptures();
-    void customPresets();
-    void whiteboard();
 };
 
 void TestCaptureP1::decorateRoundedShadowBorder()
@@ -192,17 +189,17 @@ void TestCaptureP1::enterActionsOrder()
 {
     Fixture f;
     QTemporaryDir dir;
-    f.settings.setValue(QStringLiteral("output.quickSaveDir"), dir.path());
-    f.settings.setValue(QStringLiteral("capture.enterActions"), QStringLiteral("quickSave,pin,copy"));
+    f.output.setDialogOverride(dir.filePath(QStringLiteral("out.png")));
+    f.settings.setValue(QStringLiteral("capture.enterActions"), QStringLiteral("save,pin,copy"));
     QVERIFY(f.session->start(1, false));
     f.session->setSelection(QRect(0, 0, 10, 10));
     QSignalSpy pin(f.session.get(), &CaptureSession::pinRequested);
     QSignalSpy done(&f.output, &OutputActions::done);
     f.key(QStringLiteral("Return"));
-    // 固定顺序：复制 → 贴图 → 快速保存
+    // 固定顺序：复制 → 贴图 → 保存
     QCOMPARE(done.count(), 2);
     QCOMPARE(done.at(0).at(0).value<OutputActions::Kind>(), OutputActions::Kind::Copy);
-    QCOMPARE(done.at(1).at(0).value<OutputActions::Kind>(), OutputActions::Kind::QuickSave);
+    QCOMPARE(done.at(1).at(0).value<OutputActions::Kind>(), OutputActions::Kind::Save);
     QCOMPARE(pin.count(), 1);
     QVERIFY(!f.session->isActive());
     QCOMPARE(f.history.size(), 1);
@@ -229,51 +226,6 @@ void TestCaptureP1::quickCaptures()
     app.runCommand({QStringLiteral("snip"), QStringLiteral("10,20,30,40")});
     QCOMPARE(captured.last().at(1).toRect(), QRect(10, 20, 30, 40));
     QVERIFY(!app.quickCapture(QStringLiteral("bogus")));
-}
-
-void TestCaptureP1::customPresets()
-{
-    Settings s;
-    CustomCaptureDialog::savePreset(s, QStringLiteral("A"), QRect(1, 2, 300, 400), 500);
-    CustomCaptureDialog::savePreset(s, QStringLiteral("B"), QRect(5, 6, 70, 80), 0);
-    CustomCaptureDialog::savePreset(s, QStringLiteral("A"), QRect(9, 9, 99, 99), 10); // 同名覆盖
-    QCOMPARE(CustomCaptureDialog::presets(s).size(), 2);
-    CustomCaptureDialog d(s);
-    QCOMPARE(d.findChild<QComboBox*>(QStringLiteral("presets"))->count(), 2);
-    d.applyPreset(0);
-    QCOMPARE(d.request().region, QRect(9, 9, 99, 99));
-    QCOMPARE(d.request().delayMs, 10);
-    d.setRegion(QRect(0, 0, 640, 480));
-    d.setDelayMs(1500);
-    d.saveCurrentAsPreset(QStringLiteral("C"));
-    QCOMPARE(CustomCaptureDialog::presets(s).size(), 3);
-    QVERIFY(CustomCaptureDialog::removePreset(s, QStringLiteral("B")));
-    QVERIFY(!CustomCaptureDialog::removePreset(s, QStringLiteral("none")));
-    QCOMPARE(CustomCaptureDialog::presets(s).size(), 2);
-    // 延时截图
-    FakePlatformHandles h;
-    App app(makeFakePlatform(&h), s);
-    QSignalSpy captured(&app.session(), &CaptureSession::captured);
-    app.captureRegion(QRect(0, 0, 20, 20), 50, false);
-    QCOMPARE(captured.count(), 0);
-    QTRY_COMPARE_WITH_TIMEOUT(captured.count(), 1, 2000);
-}
-
-void TestCaptureP1::whiteboard()
-{
-    Fixture f;
-    f.session->hoverAt(QPoint(4000, 100)); // 光标在右屏
-    QVERIFY(f.session->startWhiteboard(QColor(255, 255, 255), true, false));
-    QCOMPARE(f.session->state(), CaptureSession::State::Annotating);
-    QCOMPARE(f.session->selection(), QRect(3840, 0, 3840, 2160)); // 只覆盖当前屏幕
-    QCOMPARE(f.session->currentImage().pixel(10, 10), qRgb(255, 255, 255));
-    QCOMPARE(f.session->editor().tool(), AnnotationEditor::Tool::Pencil);
-    QCOMPARE(f.session->overlays().size(), 1);
-    f.session->cancel();
-    QVERIFY(f.session->startWhiteboard(QColor(0, 0, 0), false, false));
-    QCOMPARE(f.session->selection(), QRect(0, 0, 7680, 2160));
-    QCOMPARE(f.session->overlays().size(), 2);
-    f.session->cancel();
 }
 
 QTEST_MAIN(TestCaptureP1)

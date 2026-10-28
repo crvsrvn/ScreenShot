@@ -1,6 +1,5 @@
-// REQ: REC-01 REC-06 ACT-03 ACT-05 ACT-06 CFG-05
-// M5 其他 P1：OCR 结果窗口与 Shift+C、二维码识别（截图 / 贴图 / 文件）、动作系统、贴图鼠标动作、命令行接口、主题
-#include "app/ActionsDialog.h"
+// REQ: REC-01 REC-06 ACT-05 ACT-06 CFG-05
+// M5 其他 P1：OCR 结果窗口与 Shift+C、二维码识别（截图 / 贴图 / 文件）、贴图鼠标动作、命令行接口、主题
 #include "app/App.h"
 #include "app/CaptureSession.h"
 #include "app/CaptureToolbar.h"
@@ -9,7 +8,6 @@
 #include "app/ResultDialogs.h"
 #include "app/Theme.h"
 #include "core/code/CodeDecoder.h"
-#include "core/config/Actions.h"
 #include "core/config/Settings.h"
 #include "support/TestSupport.h"
 #include "testing/FakeHotkey.h"
@@ -69,8 +67,6 @@ private slots:
     void qrDuringCaptureModes();
     void qrFromPinAndFile();
     void ocrShiftCAndResultDialog();
-    void actionsJsonAndRun();
-    void actionsDialogAndHotkeys();
     void pinMouseActions();
     void commandLineInterface();
     void themeAndAccent();
@@ -208,48 +204,6 @@ void TestMiscP1::ocrShiftCAndResultDialog()
     QCOMPARE(QApplication::clipboard()->text(), QStringLiteral("hello\nworld"));
 }
 
-void TestMiscP1::actionsJsonAndRun()
-{
-    QList<Action> list{{QStringLiteral("Full"), QStringLiteral("snip full"), QStringLiteral("Ctrl+Alt+F"), true}, {QStringLiteral("Notepad"), QStringLiteral("run notepad.exe"), QString(), false}};
-    const QString json = actionsToJson(list);
-    QCOMPARE(actionsFromJson(json), list);
-    QVERIFY(actionsFromJson(QStringLiteral("not json")).isEmpty());
-    QCOMPARE(splitCommandLine(QStringLiteral("pin --text \"hello world\" --pos 1,2")), (QStringList{QStringLiteral("pin"), QStringLiteral("--text"), QStringLiteral("hello world"), QStringLiteral("--pos"), QStringLiteral("1,2")}));
-    // 内置命令动作：执行等同命令行
-    FakePlatformHandles h;
-    Settings s;
-    s.setValue(QStringLiteral("actions.list"), actionsToJson({{QStringLiteral("Pin text"), QStringLiteral("pin --text from action --pos 10,10"), QString(), true}}));
-    App app(makeFakePlatform(&h), s);
-    QCOMPARE(app.actions().size(), 1);
-    QVERIFY(app.runAction(QStringLiteral("pin text")));
-    QCOMPARE(app.pins().size(), 1);
-    QCOMPARE(app.pins().first()->textPlain(), QStringLiteral("from action"));
-    QCOMPARE(app.pins().first()->physicalTopLeft(), QPoint(10, 10));
-    QVERIFY(!app.runAction(QStringLiteral("missing")));
-}
-
-void TestMiscP1::actionsDialogAndHotkeys()
-{
-    FakePlatformHandles h;
-    Settings s;
-    App app(makeFakePlatform(&h), s);
-    ActionsDialog dialog(s);
-    dialog.addRow({QStringLiteral("Hide pins"), QStringLiteral("pins hide"), QStringLiteral("Ctrl+Alt+H"), true});
-    dialog.addRow({QStringLiteral("Bad"), QString(), QString(), true}); // 没有命令：忽略
-    QCOMPARE(dialog.actions().size(), 1);
-    dialog.apply();
-    QCOMPARE(app.actions().size(), 1);
-    // 热键注册到 1000 起的 id；触发即执行
-    QVERIFY(h.hotkey->isRegistered(App::HotkeyActionBase));
-    app.pinImage(testImage(), QPoint(0, 0));
-    QVERIFY(!app.pinsHidden());
-    h.hotkey->trigger(App::HotkeyActionBase);
-    QVERIFY(app.pinsHidden());
-    // 删除后热键注销
-    s.setValue(QStringLiteral("actions.list"), QStringLiteral("[]"));
-    QVERIFY(!h.hotkey->isRegistered(App::HotkeyActionBase));
-}
-
 void TestMiscP1::pinMouseActions()
 {
     Settings s;
@@ -290,7 +244,6 @@ void TestMiscP1::commandLineInterface()
     FakePlatformHandles h;
     Settings s;
     QTemporaryDir dir;
-    s.setValue(QStringLiteral("output.quickSaveDir"), dir.path());
     App app(makeFakePlatform(&h), s);
     // 贴图：文本 / HTML / 文件 / 位置
     app.runCommand({QStringLiteral("pin"), QStringLiteral("--text"), QStringLiteral("hello"), QStringLiteral("there"), QStringLiteral("--pos"), QStringLiteral("5,6")});
@@ -315,22 +268,13 @@ void TestMiscP1::commandLineInterface()
     QCOMPARE(app.pins().size(), 0);
     app.runCommand({QStringLiteral("pins"), QStringLiteral("restore")});
     QCOMPARE(app.pins().size(), 1);
-    // 分组
-    app.runCommand({QStringLiteral("group"), QStringLiteral("new"), QStringLiteral("Work")});
-    QCOMPARE(app.pinManager().currentGroupName(), QStringLiteral("Work"));
-    QCOMPARE(app.pins().size(), 0);
-    app.runCommand({QStringLiteral("group"), QStringLiteral("switch"), QStringLiteral("Default")});
-    QCOMPARE(app.pins().size(), 1);
-    app.runCommand({QStringLiteral("group"), QStringLiteral("next")});
-    QCOMPARE(app.pinManager().currentGroupIndex(), 1);
-    app.runCommand({QStringLiteral("group"), QStringLiteral("prev")});
-    QCOMPARE(app.pinManager().currentGroupIndex(), 0);
     // 截图：区域 + 延时 0 + 输出组合 + 阴影 + 保持编辑
     QSignalSpy captured(&app.session(), &CaptureSession::captured);
-    app.runCommand({QStringLiteral("snip"), QStringLiteral("10,10,50,40"), QStringLiteral("--output"), QStringLiteral("quickSave")});
+    QApplication::clipboard()->clear();
+    app.runCommand({QStringLiteral("snip"), QStringLiteral("10,10,50,40"), QStringLiteral("--output"), QStringLiteral("copy")});
     QTRY_COMPARE(captured.count(), 1);
     QCOMPARE(captured.at(0).at(1).toRect(), QRect(10, 10, 50, 40));
-    QVERIFY(!QDir(dir.path()).entryList({QStringLiteral("*.png")}, QDir::Files).isEmpty());
+    QCOMPARE(QApplication::clipboard()->image().size(), QSize(50, 40));
     QVERIFY(!app.session().isActive());
     app.runCommand({QStringLiteral("snip"), QStringLiteral("--size"), QStringLiteral("30x20"), QStringLiteral("--pos"), QStringLiteral("5,5"), QStringLiteral("--edit"), QStringLiteral("--shadow")});
     QTRY_VERIFY(app.session().isActive());

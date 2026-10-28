@@ -27,6 +27,7 @@ SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequiredOverridesAllowed=dialog
 UninstallDisplayIcon={app}\screenshot_app.exe
+SetupIconFile=..\src\app\icons\app.ico
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion

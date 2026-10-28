@@ -100,8 +100,6 @@ std::unique_ptr<Annotation> createAnnotation(const QString& type)
         return std::make_unique<MagnifierAnnotation>();
     if (type == QLatin1String("spotlight"))
         return std::make_unique<SpotlightAnnotation>();
-    if (type == QLatin1String("watermark"))
-        return std::make_unique<WatermarkAnnotation>();
     return nullptr;
 }
 

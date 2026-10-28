@@ -5,7 +5,6 @@
 #include "app/WindowChrome.h"
 #include "core/color/ColorFormat.h"
 #include "core/config/Settings.h"
-#include "app/Notification.h"
 #include "core/pin/ColorPin.h"
 #include "core/pin/FilePin.h"
 #include "core/pin/TextPin.h"
@@ -17,6 +16,7 @@
 #include <QFileIconProvider>
 #include <QFileInfo>
 #include <QMimeData>
+#include <QProcess>
 #include <QUrl>
 
 namespace ss {
@@ -226,9 +226,19 @@ void PinWindow::copyFilePath()
     QApplication::clipboard()->setText(QDir::toNativeSeparators(m_filePath));
 }
 
+std::function<void(const QString&)> PinWindow::revealHandler = [](const QString& path) {
+#if defined(Q_OS_WIN)
+    QProcess::startDetached(QStringLiteral("explorer.exe"), {QStringLiteral("/select,"), QDir::toNativeSeparators(path)});
+#elif defined(Q_OS_MACOS)
+    QProcess::startDetached(QStringLiteral("open"), {QStringLiteral("-R"), path});
+#else
+    Q_UNUSED(path);
+#endif
+};
+
 void PinWindow::revealFile()
 {
-    NotificationWidget::revealHandler(m_filePath);
+    revealHandler(m_filePath);
 }
 
 // ---- 换底图（内容替换、裁剪确认共用）----

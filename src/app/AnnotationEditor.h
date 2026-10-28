@@ -113,10 +113,6 @@ public:
     // 聚光灯（ANN-38）
     void setSpotlightShape(SpotlightAnnotation::Shape s) { m_spotlightShape = s; }
     SpotlightAnnotation::Shape spotlightShape() const { return m_spotlightShape; }
-    // 水印（ANN-39）：按设置添加 / 移除一个水印
-    int addWatermark();
-    void removeWatermark();
-    bool hasWatermark() const;
     // 自动马赛克（ANN-31）：按设置开关；手动覆盖
     void setAutoMosaic(bool on) { m_autoMosaic = on; }
     bool autoMosaic() const { return m_autoMosaic; }

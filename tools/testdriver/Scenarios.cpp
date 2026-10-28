@@ -196,7 +196,7 @@ QList<ScenarioResult> Runner::runAll()
     // R-08 紧跟 R-01：在干净的空闲状态测内存；需要真实输入的场景在锁屏时跳过
     const QStringList ids{QStringLiteral("R-01"), QStringLiteral("R-08"), QStringLiteral("R-16"), QStringLiteral("R-02"),
                           QStringLiteral("R-03"), QStringLiteral("HOTKEY"), QStringLiteral("R-06"), QStringLiteral("R-05"),
-                          QStringLiteral("R-07"), QStringLiteral("R-09"), QStringLiteral("R-11"), QStringLiteral("R-17"),
+                          QStringLiteral("R-07"), QStringLiteral("R-09"), QStringLiteral("R-11"),
                           QStringLiteral("M1-FLOW"), QStringLiteral("M1-INSTANCE"), QStringLiteral("M2-ANNOTATE"), QStringLiteral("M3-PINS"),
                           QStringLiteral("M4-SCROLL"), QStringLiteral("NFR-03"), QStringLiteral("AC-12")};
     QList<ScenarioResult> results;
@@ -227,7 +227,6 @@ ScenarioResult Runner::run(const QString& id)
     if (id == QStringLiteral("R-09")) return r09ElementDetectorHang();
     if (id == QStringLiteral("R-11")) return r11WindowsOcr();
     if (id == QStringLiteral("R-16")) return r16FakeMultiScreen();
-    if (id == QStringLiteral("R-17")) return r17QmlNetworkDependency();
     if (id == QStringLiteral("HOTKEY")) return hotkeyEndToEnd();
     if (id == QStringLiteral("M1-FLOW")) return m1CaptureFlow();
     if (id == QStringLiteral("M1-INSTANCE")) return m1SingleInstance();
@@ -305,11 +304,8 @@ ScenarioResult Runner::hotkeyEndToEnd()
     // 用一个不太可能被占用的组合键（默认 F1 常被另一个正在运行的 ScreenShot 占用），结束后恢复
     const QString original = m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("hotkey.capture")}}).value(QStringLiteral("value")).toString();
     m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("hotkey.capture")}, {QStringLiteral("value"), QStringLiteral("Ctrl+Alt+Shift+F9")}});
-    // 程序默认忽略模拟按键发出的热键（ACT-15）；SendInput 正是模拟按键，测试期间关掉
-    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("hotkey.ignoreInjected")}, {QStringLiteral("value"), false}});
     auto restore = qScopeGuard([&] {
         m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("hotkey.capture")}, {QStringLiteral("value"), original}});
-        m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("hotkey.ignoreInjected")}, {QStringLiteral("value"), true}});
     });
     QThread::msleep(100);
     if (!m_client.call(QStringLiteral("state")).value(QStringLiteral("hotkeys")).toObject().value(QStringLiteral("1")).toBool()) {
@@ -607,34 +603,12 @@ ScenarioResult Runner::r11WindowsOcr()
     return r;
 }
 
-ScenarioResult Runner::r17QmlNetworkDependency()
-{
-    ScenarioResult r{QStringLiteral("R-17"), QStringLiteral("Qt Qml 是否依赖 Qt Network")};
-    const QString qtBin = QString::fromLocal8Bit(qgetenv("PATH")).split(QLatin1Char(';')).filter(QStringLiteral("Qt")).value(0);
-    QString qml = QDir(qtBin).filePath(QStringLiteral("Qt6Qml.dll"));
-    if (!QFile::exists(qml))
-        qml = QStringLiteral("C:/Qt/6.12.0/msvc2022_64/bin/Qt6Qml.dll");
-    if (!QFile::exists(qml)) {
-        r.skipped = true;
-        r.summary = QStringLiteral("找不到 Qt6Qml.dll");
-        return r;
-    }
-    const QStringList imports = win::peImports(qml);
-    const bool dependsOnNetwork = imports.filter(QStringLiteral("Qt6Network"), Qt::CaseInsensitive).size() > 0;
-    r.data = QJsonObject{{QStringLiteral("dll"), qml}, {QStringLiteral("imports"), QJsonArray::fromStringList(imports)}, {QStringLiteral("dependsOnQtNetwork"), dependsOnNetwork}};
-    r.passed = true; // 只记录结论，决定脚本引擎方案
-    r.summary = dependsOnNetwork ? QStringLiteral("Qt6Qml.dll 导入了 Qt6Network.dll → 维持 QuickJS-ng 方案")
-                                 : QStringLiteral("Qt6Qml.dll 不直接导入 Qt6Network.dll（导入：%1）").arg(imports.join(QStringLiteral(", ")));
-    return r;
-}
-
 ScenarioResult Runner::m1CaptureFlow()
 {
-    // REQ: CAP-01 CAP-10 CAP-40 OUT-08 GEN-09
-    ScenarioResult r{QStringLiteral("M1-FLOW"), QStringLiteral("M1：真实桌面上框选、快速保存、历史")};
+    // REQ: CAP-01 CAP-10 CAP-40 OUT-03 GEN-09
+    ScenarioResult r{QStringLiteral("M1-FLOW"), QStringLiteral("M1：真实桌面上框选、保存、历史")};
     QTemporaryDir dir;
-    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("output.quickSaveDir")}, {QStringLiteral("value"), dir.path()}});
-    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("output.fileNamePattern")}, {QStringLiteral("value"), QStringLiteral("e2e_{n}")}});
+    m_client.call(QStringLiteral("setDialogOverride"), {{QStringLiteral("path"), dir.filePath(QStringLiteral("e2e_1.png"))}});
     if (!m_client.call(QStringLiteral("capture")).value(QStringLiteral("ok")).toBool()) {
         r.summary = QStringLiteral("capture 失败");
         return r;
@@ -655,13 +629,13 @@ ScenarioResult Runner::m1CaptureFlow()
     m_client.call(QStringLiteral("mouse"), {{QStringLiteral("action"), QStringLiteral("release")}, {QStringLiteral("x"), b.x() + 10}, {QStringLiteral("y"), b.y() + 10}});
     const QJsonObject sel2 = m_client.call(QStringLiteral("state")).value(QStringLiteral("selection")).toObject();
     const bool resizeOk = sel2.value(QStringLiteral("w")).toInt() == 330 && sel2.value(QStringLiteral("h")).toInt() == 250;
-    // 当前图像与 GDI 参照比对，然后快速保存
+    // 当前图像与 GDI 参照比对，然后保存
     const QString cur = tempPng(QStringLiteral("m1-current"));
     m_client.call(QStringLiteral("currentImage"), {{QStringLiteral("path"), cur}});
     const QImage out(cur);
     const QImage ref = win::GdiScreenCapture::captureRect(QRect(a, QSize(330, 250)));
     const auto cmp = testing::compareImages(out, ref, testing::CompareOptions{0, static_cast<qint64>(330) * 250 / 50});
-    m_client.call(QStringLiteral("key"), {{QStringLiteral("key"), QStringLiteral("Ctrl+Shift+S")}});
+    m_client.call(QStringLiteral("key"), {{QStringLiteral("key"), QStringLiteral("Ctrl+S")}});
     const QJsonObject after = m_client.call(QStringLiteral("state"));
     const QStringList savedFiles = QDir(dir.path()).entryList({QStringLiteral("e2e_*.png")}, QDir::Files, QDir::Time);
     const QString saved = savedFiles.isEmpty() ? QString() : QDir(dir.path()).filePath(savedFiles.first());
@@ -675,7 +649,7 @@ ScenarioResult Runner::m1CaptureFlow()
     m_client.call(QStringLiteral("cancelCapture"));
     r.data = QJsonObject{{QStringLiteral("selectionOk"), selOk}, {QStringLiteral("resizeOk"), resizeOk}, {QStringLiteral("pixels"), cmp.summary()}, {QStringLiteral("savedOk"), savedOk}, {QStringLiteral("historyOk"), histOk}};
     r.passed = selOk && resizeOk && cmp.passed && savedOk && histOk;
-    r.summary = QStringLiteral("框选%1，锚点%2，像素%3，快速保存%4，历史%5").arg(selOk ? QStringLiteral("ok") : QStringLiteral("FAIL"), resizeOk ? QStringLiteral("ok") : QStringLiteral("FAIL"),
+    r.summary = QStringLiteral("框选%1，锚点%2，像素%3，保存%4，历史%5").arg(selOk ? QStringLiteral("ok") : QStringLiteral("FAIL"), resizeOk ? QStringLiteral("ok") : QStringLiteral("FAIL"),
                                                                  cmp.passed ? QStringLiteral("ok") : cmp.summary(), savedOk ? QStringLiteral("ok") : QStringLiteral("FAIL"), histOk ? QStringLiteral("ok") : QStringLiteral("FAIL"));
     return r;
 }
@@ -702,10 +676,9 @@ ScenarioResult Runner::m1SingleInstance()
 ScenarioResult Runner::m2Annotate()
 {
     // REQ: ANN-01 ANN-20 NFR-08
-    ScenarioResult r{QStringLiteral("M2-ANNOTATE"), QStringLiteral("M2：真实桌面上框选、画填充矩形、快速保存后像素正确")};
+    ScenarioResult r{QStringLiteral("M2-ANNOTATE"), QStringLiteral("M2：真实桌面上框选、画填充矩形、保存后像素正确")};
     QTemporaryDir dir;
-    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("output.quickSaveDir")}, {QStringLiteral("value"), dir.path()}});
-    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("output.fileNamePattern")}, {QStringLiteral("value"), QStringLiteral("ann_{n}")}});
+    m_client.call(QStringLiteral("setDialogOverride"), {{QStringLiteral("path"), dir.filePath(QStringLiteral("ann_1.png"))}});
     if (!m_client.call(QStringLiteral("capture")).value(QStringLiteral("ok")).toBool()) {
         r.summary = QStringLiteral("capture 失败");
         return r;
@@ -721,7 +694,7 @@ ScenarioResult Runner::m2Annotate()
     m_client.call(QStringLiteral("mouse"), {{QStringLiteral("action"), QStringLiteral("release")}, {QStringLiteral("x"), a.x() + 119}, {QStringLiteral("y"), a.y() + 99}});
     const QJsonObject st = m_client.call(QStringLiteral("annotateState"));
     const bool oneItem = st.value(QStringLiteral("count")).toInt() == 1 && m_client.call(QStringLiteral("state")).value(QStringLiteral("state")).toString() == QLatin1String("annotating");
-    m_client.call(QStringLiteral("key"), {{QStringLiteral("key"), QStringLiteral("Ctrl+Shift+S")}});
+    m_client.call(QStringLiteral("key"), {{QStringLiteral("key"), QStringLiteral("Ctrl+S")}});
     const QStringList files = QDir(dir.path()).entryList({QStringLiteral("ann_*.png")}, QDir::Files, QDir::Time);
     const QString saved = files.isEmpty() ? QString() : QDir(dir.path()).filePath(files.first());
     const QImage img(saved);
@@ -876,13 +849,12 @@ ScenarioResult Runner::startupTime()
 ScenarioResult Runner::cliWait()
 {
     // REQ: AC-12 ACT-06
-    ScenarioResult r{QStringLiteral("AC-12"), QStringLiteral("命令行：第二实例触发全屏截图并快速保存，加 --wait 时在保存完成后才退出")};
+    ScenarioResult r{QStringLiteral("AC-12"), QStringLiteral("命令行：第二实例触发全屏截图并保存，加 --wait 时在保存完成后才退出")};
     QTemporaryDir dir;
-    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("output.quickSaveDir")}, {QStringLiteral("value"), dir.path()}});
-    m_client.call(QStringLiteral("setting"), {{QStringLiteral("key"), QStringLiteral("output.fileNamePattern")}, {QStringLiteral("value"), QStringLiteral("cli_{n}")}});
+    m_client.call(QStringLiteral("setDialogOverride"), {{QStringLiteral("path"), dir.filePath(QStringLiteral("cli_1.png"))}});
     QProcess second;
     second.setProgram(m_options.appPath);
-    second.setArguments({QStringLiteral("--channel"), m_options.channel, QStringLiteral("snip"), QStringLiteral("full"), QStringLiteral("--output"), QStringLiteral("quickSave"), QStringLiteral("--wait")});
+    second.setArguments({QStringLiteral("--channel"), m_options.channel, QStringLiteral("snip"), QStringLiteral("full"), QStringLiteral("--output"), QStringLiteral("save"), QStringLiteral("--wait")});
     QElapsedTimer t;
     t.start();
     second.start();
