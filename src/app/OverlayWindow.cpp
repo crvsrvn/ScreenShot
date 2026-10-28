@@ -161,7 +161,7 @@ void OverlayWindow::paintSelection(QPainter& p, const QRect& selection)
     p.fillRect(QRectF(sel.right(), sel.top(), full.width() - sel.right(), sel.height()), dim);
 
     const QColor borderColor = QColor::fromString(st.stringValue(QStringLiteral("capture.borderColor")));
-    QPen pen(borderColor.isValid() ? borderColor : theme::accent(st), st.intValue(QStringLiteral("capture.borderWidth")));
+    QPen pen(borderColor.isValid() ? borderColor : theme::accent(), st.intValue(QStringLiteral("capture.borderWidth")));
     pen.setCosmetic(true);
     p.setPen(pen);
     p.setBrush(Qt::NoBrush);

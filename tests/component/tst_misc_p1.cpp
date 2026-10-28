@@ -303,15 +303,13 @@ void TestMiscP1::themeAndAccent()
     QVERIFY(theme::palette(QStringLiteral("light")).color(QPalette::Window).lightness() > 150);
     s.setValue(QStringLiteral("ui.theme"), QStringLiteral("system"));
     QVERIFY(theme::resolve(s) == QLatin1String("light") || theme::resolve(s) == QLatin1String("dark"));
-    // 主题色影响激活贴图的阴影；字体
-    s.setValue(QStringLiteral("ui.accentColor"), QStringLiteral("#ff00aa00"));
-    QCOMPARE(theme::accent(s), QColor(0, 170, 0));
+    // 激活贴图的阴影用强调蓝；字体
     PinWindow pin(testImage(), s);
     pin.show();
     pin.activateWindow();
     const QColor shadow = pin.shadowColor();
     if (pin.isActiveWindow())
-        QCOMPARE(shadow.rgb(), QColor(0, 170, 0).rgb());
+        QCOMPARE(shadow.rgb(), theme::accent().rgb());
     s.setValue(QStringLiteral("ui.font"), QStringLiteral("Arial"));
     theme::apply(s);
     QCOMPARE(QApplication::font().family(), QStringLiteral("Arial"));

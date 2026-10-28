@@ -1522,16 +1522,6 @@
         <translation>Dark</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="26" />
-        <source>Accent color</source>
-        <translation>Accent color</translation>
-    </message>
-    <message>
-        <location filename="../src/core/config/Settings.cpp" line="26" />
-        <source>Color of the selection border and the shadow of the active pin.</source>
-        <translation>Color of the selection border and the shadow of the active pin.</translation>
-    </message>
-    <message>
         <location filename="../src/core/config/Settings.cpp" line="27" />
         <source>Interface font</source>
         <translation>Interface font</translation>
@@ -3454,8 +3444,8 @@
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="171" />
-        <source>Empty uses the accent color.</source>
-        <translation>Empty uses the accent color.</translation>
+        <source>Empty uses the default blue.</source>
+        <translation>Empty uses the default blue.</translation>
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="172" />

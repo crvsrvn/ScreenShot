@@ -224,10 +224,9 @@ void apply(const Settings& settings)
     qApp->setStyleSheet(styleSheet(c));
 }
 
-QColor accent(const Settings& settings)
+QColor accent()
 {
-    const QColor c = QColor::fromString(settings.stringValue(QStringLiteral("ui.accentColor")));
-    return c.isValid() ? c : QColor(40, 120, 220);
+    return QColor(40, 120, 220);
 }
 
 void makeSurface(QWidget* window)

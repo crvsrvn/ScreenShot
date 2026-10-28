@@ -1522,16 +1522,6 @@
         <translation>深色</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="26" />
-        <source>Accent color</source>
-        <translation>主题色</translation>
-    </message>
-    <message>
-        <location filename="../src/core/config/Settings.cpp" line="26" />
-        <source>Color of the selection border and the shadow of the active pin.</source>
-        <translation>选区边框与激活贴图阴影的颜色。</translation>
-    </message>
-    <message>
         <location filename="../src/core/config/Settings.cpp" line="27" />
         <source>Interface font</source>
         <translation>界面字体</translation>
@@ -3454,8 +3444,8 @@
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="171" />
-        <source>Empty uses the accent color.</source>
-        <translation>留空用主题色。</translation>
+        <source>Empty uses the default blue.</source>
+        <translation>留空用默认蓝色。</translation>
     </message>
     <message>
         <location filename="../src/core/config/Settings.cpp" line="172" />

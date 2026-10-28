@@ -765,7 +765,7 @@ QColor PinWindow::shadowColor() const
         return QColor(60, 190, 90, 180);
     if (!isActiveWindow())
         return QColor(0, 0, 0, 150);
-    QColor accent = theme::accent(m_settings);
+    QColor accent = theme::accent();
     accent.setAlpha(170);
     return accent;
 }

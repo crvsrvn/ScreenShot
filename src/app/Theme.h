@@ -43,8 +43,8 @@ const Colors& colors();
 QLinearGradient gradient(const QRectF& rect, const QColor* stops, int count);
 // 应用到整个程序（样式、调色板、字体、全局样式表）
 void apply(const Settings& settings);
-// 主题色：贴图阴影（激活）、选区边框等
-QColor accent(const Settings& settings);
+// 强调蓝：激活贴图的阴影、未设颜色时的选区边框
+QColor accent();
 
 // 浮动面板（截图工具栏、悬浮条、通知等无边框小窗）：AppSurfaceBrush 圆角底板 + 金色描边，
 // 内部按钮为 Fluent 按钮；须在窗口显示前调用
