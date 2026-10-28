@@ -1387,6 +1387,25 @@ void AnnotationEditor::paint(QPainter& p, QPointF topLeft, qreal scale) const
     }
     base.setDevicePixelRatio(scale);
     p.drawImage(topLeft, base);
+    // 矩形 / 椭圆的马赛克、模糊、智能擦除只在屏幕上画出边界（不进导出），否则看不清范围
+    QTransform toScreen;
+    toScreen.translate(topLeft.x(), topLeft.y());
+    toScreen.scale(1 / scale, 1 / scale);
+    auto outlineEffect = [&](const Annotation* a) {
+        const auto* e = dynamic_cast<const EffectAnnotation*>(a);
+        if (!e || e->shape() == EffectAnnotation::Shape::Brush)
+            return;
+        const QPainterPath path = toScreen.map(e->shapePath());
+        QPen pen(QColor(0, 0, 0, 160), 1);
+        pen.setCosmetic(true);
+        p.strokePath(path, pen);
+        pen.setColor(Qt::white);
+        pen.setStyle(Qt::DashLine);
+        p.strokePath(path, pen);
+    };
+    for (int i = 0; i < m_doc.count(); ++i)
+        outlineEffect(m_doc.at(i));
+    outlineEffect(m_draft.get());
     if (m_drag == DragMode::Marquee && !m_marquee.isEmpty()) {
         QPen band(QColor(40, 120, 220), 1, Qt::DashLine);
         band.setCosmetic(true);

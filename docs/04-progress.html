@@ -485,7 +485,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <body>
 <main class="hs-doc" data-toc-levels="2,3">
 <h1 id="top">ScreenShot 实现进度与交付报告（M0 ~ M8）</h1>
-<p class="hs-meta">v1.6 · 2026-10-28 · 输入：<a href="01-requirements.md">需求</a>、<a href="02-architecture.md">架构</a>、<a href="03-m0-report.md">M0 报告</a></p>
+<p class="hs-meta">v1.7 · 2026-10-28 · 输入：<a href="01-requirements.md">需求</a>、<a href="02-architecture.md">架构</a>、<a href="03-m0-report.md">M0 报告</a></p>
 <h2 id="summary"><span class="hs-num">1.</span>结论<a class="hs-anchor" href="#summary" aria-label="本节链接">#</a></h2>
 <p><mark>八个里程碑全部实现并逐里程碑本地提交；需求文档 v0.5 删除了公式贴图与公式识别、v0.6 精简了非核心功能后，现行 216 条需求全部进入交付范围且每条都有自动用例（覆盖矩阵无空项）。Debug 与 Release 两套自动测试全部通过，程序零网络导入。真实桌面端到端 20 个场景经三轮修复后全部通过；macOS 用例已写好，等 Mac 设备后执行。</mark></p>
 <div class="hs-table lead"><table>
@@ -630,7 +630,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <li>验收与非功能需求的用例：30 步撤销重做无残影（<code>AC-04</code>）、输入法事件输入中文并旋转导出一致（<code>AC-03</code>）、命令行 <code>--wait</code> 场景（<code>AC-12</code>）、启动耗时场景（<code>NFR-03</code>）、系统版本门槛（<code>NFR-11</code>，低于 19041 启动即提示退出）、设置项可访问名称与说明（<code>NFR-14</code>）。</li>
 <li>打包（<code>NFR-12</code>）：<code>tests/package/check_package.py</code> 生成绿色版 zip 与 Inno Setup 安装包并检查 ≤ 50 MB、包内无 Qt Network；只在非 Debug 配置下运行。</li>
 <li>公式贴图 <code>PIN-09</code> 与公式识别 <code>REC-09</code> 按决定从需求中删除（需求文档 v0.5）。</li>
-<li>精简非核心功能（需求文档 v0.6）：删除白板、打印与 PDF、通知、悬浮工具栏、托盘图标样式、自定义截图对话框、水印、快速保存与自动保存、外部命令、贴图组、动作系统、脚本引擎（连同 QuickJS-ng）、热角、全局鼠标、修饰键双击、忽略模拟按键与前台程序、单键热键、切换窗口置顶、粘贴转换、一键禁用热键、配置导入导出、打开配置目录；托盘菜单只留偏好设置和退出，托盘图标改用程序图标；工具栏去掉撤销 / 重做按钮，矩形 / 椭圆合为框选工具，序号进常用区；截图中按贴图热键直接贴当前选区。</li>
+<li>精简非核心功能（需求文档 v0.6）：删除白板、打印与 PDF、通知、悬浮工具栏、托盘图标样式、自定义截图对话框、水印、快速保存与自动保存、外部命令、贴图组、动作系统、脚本引擎（连同 QuickJS-ng）、热角、全局鼠标、修饰键双击、忽略模拟按键与前台程序、单键热键、切换窗口置顶、粘贴转换、一键禁用热键、配置导入导出、打开配置目录；托盘菜单只留设置和退出，托盘图标改用程序图标；工具栏去掉撤销 / 重做按钮，矩形 / 椭圆合为框选工具，直线并入箭头工具（需求 v0.7），序号进常用区；矩形 / 椭圆的马赛克、模糊在屏幕上显示边框；截图中按贴图热键直接贴当前选区。</li>
 <li>已实现但此前未纳入范围的需求（各工具记住颜色、形状旋转、工具快捷键、选项说明、贴图尺寸限制、屏幕外贴图恢复）补入交付范围并核对用例。</li>
 </ul>
 <h3 id="e2e-fixes"><span class="hs-num">4.5</span>真实桌面端到端失败项与修复<a class="hs-anchor" href="#e2e-fixes" aria-label="本节链接">#</a></h3>

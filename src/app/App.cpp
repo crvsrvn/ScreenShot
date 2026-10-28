@@ -142,7 +142,7 @@ void App::checkPermissions()
 void App::setupTray()
 {
     m_trayMenu = new QMenu();
-    m_trayMenu->addAction(tr("Preferences..."), this, &App::showPreferences);
+    m_trayMenu->addAction(tr("Settings"), this, &App::showPreferences);
     m_trayMenu->addAction(tr("Quit"), this, &App::quit);
     if (!QSystemTrayIcon::isSystemTrayAvailable())
         return;

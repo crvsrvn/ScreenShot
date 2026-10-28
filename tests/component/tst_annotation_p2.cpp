@@ -100,6 +100,7 @@ private slots:
     void arrowNoteOnDoubleClick();
     void smartEraseInpaint();
     void autoMosaicGroup();
+    void effectOutlineOnScreenOnly();
     void textWrapAndPointer();
     void spotlight();
 };
@@ -213,29 +214,69 @@ void TestAnnotationP2::defaultToolbarKeepsCommonOnly()
     f.startWith(Tool::Rect);
     CaptureToolbar* tb = f.session->toolbar();
     QVERIFY(tb->testAttribute(Qt::WA_AlwaysShowToolTips)); // 工具栏不激活，也要显示悬停提示
-    // 主栏只有常用工具与输出按钮；撤销 / 重做只用快捷键，椭圆是框选工具的形状选项
+    // 主栏只有常用工具与输出按钮；撤销 / 重做只用快捷键，椭圆、直线分别是框选、箭头工具的形状选项
     for (const char* name : {"rect", "arrow", "pencil", "mosaic", "text", "step", "more", "pin", "save", "cancel", "copy"})
         QVERIFY2(tb->button(QString::fromLatin1(name))->isVisibleTo(tb), name);
-    for (const char* name : {"ellipse", "undo", "redo"})
+    for (const char* name : {"ellipse", "line", "undo", "redo"})
         QVERIFY2(!tb->button(QString::fromLatin1(name)), name);
     // 其余工具和低频操作在“更多”面板里，仍能按名称找到并使用
-    for (const char* name : {"line", "highlighter", "blur", "eraser", "clear", "mode", "scroll", "ratio", "shadow", "border"})
+    for (const char* name : {"highlighter", "blur", "eraser", "clear", "mode", "scroll", "ratio", "shadow", "border"})
         QVERIFY2(!tb->button(QString::fromLatin1(name))->isVisibleTo(tb), name);
-    tb->button(QStringLiteral("line"))->click();
-    QCOMPARE(f.editor().tool(), Tool::Line);
+    tb->button(QStringLiteral("highlighter"))->click();
+    QCOMPARE(f.editor().tool(), Tool::Highlighter);
     QVERIFY(tb->button(QStringLiteral("recent"))->isVisibleTo(tb));
+    // 箭头工具：形状选项在箭头 / 直线之间切换
+    tb->button(QStringLiteral("arrow"))->click();
+    QCOMPARE(f.editor().tool(), Tool::Arrow);
+    QToolButton* line = tb->optionsRow()->findChild<QToolButton*>(QStringLiteral("shape_line"));
+    QVERIFY(line && line->isVisibleTo(tb));
+    QVERIFY(!tb->optionsRow()->findChild<QToolButton*>(QStringLiteral("shape_rect"))->isVisibleTo(tb));
+    line->click();
+    QCOMPARE(f.editor().tool(), Tool::Line);
+    QVERIFY(tb->button(QStringLiteral("arrow"))->isChecked());
+    QVERIFY(line->isChecked());
+    QVERIFY(!tb->optionsRow()->findChild<QToolButton*>(QStringLiteral("shape_arrow"))->isChecked());
     // 框选工具：形状选项在矩形 / 椭圆之间切换，主栏按钮保持选中
     tb->button(QStringLiteral("rect"))->click();
     QCOMPARE(f.editor().tool(), Tool::Rect);
     QToolButton* ellipse = tb->optionsRow()->findChild<QToolButton*>(QStringLiteral("shape_ellipse"));
     QVERIFY(ellipse && ellipse->isVisibleTo(tb));
     QVERIFY(!tb->optionsRow()->findChild<QToolButton*>(QStringLiteral("shape_brush"))->isVisibleTo(tb));
+    QVERIFY(!line->isVisibleTo(tb));
     ellipse->click();
     QCOMPARE(f.editor().tool(), Tool::Ellipse);
     QVERIFY(tb->button(QStringLiteral("rect"))->isChecked());
     QVERIFY(ellipse->isChecked());
     tb->optionsRow()->findChild<QToolButton*>(QStringLiteral("shape_rect"))->click();
     QCOMPARE(f.editor().tool(), Tool::Rect);
+}
+
+void TestAnnotationP2::effectOutlineOnScreenOnly()
+{
+    // 矩形马赛克在屏幕上画出边界，导出图里没有
+    Fixture f;
+    f.startWith(Tool::Mosaic);
+    f.editor().setEffectShape(EffectAnnotation::Shape::Rect);
+    f.drag(QPoint(150, 150), QPoint(300, 250));
+    QCOMPARE(f.editor().document().count(), 1);
+    const QRect box = f.editor().document().at(0)->bounds().toAlignedRect();
+    const QImage exported = f.editor().document().render().convertToFormat(QImage::Format_ARGB32);
+    QImage screen(exported.size(), QImage::Format_ARGB32_Premultiplied);
+    screen.fill(Qt::transparent);
+    {
+        QPainter p(&screen);
+        f.editor().paint(p, QPointF(0, 0), 1.0);
+    }
+    screen = screen.convertToFormat(QImage::Format_ARGB32);
+    int onEdge = 0;
+    for (int y = 0; y < screen.height(); ++y)
+        for (int x = 0; x < screen.width(); ++x) {
+            if (screen.pixel(x, y) == exported.pixel(x, y))
+                continue;
+            QVERIFY2(box.adjusted(-2, -2, 2, 2).contains(x, y) && !box.adjusted(2, 2, -2, -2).contains(x, y), qPrintable(QStringLiteral("%1,%2").arg(x).arg(y)));
+            ++onEdge;
+        }
+    QVERIFY(onEdge > box.width());
 }
 
 void TestAnnotationP2::rememberToolAndDefaultTool()

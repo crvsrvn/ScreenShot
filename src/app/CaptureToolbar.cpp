@@ -44,7 +44,7 @@ const ToolDef kTools[] = {
     {AnnotationEditor::Tool::Rect, "rect", QT_TRANSLATE_NOOP("CaptureToolbar", "Rect"), QT_TRANSLATE_NOOP("CaptureToolbar", "Rectangle / ellipse (Ctrl+1 / Ctrl+2)")},
     {AnnotationEditor::Tool::Ellipse, "ellipse", QT_TRANSLATE_NOOP("CaptureToolbar", "Ellipse"), QT_TRANSLATE_NOOP("CaptureToolbar", "Ellipse (Ctrl+2)")},
     {AnnotationEditor::Tool::Line, "line", QT_TRANSLATE_NOOP("CaptureToolbar", "Line"), QT_TRANSLATE_NOOP("CaptureToolbar", "Line / polyline (Ctrl+3); Tab switches to arrow")},
-    {AnnotationEditor::Tool::Arrow, "arrow", QT_TRANSLATE_NOOP("CaptureToolbar", "Arrow"), QT_TRANSLATE_NOOP("CaptureToolbar", "Arrow (Ctrl+4)")},
+    {AnnotationEditor::Tool::Arrow, "arrow", QT_TRANSLATE_NOOP("CaptureToolbar", "Arrow"), QT_TRANSLATE_NOOP("CaptureToolbar", "Arrow / line (Ctrl+4 / Ctrl+3); Tab switches between them")},
     {AnnotationEditor::Tool::Pencil, "pencil", QT_TRANSLATE_NOOP("CaptureToolbar", "Pencil"), QT_TRANSLATE_NOOP("CaptureToolbar", "Pencil (B); Shift for a straight line")},
     {AnnotationEditor::Tool::Highlighter, "highlighter", QT_TRANSLATE_NOOP("CaptureToolbar", "Marker"), QT_TRANSLATE_NOOP("CaptureToolbar", "Highlighter (Ctrl+5)")},
     {AnnotationEditor::Tool::Mosaic, "mosaic", QT_TRANSLATE_NOOP("CaptureToolbar", "Mosaic"), QT_TRANSLATE_NOOP("CaptureToolbar", "Mosaic (Ctrl+6)")},
@@ -59,10 +59,14 @@ const ToolDef kTools[] = {
 
 const char* const kHeadNames[] = {"none", "triangle", "open", "dot", "bar"};
 
-// 椭圆是框选工具（矩形按钮）的形状选项，没有独立按钮
+// 椭圆是框选工具（矩形按钮）的形状选项，直线是箭头工具的形状选项，都没有独立按钮
 AnnotationEditor::Tool buttonTool(AnnotationEditor::Tool tool)
 {
-    return tool == AnnotationEditor::Tool::Ellipse ? AnnotationEditor::Tool::Rect : tool;
+    if (tool == AnnotationEditor::Tool::Ellipse)
+        return AnnotationEditor::Tool::Rect;
+    if (tool == AnnotationEditor::Tool::Line)
+        return AnnotationEditor::Tool::Arrow;
+    return tool;
 }
 
 // 工具表里的文案按声明时的上下文查翻译
@@ -414,7 +418,7 @@ void CaptureToolbar::buildOptions()
     connect(magShadow, &QToolButton::clicked, this, [this](bool on) { m_target->editor().setMagnifierShadow(on); });
     row->addWidget(m_magnifierRow);
 
-    // 形状（框选 / 荧光笔 / 效果 / 橡皮擦）
+    // 形状（框选 / 箭头 / 荧光笔 / 效果 / 橡皮擦）
     m_shapeRow = new QWidget(m_options);
     auto* shapeLayout = new QHBoxLayout(m_shapeRow);
     shapeLayout->setContentsMargins(0, 0, 0, 0);
@@ -436,6 +440,13 @@ void CaptureToolbar::buildOptions()
                 e.setSpotlightShape(idx == 2 ? SpotlightAnnotation::Shape::Ellipse : SpotlightAnnotation::Shape::Rect);
             else
                 e.setEffectShape(static_cast<EffectAnnotation::Shape>(idx));
+            syncFromEditor();
+        });
+    }
+    for (const AnnotationEditor::Tool tool : {AnnotationEditor::Tool::Arrow, AnnotationEditor::Tool::Line}) {
+        QToolButton* b = addButton(m_shapeRow, tool == AnnotationEditor::Tool::Arrow ? QStringLiteral("shape_arrow") : QStringLiteral("shape_line"), trTool(kToolText(tool)), tr("Shape"), true);
+        connect(b, &QToolButton::clicked, this, [this, tool] {
+            m_target->setTool(tool);
             syncFromEditor();
         });
     }
@@ -727,7 +738,8 @@ void CaptureToolbar::syncFromEditor()
         m_magnifierRow->findChild<QToolButton*>(QStringLiteral("includeBelow"))->setChecked(e.magnifierIncludeAnnotations());
         m_magnifierRow->findChild<QToolButton*>(QStringLiteral("magShadow"))->setChecked(e.magnifierShadow());
         const bool frame = buttonTool(tool) == AnnotationEditor::Tool::Rect;
-        const bool shapes = frame || tool == AnnotationEditor::Tool::Highlighter || tool == AnnotationEditor::Tool::Mosaic || tool == AnnotationEditor::Tool::Blur || tool == AnnotationEditor::Tool::Eraser
+        const bool line = buttonTool(tool) == AnnotationEditor::Tool::Arrow;
+        const bool shapes = frame || line || tool == AnnotationEditor::Tool::Highlighter || tool == AnnotationEditor::Tool::Mosaic || tool == AnnotationEditor::Tool::Blur || tool == AnnotationEditor::Tool::Eraser
             || tool == AnnotationEditor::Tool::Magnifier || tool == AnnotationEditor::Tool::Spotlight || tool == AnnotationEditor::Tool::SmartErase;
         m_shapeRow->setVisible(shapes);
         if (shapes) {
@@ -747,8 +759,14 @@ void CaptureToolbar::syncFromEditor()
             m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_brush"))->setChecked(idx == 0);
             m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_rect"))->setChecked(idx == 1);
             m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_ellipse"))->setChecked(idx == 2);
-            m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_ellipse"))->setVisible(tool != AnnotationEditor::Tool::Highlighter);
-            m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_brush"))->setVisible(!frame && tool != AnnotationEditor::Tool::Magnifier && tool != AnnotationEditor::Tool::Spotlight && tool != AnnotationEditor::Tool::SmartErase);
+            m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_rect"))->setVisible(!line);
+            m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_ellipse"))->setVisible(!line && tool != AnnotationEditor::Tool::Highlighter);
+            m_shapeRow->findChild<QToolButton*>(QStringLiteral("shape_brush"))->setVisible(!frame && !line && tool != AnnotationEditor::Tool::Magnifier && tool != AnnotationEditor::Tool::Spotlight && tool != AnnotationEditor::Tool::SmartErase);
+            for (const AnnotationEditor::Tool t : {AnnotationEditor::Tool::Arrow, AnnotationEditor::Tool::Line}) {
+                QToolButton* b = m_shapeRow->findChild<QToolButton*>(t == AnnotationEditor::Tool::Arrow ? QStringLiteral("shape_arrow") : QStringLiteral("shape_line"));
+                b->setVisible(line);
+                b->setChecked(tool == t);
+            }
         }
         m_strengthRow->setVisible(tool == AnnotationEditor::Tool::Mosaic || tool == AnnotationEditor::Tool::Blur);
         m_strength->setValue(e.effectStrength());

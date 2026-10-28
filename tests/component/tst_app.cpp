@@ -47,8 +47,8 @@ void TestApp::trayMenuHasRequiredEntries()
     App app(makeFakePlatform(&h), settings);
     QVERIFY(app.trayMenu());
     const QStringList texts = actionTexts(app.trayMenu());
-    // GEN-03：右键菜单只有偏好设置和退出
-    QCOMPARE(texts, QStringList({QStringLiteral("Preferences..."), QStringLiteral("Quit")}));
+    // GEN-03：右键菜单只有设置和退出
+    QCOMPARE(texts, QStringList({QStringLiteral("Settings"), QStringLiteral("Quit")}));
 }
 
 void TestApp::trayClickMapping()

@@ -485,7 +485,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 <body>
 <main class="hs-doc" data-toc-levels="2,3">
 <h1 id="top">ScreenShot 需求文档</h1>
-<p class="hs-meta">v0.6 草案 · 2026-10-28 · 依据 Snipaste 2.11.3 与 PixPin 3.5 的公开文档整理</p>
+<p class="hs-meta">v0.7 草案 · 2026-10-28 · 依据 Snipaste 2.11.3 与 PixPin 3.5 的公开文档整理</p>
 <h2 id="s1"><span class="hs-num">1.</span>概述<a class="hs-anchor" href="#s1" aria-label="本节链接">#</a></h2>
 <h3 id="s1-1"><span class="hs-num">1.1</span>背景<a class="hs-anchor" href="#s1-1" aria-label="本节链接">#</a></h3>
 <p>本项目用正向开发的方式，在 Windows 和 macOS 上做一款截图 + 贴图工具：复刻 Snipaste 的核心功能，补上 PixPin 比 Snipaste 多出的实用功能，并在截图中加入滚动截图。非核心的功能和设置不做，保持精简。</p>
@@ -636,7 +636,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>GEN-03</code></td>
-<td>托盘菜单只有偏好设置和退出；托盘图标使用程序图标</td>
+<td>托盘菜单只有设置和退出；托盘图标使用程序图标</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="danger">P0</span></td>
 </tr>
@@ -1201,7 +1201,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>ANN-23</code></td>
-<td>直线 / 折线：拖拽画单段，连续单击画折线，双击或右键结束；Tab 在线条和箭头间切换</td>
+<td>直线 / 折线：作为箭头工具的形状选项（不单独占按钮）；拖拽画单段，连续单击画折线，双击或右键结束；Tab 在线条和箭头间切换</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="danger">P0</span></td>
 </tr>
@@ -1237,7 +1237,7 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 <tr>
 <td><code>ANN-29</code></td>
-<td>马赛克与高斯模糊：画笔、矩形、椭圆三种形状，强度可调</td>
+<td>马赛克与高斯模糊：画笔、矩形、椭圆三种形状，强度可调；矩形、椭圆在屏幕上显示边框（不进导出），便于看清范围</td>
 <td><span class="hs-mark" data-kind="ok" title="Snipaste 免费版已有">Snipaste</span></td>
 <td><span class="hs-tag" data-kind="danger">P0</span></td>
 </tr>
@@ -2349,6 +2349,10 @@ body { margin: 0; background: var(--hs-bg); color: var(--hs-text); font: 16px/1.
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>v0.7</td>
+<td>直线并入箭头工具，作为形状选项（<code>ANN-23</code>）；矩形 / 椭圆的马赛克、模糊在屏幕上显示边框（<code>ANN-29</code>）；托盘菜单“偏好设置”改名为“设置”（<code>GEN-03</code>）</td>
+</tr>
 <tr>
 <td>v0.6</td>
 <td>精简非核心功能：删除托盘图标样式 <code>GEN-06</code>、系统通知 <code>GEN-07</code>、悬浮工具栏 <code>GEN-08</code>、自定义截图对话框 <code>CAP-05</code>、白板 <code>CAP-50</code> <code>CAP-51</code>、水印 <code>ANN-39</code>、PDF 保存 <code>OUT-04</code>（AVIF 并入 <code>OUT-03</code>）、快速保存 <code>OUT-08</code>、自动保存 <code>OUT-09</code>、打印 <code>OUT-11</code>、外部命令 <code>OUT-14</code>、贴图组 <code>GRP-01</code> 到 <code>GRP-03</code>、动作系统 <code>ACT-03</code>、禁用全部热键 <code>ACT-04</code>、前台忽略与单键热键 <code>ACT-07</code> <code>ACT-08</code>、修饰键双击 <code>ACT-10</code>、全局鼠标 <code>ACT-11</code>、热角 <code>ACT-12</code>、脚本 <code>ACT-13</code>、切换窗口置顶 <code>ACT-14</code>、忽略模拟按键 <code>ACT-15</code>、粘贴转换 <code>ACT-16</code>、配置导入导出 <code>CFG-03</code>、打开配置目录 <code>CFG-08</code>；托盘菜单只留偏好设置和退出（<code>GEN-02</code> <code>GEN-03</code>）；矩形 / 椭圆合为框选工具、工具栏去掉撤销 / 重做按钮、序号进常用区（<code>ANN-02</code> <code>ANN-14</code> <code>ANN-20</code>）；截图中按贴图热键贴当前选区（<code>PIN-02</code> <code>ACT-01</code>）；补删 v0.5 遗留的公式场景 <code>S-05</code></td>

@@ -30,8 +30,8 @@
     </message>
     <message>
         <location filename="../src/app/App.cpp" line="145" />
-        <source>Preferences...</source>
-        <translation>偏好设置...</translation>
+        <source>Settings</source>
+        <translation>设置</translation>
     </message>
     <message>
         <location filename="../src/app/App.cpp" line="146" />
@@ -132,121 +132,121 @@
 <context>
     <name>CaptureToolbar</name>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="157" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="161" />
         <source>Last tool used from More</source>
         <translation>最近从“更多”里用过的工具</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="164" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="168" />
         <source>More</source>
         <translation>更多</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="164" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="168" />
         <source>More tools and options</source>
         <translation>更多工具与选项</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="205" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="209" />
         <source>Clear</source>
         <translation>清除</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="205" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="209" />
         <source>Remove all annotations (undoable)</source>
         <translation>清除全部标注（可撤销）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="202" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="206" />
         <source>Copy</source>
         <translation>复制</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="202" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="206" />
         <source>Copy to clipboard (Enter)</source>
         <translation>复制到剪贴板（Enter）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="204" />
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="197" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="201" />
         <source>Pin</source>
         <translation>贴图</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="197" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="201" />
         <source>Pin to screen (Ctrl+T)</source>
         <translation>贴到屏幕上（Ctrl+T）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="194" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="198" />
         <source>QR</source>
         <translation>二维码</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="194" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="692" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="198" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="703" />
         <source>Decode QR codes / barcodes in the selection</source>
         <translation>识别选区里的二维码 / 条码</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="206" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="210" />
         <source>Capture</source>
         <translation>截图</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="206" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="687" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="210" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="698" />
         <source>Mode: capture / scrolling capture / recording (Ctrl+Tab)</source>
         <translation>模式：截图 / 滚动截图 / 录制（Ctrl+Tab）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="209" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="213" />
         <source>Scroll</source>
         <translation>滚动截图</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="209" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="213" />
         <source>Scrolling capture (Ctrl+L)</source>
         <translation>滚动截图（Ctrl+L）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="212" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="216" />
         <source>1:1 lock</source>
         <translation>锁定比例</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="212" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="216" />
         <source>Keep the current aspect ratio while resizing (Shift drags a square)</source>
         <translation>调整大小时保持当前宽高比（按住 Shift 拖出正方形）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="213" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="413" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="480" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="217" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="417" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="491" />
         <source>Shadow</source>
         <translation>阴影</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="213" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="217" />
         <source>Add a shadow to the output</source>
         <translation>为输出图像添加阴影</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="214" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="218" />
         <source>Border</source>
         <translation>边框</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="214" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="218" />
         <source>Add a border to the output</source>
         <translation>为输出图像添加边框</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="201" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="205" />
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
@@ -256,180 +256,185 @@
         <translation>矩形 / 椭圆（Ctrl+1 / Ctrl+2）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="201" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="47" />
+        <source>Arrow / line (Ctrl+4 / Ctrl+3); Tab switches between them</source>
+        <translation>箭头 / 直线（Ctrl+4 / Ctrl+3）；Tab 在两者间切换</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CaptureToolbar.cpp" line="205" />
         <source>Cancel (Esc)</source>
         <translation>取消（Esc）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="278" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="282" />
         <source>Custom</source>
         <translation>自定义</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="278" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="282" />
         <source>Pick a color (with opacity)</source>
         <translation>选择颜色（含透明度）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="280" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="284" />
         <source>Annotation color</source>
         <translation>标注颜色</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="288" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="292" />
         <source>Width</source>
         <translation>笔宽</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="296" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="300" />
         <source>Pen width %1</source>
         <translation>笔宽 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="314" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="318" />
         <source>Fill</source>
         <translation>填充</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="314" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="318" />
         <source>Filled shape</source>
         <translation>填充形状</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="316" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="320" />
         <source>Radius</source>
         <translation>圆角</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="332" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="336" />
         <source>Solid</source>
         <translation>实线</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="333" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="337" />
         <source>Dash</source>
         <translation>虚线</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="334" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="358" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="338" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="362" />
         <source>Dot</source>
         <translation>点线</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="335" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="339" />
         <source>Line style</source>
         <translation>线型</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="343" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="347" />
         <source>Square ends</source>
         <translation>方形端点</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="343" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="347" />
         <source>Square line ends (off: round)</source>
         <translation>线条端点为方形（关闭为圆形）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="345" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="349" />
         <source>Sharp corners</source>
         <translation>尖角连接</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="345" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="349" />
         <source>Sharp line joins (off: round)</source>
         <translation>线条连接为尖角（关闭为圆角）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="358" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="362" />
         <source>None</source>
         <translation>无</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="358" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="362" />
         <source>Triangle</source>
         <translation>三角</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="358" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="362" />
         <source>Open</source>
         <translation>开放</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="358" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="362" />
         <source>Bar</source>
         <translation>横杠</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="368" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="372" />
         <source>Start</source>
         <translation>起点</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="369" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="373" />
         <source>End</source>
         <translation>终点</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="379" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="383" />
         <source>1, 2, 3</source>
         <translation>1, 2, 3</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="379" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="383" />
         <source>A, B, C</source>
         <translation>A, B, C</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="379" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="383" />
         <source>I, II, III</source>
         <translation>I, II, III</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="385" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="389" />
         <source>Value</source>
         <translation>编号</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="401" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="405" />
         <source>Zoom</source>
         <translation>倍数</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="411" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="415" />
         <source>With annotations</source>
         <translation>含下层标注</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="411" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="415" />
         <source>Magnify the annotations underneath too</source>
         <translation>连同下层的标注一起放大</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="413" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="417" />
         <source>Drop shadow under the magnified area</source>
         <translation>放大区域下方加投影</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="423" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="427" />
         <source>Brush</source>
         <translation>画笔</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="692" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="703" />
         <source>QR code / barcode found - click to decode</source>
         <translation>找到二维码 / 条码 - 点击识别</translation>
     </message>
     <message>
         <location filename="../src/app/CaptureToolbar.cpp" line="44" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="423" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="427" />
         <source>Rect</source>
         <translation>矩形</translation>
     </message>
     <message>
         <location filename="../src/app/CaptureToolbar.cpp" line="45" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="423" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="427" />
         <source>Ellipse</source>
         <translation>椭圆</translation>
     </message>
@@ -452,11 +457,6 @@
         <location filename="../src/app/CaptureToolbar.cpp" line="47" />
         <source>Arrow</source>
         <translation>箭头</translation>
-    </message>
-    <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="47" />
-        <source>Arrow (Ctrl+4)</source>
-        <translation>箭头（Ctrl+4）</translation>
     </message>
     <message>
         <location filename="../src/app/CaptureToolbar.cpp" line="48" />
@@ -559,119 +559,120 @@
         <translation>智能擦除：用周围内容填补区域</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="204" />
         <source>Save to file (Ctrl+S)</source>
         <translation>保存到文件（Ctrl+S）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="423" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="427" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="447" />
         <source>Shape</source>
         <translation>形状</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="448" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="459" />
         <source>Strength</source>
         <translation>强度</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="473" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="484" />
         <source>B</source>
         <translation>B</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="473" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="484" />
         <source>Bold</source>
         <translation>粗体</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="474" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="485" />
         <source>I</source>
         <translation>I</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="474" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="485" />
         <source>Italic</source>
         <translation>斜体</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="478" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="489" />
         <source>Outline</source>
         <translation>描边</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="478" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="489" />
         <source>Outline the text</source>
         <translation>给文字描边</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="479" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="490" />
         <source>Background</source>
         <translation>背景</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="479" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="490" />
         <source>Fill a box behind the text</source>
         <translation>在文字后面填充底框</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="480" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="491" />
         <source>Drop shadow under the text</source>
         <translation>给文字加投影</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="586" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="597" />
         <source>Edit color...</source>
         <translation>编辑颜色...</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="587" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="598" />
         <source>Add color...</source>
         <translation>添加颜色...</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="588" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="599" />
         <source>Remove</source>
         <translation>删除</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="589" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="600" />
         <source>Move left</source>
         <translation>左移</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="590" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="601" />
         <source>Move right</source>
         <translation>右移</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="592" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="603" />
         <source>Import palette...</source>
         <translation>导入色板...</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="593" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="604" />
         <source>Export palette...</source>
         <translation>导出色板...</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="596" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="602" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="607" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="613" />
         <source>Palette color</source>
         <translation>色板颜色</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="617" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="628" />
         <source>Import palette</source>
         <translation>导入色板</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="617" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="621" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="628" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="632" />
         <source>Palette (*.txt)</source>
         <translation>色板 (*.txt)</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="621" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="632" />
         <source>Export palette</source>
         <translation>导出色板</translation>
     </message>
@@ -2061,6 +2062,11 @@
         <translation>文字描边宽度</translation>
     </message>
     <message>
+        <location filename="../src/core/config/Settings.cpp" line="59" />
+        <source>Tools shown directly on the toolbar, in order (rect, arrow, pencil, highlighter, mosaic, blur, text, eraser, step, magnifier, spotlight, smartErase). The rest go under More, together with less-used actions; the last tool used from there gets a quick button.</source>
+        <translation>直接显示在工具栏上的工具及顺序（rect、arrow、pencil、highlighter、mosaic、blur、text、eraser、step、magnifier、spotlight、smartErase）。其余工具和低频操作折叠到“更多”；最近从那里用过的工具会有一个快捷按钮。</translation>
+    </message>
+    <message>
         <location filename="../src/core/config/Settings.cpp" line="67" />
         <source>Outline width in pixels when the text outline is on.</source>
         <translation>开启文字描边时的描边宽度（像素）。</translation>
@@ -3392,11 +3398,6 @@
         <translation>无</translation>
     </message>
     <message>
-        <location filename="../src/core/config/Settings.cpp" line="59" />
-        <source>Tools shown directly on the toolbar, in order (rect, line, arrow, pencil, highlighter, mosaic, blur, text, eraser, step, magnifier, spotlight, smartErase). The rest go under More, together with less-used actions; the last tool used from there gets a quick button.</source>
-        <translation>直接显示在工具栏上的工具及顺序（rect、line、arrow、pencil、highlighter、mosaic、blur、text、eraser、step、magnifier、spotlight、smartErase）。其余工具和低频操作折叠到“更多”；最近从那里用过的工具会有一个快捷按钮。</translation>
-    </message>
-    <message>
         <location filename="../src/core/config/Settings.cpp" line="113" />
         <source>What happens when you confirm a capture: a comma-separated list of copy, pin, save, ocrCopy, executed in that fixed order.</source>
         <translation>确认截图时执行的动作：用逗号分隔的 copy、pin、save、ocrCopy，按这个固定顺序执行。</translation>
@@ -3823,8 +3824,8 @@
     </message>
     <message>
         <location filename="../src/app/App.cpp" line="145" />
-        <source>Preferences...</source>
-        <translation>偏好设置...</translation>
+        <source>Settings</source>
+        <translation>设置</translation>
     </message>
     <message>
         <location filename="../src/app/App.cpp" line="146" />
@@ -3925,416 +3926,417 @@
 <context>
     <name>ss::CaptureToolbar</name>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="157" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="161" />
         <source>Last tool used from More</source>
         <translation>最近从“更多”里用过的工具</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="164" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="168" />
         <source>More</source>
         <translation>更多</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="164" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="168" />
         <source>More tools and options</source>
         <translation>更多工具与选项</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="205" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="209" />
         <source>Clear</source>
         <translation>清除</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="205" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="209" />
         <source>Remove all annotations (undoable)</source>
         <translation>清除全部标注（可撤销）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="202" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="206" />
         <location filename="../tests/component/tst_i18n.cpp" line="25" />
         <location filename="../tests/component/tst_i18n.cpp" line="34" />
         <source>Copy</source>
         <translation>复制</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="202" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="206" />
         <source>Copy to clipboard (Enter)</source>
         <translation>复制到剪贴板（Enter）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="204" />
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="197" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="201" />
         <source>Pin</source>
         <translation>贴图</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="197" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="201" />
         <source>Pin to screen (Ctrl+T)</source>
         <translation>贴到屏幕上（Ctrl+T）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="194" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="198" />
         <source>QR</source>
         <translation>二维码</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="194" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="692" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="198" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="703" />
         <source>Decode QR codes / barcodes in the selection</source>
         <translation>识别选区里的二维码 / 条码</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="206" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="210" />
         <source>Capture</source>
         <translation>截图</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="206" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="687" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="210" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="698" />
         <source>Mode: capture / scrolling capture / recording (Ctrl+Tab)</source>
         <translation>模式：截图 / 滚动截图 / 录制（Ctrl+Tab）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="209" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="213" />
         <source>Scroll</source>
         <translation>滚动截图</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="209" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="213" />
         <source>Scrolling capture (Ctrl+L)</source>
         <translation>滚动截图（Ctrl+L）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="212" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="216" />
         <source>1:1 lock</source>
         <translation>锁定比例</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="212" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="216" />
         <source>Keep the current aspect ratio while resizing (Shift drags a square)</source>
         <translation>调整大小时保持当前宽高比（按住 Shift 拖出正方形）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="213" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="413" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="480" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="217" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="417" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="491" />
         <source>Shadow</source>
         <translation>阴影</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="213" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="217" />
         <source>Add a shadow to the output</source>
         <translation>为输出图像添加阴影</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="214" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="218" />
         <source>Border</source>
         <translation>边框</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="214" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="218" />
         <source>Add a border to the output</source>
         <translation>为输出图像添加边框</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="201" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="205" />
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="200" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="204" />
         <source>Save to file (Ctrl+S)</source>
         <translation>保存到文件（Ctrl+S）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="201" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="205" />
         <source>Cancel (Esc)</source>
         <translation>取消（Esc）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="278" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="282" />
         <source>Custom</source>
         <translation>自定义</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="278" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="282" />
         <source>Pick a color (with opacity)</source>
         <translation>选择颜色（含透明度）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="280" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="284" />
         <source>Annotation color</source>
         <translation>标注颜色</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="288" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="292" />
         <source>Width</source>
         <translation>笔宽</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="296" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="300" />
         <source>Pen width %1</source>
         <translation>笔宽 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="314" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="318" />
         <source>Fill</source>
         <translation>填充</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="314" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="318" />
         <source>Filled shape</source>
         <translation>填充形状</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="316" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="320" />
         <source>Radius</source>
         <translation>圆角</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="332" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="336" />
         <source>Solid</source>
         <translation>实线</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="333" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="337" />
         <source>Dash</source>
         <translation>虚线</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="334" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="358" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="338" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="362" />
         <source>Dot</source>
         <translation>点线</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="335" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="339" />
         <source>Line style</source>
         <translation>线型</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="343" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="347" />
         <source>Square ends</source>
         <translation>方形端点</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="343" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="347" />
         <source>Square line ends (off: round)</source>
         <translation>线条端点为方形（关闭为圆形）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="345" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="349" />
         <source>Sharp corners</source>
         <translation>尖角连接</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="345" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="349" />
         <source>Sharp line joins (off: round)</source>
         <translation>线条连接为尖角（关闭为圆角）</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="358" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="362" />
         <source>None</source>
         <translation>无</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="358" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="362" />
         <source>Triangle</source>
         <translation>三角</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="358" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="362" />
         <source>Open</source>
         <translation>开放</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="358" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="362" />
         <source>Bar</source>
         <translation>横杠</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="368" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="372" />
         <source>Start</source>
         <translation>起点</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="369" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="373" />
         <source>End</source>
         <translation>终点</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="379" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="383" />
         <source>1, 2, 3</source>
         <translation>1, 2, 3</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="379" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="383" />
         <source>A, B, C</source>
         <translation>A, B, C</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="379" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="383" />
         <source>I, II, III</source>
         <translation>I, II, III</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="385" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="389" />
         <source>Value</source>
         <translation>编号</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="401" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="405" />
         <source>Zoom</source>
         <translation>倍数</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="411" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="415" />
         <source>With annotations</source>
         <translation>含下层标注</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="411" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="415" />
         <source>Magnify the annotations underneath too</source>
         <translation>连同下层的标注一起放大</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="413" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="417" />
         <source>Drop shadow under the magnified area</source>
         <translation>放大区域下方加投影</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="423" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="427" />
         <source>Brush</source>
         <translation>画笔</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="423" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="427" />
         <source>Rect</source>
         <translation>矩形</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="423" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="427" />
         <source>Ellipse</source>
         <translation>椭圆</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="423" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="427" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="447" />
         <source>Shape</source>
         <translation>形状</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="448" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="459" />
         <source>Strength</source>
         <translation>强度</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="473" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="484" />
         <source>B</source>
         <translation>B</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="473" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="484" />
         <source>Bold</source>
         <translation>粗体</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="474" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="485" />
         <source>I</source>
         <translation>I</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="474" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="485" />
         <source>Italic</source>
         <translation>斜体</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="478" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="489" />
         <source>Outline</source>
         <translation>描边</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="478" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="489" />
         <source>Outline the text</source>
         <translation>给文字描边</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="479" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="490" />
         <source>Background</source>
         <translation>背景</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="479" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="490" />
         <source>Fill a box behind the text</source>
         <translation>在文字后面填充底框</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="480" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="491" />
         <source>Drop shadow under the text</source>
         <translation>给文字加投影</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="586" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="597" />
         <source>Edit color...</source>
         <translation>编辑颜色...</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="587" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="598" />
         <source>Add color...</source>
         <translation>添加颜色...</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="588" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="599" />
         <source>Remove</source>
         <translation>删除</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="589" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="600" />
         <source>Move left</source>
         <translation>左移</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="590" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="601" />
         <source>Move right</source>
         <translation>右移</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="592" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="603" />
         <source>Import palette...</source>
         <translation>导入色板...</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="593" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="604" />
         <source>Export palette...</source>
         <translation>导出色板...</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="596" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="602" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="607" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="613" />
         <source>Palette color</source>
         <translation>色板颜色</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="617" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="628" />
         <source>Import palette</source>
         <translation>导入色板</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="617" />
-        <location filename="../src/app/CaptureToolbar.cpp" line="621" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="628" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="632" />
         <source>Palette (*.txt)</source>
         <translation>色板 (*.txt)</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="621" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="632" />
         <source>Export palette</source>
         <translation>导出色板</translation>
     </message>
     <message>
-        <location filename="../src/app/CaptureToolbar.cpp" line="692" />
+        <location filename="../src/app/CaptureToolbar.cpp" line="703" />
         <source>QR code / barcode found - click to decode</source>
         <translation>找到二维码 / 条码 - 点击识别</translation>
     </message>
