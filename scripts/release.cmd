@@ -21,7 +21,7 @@ call "%~dp0vsenv.cmd" python -I "%ROOT%\tests\package\check_package.py" ^
     --iss "%ROOT%\scripts\installer.iss" || goto :fail
 echo.
 echo Release artifacts: %ROOT%\build\win-release\dist
-echo   portable folder : dist\portable   (publish it with scripts\publish.cmd [target dir])
+echo   portable folder : dist\portable   (publish it with scripts\publish.cmd [parent dir])
 echo   portable zip    : dist\ScreenShot-*-win64-portable.zip
 echo   installer       : dist\ScreenShot-*-win64-setup.exe
 if defined KEEP_OPEN pause
