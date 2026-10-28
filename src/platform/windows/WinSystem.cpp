@@ -116,6 +116,32 @@ bool setProcessPriority(const QString& level)
     return SetPriorityClass(GetCurrentProcess(), cls) != FALSE;
 }
 
+int showNativeMenu(const QStringList& items)
+{
+    // 菜单需要本线程的窗口作宿主：用一个隐藏的弹出窗口，进程内复用
+    static const HWND owner = CreateWindowExW(0, L"STATIC", L"", WS_POPUP, 0, 0, 0, 0, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
+    POINT cursor{};
+    const HMENU menu = CreatePopupMenu();
+    if (!owner || !menu || !GetCursorPos(&cursor)) {
+        if (menu)
+            DestroyMenu(menu);
+        return -1;
+    }
+    // 命令 ID 从 1 开始（0 表示未选）
+    for (int i = 0; i < items.size(); ++i) {
+        if (items[i].isEmpty())
+            AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+        else
+            AppendMenuW(menu, MF_STRING, i + 1, reinterpret_cast<LPCWSTR>(items[i].utf16()));
+    }
+    // 先置前台，点菜单外才能关闭菜单；结束后发一条空消息（KB135788）
+    SetForegroundWindow(owner);
+    const int command = TrackPopupMenu(menu, TPM_RIGHTBUTTON | TPM_RETURNCMD | TPM_NONOTIFY, cursor.x, cursor.y, 0, owner, nullptr);
+    PostMessageW(owner, WM_NULL, 0, 0);
+    DestroyMenu(menu);
+    return command - 1;
+}
+
 bool isElevated()
 {
     HANDLE token = nullptr;

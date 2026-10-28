@@ -82,6 +82,14 @@ PreferencesDialog::PreferencesDialog(Settings& settings, QWidget* parent)
     setStyleSheet(prefs::styleSheet());
     buildPages();
     theme::decorateWindow(this);
+    // 上次关闭时的位置与大小；没有记录时用上面的默认大小
+    restoreGeometry(QByteArray::fromBase64(m_settings.stringValue(QStringLiteral("general.preferencesGeometry")).toLatin1()));
+}
+
+void PreferencesDialog::done(int result)
+{
+    m_settings.setValue(QStringLiteral("general.preferencesGeometry"), QString::fromLatin1(saveGeometry().toBase64()));
+    QDialog::done(result);
 }
 
 QString PreferencesDialog::pageTitle(const QString& page)

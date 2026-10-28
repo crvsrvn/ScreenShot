@@ -21,6 +21,7 @@ class TestApp : public QObject {
     Q_OBJECT
 private slots:
     void trayMenuHasRequiredEntries();
+    void preferencesSingleWindow();
     void trayClickMapping();
     void hotkeysRegisteredAndReapplied();
     void hotkeyTriggersCapture();
@@ -49,6 +50,21 @@ void TestApp::trayMenuHasRequiredEntries()
     const QStringList texts = actionTexts(app.trayMenu());
     // GEN-03：右键菜单只有设置和退出
     QCOMPARE(texts, QStringList({QStringLiteral("Settings"), QStringLiteral("Quit")}));
+}
+
+void TestApp::preferencesSingleWindow()
+{
+    // 多次点“设置”只有一个设置窗口
+    FakePlatformHandles h;
+    Settings settings;
+    App app(makeFakePlatform(&h), settings);
+    app.showPreferences();
+    app.showPreferences();
+    int count = 0;
+    for (QWidget* w : QApplication::topLevelWidgets())
+        if (w->inherits("ss::PreferencesDialog") && w->isVisible())
+            ++count;
+    QCOMPARE(count, 1);
 }
 
 void TestApp::trayClickMapping()

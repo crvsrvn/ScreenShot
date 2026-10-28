@@ -7,6 +7,7 @@
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QListWidget>
+#include <QScreen>
 #include <QTest>
 
 using namespace ss;
@@ -20,6 +21,7 @@ private slots:
     void editorsAccessible();
     void spinBoxesShowValue();
     void searchFiltersRows();
+    void geometryRemembered();
 };
 
 void TestPreferences::pagesMatchSettingsTable()
@@ -112,6 +114,28 @@ void TestPreferences::searchFiltersRows()
     search->clear();
     QVERIFY(!autostartRow->isHidden());
     QVERIFY(!nav->item(0)->isHidden());
+}
+
+void TestPreferences::geometryRemembered()
+{
+    // 关闭时记下位置与大小，下次打开恢复
+    Settings s;
+    QRect closed;
+    {
+        PreferencesDialog d(s);
+        d.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&d));
+        // 取屏幕内的位置：超出屏幕或标题栏不可见时，恢复会把窗口挪回屏内
+        const QRect available = d.screen()->availableGeometry();
+        d.setGeometry(QRect(available.topLeft() + QPoint(17, 43), d.minimumSize() + QSize(11, 7)));
+        closed = d.geometry();
+        d.close();
+    }
+    QVERIFY(!s.stringValue(QStringLiteral("general.preferencesGeometry")).isEmpty());
+    PreferencesDialog d(s);
+    d.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&d));
+    QCOMPARE(d.geometry(), closed);
 }
 
 QTEST_MAIN(TestPreferences)

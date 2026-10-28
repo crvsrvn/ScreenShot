@@ -1633,6 +1633,16 @@
         <translation>The log file is rotated when it grows past this size.</translation>
     </message>
     <message>
+        <location filename="../src/core/config/Settings.cpp" line="33" />
+        <source>Settings window geometry</source>
+        <translation>Settings window geometry</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="33" />
+        <source>Remembered automatically when the settings window closes.</source>
+        <translation>Remembered automatically when the settings window closes.</translation>
+    </message>
+    <message>
         <location filename="../src/core/config/Settings.cpp" line="34" />
         <source>Auto detection</source>
         <translation>Auto detection</translation>

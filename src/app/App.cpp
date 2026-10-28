@@ -97,6 +97,7 @@ App::App(Platform platform, Settings& settings, QObject* parent)
 
 App::~App()
 {
+    delete m_preferences; // 不挂父对象，引用 m_settings，需先于 App 销毁
     delete m_trayMenu;
 }
 
@@ -148,7 +149,9 @@ void App::setupTray()
         return;
     m_tray = new QSystemTrayIcon(QApplication::windowIcon(), this);
     m_tray->setToolTip(QStringLiteral("ScreenShot"));
-    m_tray->setContextMenu(m_trayMenu);
+#ifndef Q_OS_WIN
+    m_tray->setContextMenu(m_trayMenu); // Windows 在 trayActivated 里弹系统原生菜单
+#endif
     connect(m_tray, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) { trayActivated(reason); });
     m_tray->show();
 }
@@ -159,7 +162,24 @@ void App::trayActivated(int reason)
         startCapture(monotonicNs());
     else if (reason == QSystemTrayIcon::MiddleClick)
         pinFromClipboard();
+#ifdef Q_OS_WIN
+    else if (reason == QSystemTrayIcon::Context)
+        showTrayMenu();
+#endif
 }
+
+#ifdef Q_OS_WIN
+void App::showTrayMenu()
+{
+    // 右键菜单用系统原生样式；菜单项仍来自 m_trayMenu
+    const QList<QAction*> actions = m_trayMenu->actions();
+    QStringList items;
+    for (QAction* a : actions)
+        items << (a->isSeparator() ? QString() : a->text());
+    if (const int index = win::showNativeMenu(items); index >= 0)
+        actions[index]->trigger();
+}
+#endif
 
 void App::setupHotkeys()
 {
@@ -642,9 +662,15 @@ void App::closeAllPins()
 
 void App::showPreferences()
 {
-    PreferencesDialog dialog(m_settings);
-    dialog.exec();
-    m_settings.saveToFile();
+    // 已打开时只把它带到前台；关闭时窗口位置写入设置，applySetting 随即存盘
+    if (!m_preferences) {
+        m_preferences = new PreferencesDialog(m_settings);
+        m_preferences->setAttribute(Qt::WA_DeleteOnClose);
+    }
+    m_preferences->setWindowState(m_preferences->windowState() & ~Qt::WindowMinimized);
+    m_preferences->show();
+    m_preferences->raise();
+    m_preferences->activateWindow();
 }
 
 void App::applyInputHooks()
@@ -699,6 +725,8 @@ void App::quit()
 {
     if (!m_dataDir.isEmpty() && m_settings.boolValue(QStringLiteral("pin.restoreOnStart")))
         m_pins->saveState(m_dataDir + QStringLiteral("/pins")); // PIN-54
+    if (m_preferences)
+        m_preferences->close(); // 记下设置窗口位置
     m_settings.saveToFile();
     QApplication::quit();
 }

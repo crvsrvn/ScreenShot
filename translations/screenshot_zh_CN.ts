@@ -1633,6 +1633,16 @@
         <translation>日志文件超过这个大小后轮转。</translation>
     </message>
     <message>
+        <location filename="../src/core/config/Settings.cpp" line="33" />
+        <source>Settings window geometry</source>
+        <translation>设置窗口位置</translation>
+    </message>
+    <message>
+        <location filename="../src/core/config/Settings.cpp" line="33" />
+        <source>Remembered automatically when the settings window closes.</source>
+        <translation>关闭设置窗口时自动记下。</translation>
+    </message>
+    <message>
         <location filename="../src/core/config/Settings.cpp" line="34" />
         <source>Auto detection</source>
         <translation>自动检测</translation>

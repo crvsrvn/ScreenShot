@@ -29,6 +29,9 @@ QString currentUserName();
 // 进程优先级（GEN-10）：normal | aboveNormal | high
 bool setProcessPriority(const QString& level);
 
+// 在光标处弹出系统原生菜单（托盘右键菜单）；空字符串为分隔线。阻塞到菜单关闭，返回选中项序号，未选返回 -1
+int showNativeMenu(const QStringList& items);
+
 // 以管理员身份运行（GEN-05）
 bool isElevated();
 // 用 UAC 提权重新启动自己（带同样的参数）；用户拒绝或失败返回 false

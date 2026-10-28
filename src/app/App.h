@@ -29,6 +29,7 @@ class CommandServer;
 class ScrollCaptureSession;
 class RecordSession;
 class RecordPlaybackDialog;
+class PreferencesDialog;
 
 // 托盘与命令路由：持有平台层、设置、截图会话、输出动作和贴图管理。
 class App : public QObject {
@@ -104,6 +105,9 @@ public slots:
 
 private:
     void setupTray();
+#ifdef Q_OS_WIN
+    void showTrayMenu();
+#endif
     void setupHotkeys();
     void onSizeInputRequested();
     void onOcrCopyRequested(const QImage& image);
@@ -128,6 +132,7 @@ private:
     QString m_recordLastFile;
     bool m_recordHooks = false;
     QPointer<RecordPlaybackDialog> m_playback;
+    QPointer<PreferencesDialog> m_preferences; // 只开一个设置窗口
     QImage m_scrollResult;
 public:
     QSystemTrayIcon* trayIcon() const { return m_tray; }
