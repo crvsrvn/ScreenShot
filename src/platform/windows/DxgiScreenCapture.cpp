@@ -2,6 +2,8 @@
 
 #include "core/fx/HdrToneMap.h"
 #include "core/util/Clock.h"
+#include "platform/windows/GdiScreenCapture.h"
+#include "platform/windows/WinCursor.h"
 #include "platform/windows/WinScreens.h"
 
 #include <d3d11.h>
@@ -22,6 +24,7 @@ struct DxgiScreenCapture::Output {
     ComPtr<ID3D11Texture2D> staging;
     QImage lastFrame; // 最近一次成功取到的完整画面
     QSize size;
+    QPoint origin; // 显示器左上角的物理坐标
     qreal scale = 1.0;
     bool hdr = false;              // 输出处于 HDR 模式：桌面复制交出 scRGB FP16 帧
     float sdrWhiteNits = 80.0f;    // SDR 白电平
@@ -56,6 +59,27 @@ float screenSdrWhiteNits(const QString& deviceName)
             return white.SDRWhiteLevel * 80.0f / 1000.0f;
     }
     return 80.0f;
+}
+
+// 系统用软件绘制指针时（如辅助功能里调大的指针），桌面复制的画面里已经带着指针；
+// GDI 抓屏不含指针，用它重抓指针所在的一小块盖回去
+void eraseCursor(QImage& frame, const QPoint& origin)
+{
+    const auto cursor = cursorRect();
+    if (!cursor)
+        return;
+    // 放大倍数是按设置推算的，四周多盖一些留余量（GDI 画面本身不含指针，多盖无害）
+    const int margin = cursor->width() / 4;
+    const QRect area = cursor->adjusted(-margin, -margin, margin, margin).intersected(QRect(origin, frame.size()));
+    if (area.isEmpty())
+        return;
+    const QImage patch = GdiScreenCapture::captureRect(area);
+    if (patch.isNull())
+        return;
+    const QPoint at = area.topLeft() - origin;
+    const size_t rowBytes = static_cast<size_t>(area.width()) * 4;
+    for (int y = 0; y < area.height(); ++y)
+        std::memcpy(frame.scanLine(at.y() + y) + at.x() * 4, patch.constScanLine(y), rowBytes);
 }
 
 } // namespace
@@ -134,6 +158,7 @@ DxgiScreenCapture::Output* DxgiScreenCapture::outputFor(const ScreenInfo& screen
             if (out->hdr && dd.ModeDesc.Format != DXGI_FORMAT_R16G16B16A16_FLOAT)
                 out->hdr = false;
             out->size = QSize(static_cast<int>(dd.ModeDesc.Width), static_cast<int>(dd.ModeDesc.Height));
+            out->origin = screen.physicalGeometry.topLeft();
             out->scale = screen.scale;
             D3D11_TEXTURE2D_DESC td{};
             td.Width = dd.ModeDesc.Width;
@@ -200,8 +225,9 @@ DxgiScreenCapture::Acquired DxgiScreenCapture::acquire(Output& out, QImage& imag
         for (int y = 0; y < out.size.height(); ++y)
             std::memcpy(frame.scanLine(y), static_cast<const char*>(mapped.pData) + y * mapped.RowPitch, rowBytes);
     }
-    frame.setDevicePixelRatio(out.scale);
     out.context->Unmap(out.staging.Get(), 0);
+    eraseCursor(frame, out.origin);
+    frame.setDevicePixelRatio(out.scale);
     out.lastFrame = frame;
     image = frame;
     return Acquired::Frame;

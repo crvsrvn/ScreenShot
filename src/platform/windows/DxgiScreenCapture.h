@@ -13,6 +13,7 @@ namespace ss::win {
 // 画面无变化时复用上一帧；会话失效（ACCESS_LOST）时重建；仍失败则返回空，由上层改走 GDI。
 // 新建的会话在桌面下一次刷新前只交出一张空白（全黑）帧，所以程序启动后预建并常驻会话，
 // 还没有收到真实画面时返回空，由上层改走 GDI。
+// 软件绘制的指针会被合成进画面，取到新帧后用 GDI 重抓指针所在区域覆盖。
 class DxgiScreenCapture : public IScreenCapture {
 public:
     DxgiScreenCapture();
